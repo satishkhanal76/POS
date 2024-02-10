@@ -38,11 +38,11 @@ export default class DB implements IDB {
   public async connectDB() {
     return (this.db = await new Promise((resolve, reject) => {
       const dbRequest = window.indexedDB.open(DB.DB_NAME, DB.DB_VERSION);
-      dbRequest.addEventListener("success", (eve) => {
+      dbRequest.addEventListener("success", () => {
         this.onSuccess(dbRequest.result);
         resolve(dbRequest.result);
       });
-      dbRequest.addEventListener("upgradeneeded", (eve) => {
+      dbRequest.addEventListener("upgradeneeded", () => {
         this.onUpgradeNeeded(dbRequest.result);
         resolve(dbRequest.result);
       });
@@ -53,8 +53,12 @@ export default class DB implements IDB {
     }));
   }
 
-  private onSuccess(database: IDBDatabase) {}
-  private onError(eve: Event) {}
+  private onSuccess(database: IDBDatabase) {
+    console.log(database);
+  }
+  private onError(eve: Event) {
+    console.log(eve);
+  }
 
   private onUpgradeNeeded(database: IDBDatabase) {
     //create all object store

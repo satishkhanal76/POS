@@ -4,13 +4,13 @@ import ItemForm, { IFormData } from "./ItemForm";
 import { v4 as uuidv4 } from "uuid";
 import { IItem, Item } from "../model/Item";
 import ItemDB, { IItemDB, ItemSchema } from "../database/ItemDB";
-import ItemController from "../controllers/ItemController";
+// import ItemController from "../controllers/ItemController";
 
 const Items = () => {
   const db = new DB();
   const itemDB: IItemDB = new ItemDB(db);
 
-  const itemController = new ItemController();
+  // const itemController = new ItemController();
 
   const [items, setItems] = useState<ItemSchema[]>([]);
 

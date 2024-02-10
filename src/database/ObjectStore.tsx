@@ -47,8 +47,8 @@ export default class ObjectStore<G> implements IObjectStore<G> {
     return new Promise(async (resolve, reject) => {
       const objectStore = await this.getReadOnlyObjectStore();
       const request = objectStore?.getAll();
-      request?.addEventListener("success", (eve) => resolve(request.result));
-      request?.addEventListener("error", (eve) => reject(request));
+      request?.addEventListener("success", () => resolve(request.result));
+      request?.addEventListener("error", () => reject(request));
     });
   }
 
@@ -56,8 +56,8 @@ export default class ObjectStore<G> implements IObjectStore<G> {
     return new Promise(async (resolve, reject) => {
       const objectStore = await this.getReadOnlyObjectStore();
       const request = objectStore?.index("id").get(id);
-      request?.addEventListener("success", (eve) => resolve(request.result));
-      request?.addEventListener("error", (eve) => reject(request));
+      request?.addEventListener("success", () => resolve(request.result));
+      request?.addEventListener("error", () => reject(request));
     });
   }
 
@@ -72,8 +72,8 @@ export default class ObjectStore<G> implements IObjectStore<G> {
 
       const objectStore = await this.getReadWriteObjectStore();
       const request = objectStore?.delete(id);
-      request?.addEventListener("success", (eve) => resolve(data));
-      request?.addEventListener("error", (eve) => reject(request));
+      request?.addEventListener("success", () => resolve(data));
+      request?.addEventListener("error", () => reject(request));
     });
   }
 }
