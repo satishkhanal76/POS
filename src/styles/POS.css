@@ -1,0 +1,48 @@
+.pos-container {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: min-content 1fr;
+
+  background-color: goldenrod;
+}
+
+.buttons-container {
+  grid-column: span 6;
+  display: grid;
+  gap: 0.5em;
+  grid-template-columns: subgrid;
+}
+
+.big-button {
+  font-size: 1.5em;
+  outline: none;
+  border: none;
+  background-color: greenyellow;
+  padding: 0.5em;
+  cursor: pointer;
+
+  flex-grow: 1;
+}
+
+.transaction-container {
+  grid-column: span 6;
+  overflow-y: auto;
+}
+
+.transaction-title {
+  text-align: center;
+  padding-block: 0.5em;
+  font-size: 1.3rem;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  padding-block: 0.3em;
+  padding-inline: 1em;
+}
+
+.transaction-item.active {
+  background-color: grey;
+}

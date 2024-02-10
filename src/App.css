@@ -1,0 +1,12 @@
+.App {
+  display: flex;
+  flex-direction: column;
+  min-width: 100svw;
+  min-height: 100svh;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
