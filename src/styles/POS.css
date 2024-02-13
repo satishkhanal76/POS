@@ -1,4 +1,4 @@
-.pos-container {
+/* .pos-container {
   flex-grow: 1;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -18,9 +18,11 @@
   font-size: 1.5em;
   outline: none;
   border: none;
-  background-color: greenyellow;
   padding: 0.5em;
   cursor: pointer;
+  opacity: 1;
+  background-color: greenyellow;
+
 
   flex-grow: 1;
 }
@@ -28,6 +30,8 @@
 .transaction-container {
   grid-column: span 6;
   overflow-y: auto;
+  row-gap: 0.3em;
+  column-gap: 0.3em;
 }
 
 .transaction-title {
@@ -45,4 +49,4 @@
 
 .transaction-item.active {
   background-color: grey;
-}
+} */

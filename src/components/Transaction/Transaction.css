@@ -1,0 +1,81 @@
+.buttons-container {
+  /* background-color: hsl(229, 78%, 50%); */
+  padding: 0.3em;
+  display: flex;
+  gap: 1em;
+  margin-block: 1em;
+  padding-block: 1em;
+  flex-flow: wrap;
+}
+
+.big-button {
+  max-width: 150px;
+  flex: 1;
+  margin: 0;
+  padding-block: 0.5em;
+  background-color: hsl(229, 78%, 90%);
+  outline: none;
+  border: none;
+  border-radius: 0.8em;
+  cursor: pointer;
+  color: hsl(229, 78%, 50%);
+}
+
+.big-button:disabled {
+  /* background-color: red; */
+  background-color: rgba(28, 65, 227, 0.4);
+  color: white;
+  cursor: not-allowed;
+}
+
+.transaction-container {
+  background-color: hsl(229, 78%, 50%);
+  /* box-shadow: 0 0 1.5em rgba(255, 255, 255, 0.5); */
+  padding-block: 1em;
+  border-radius: 0.5em;
+  font-size: 1em;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  padding: 1em;
+}
+
+.transaction-title {
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.2em;
+  margin-block-end: 0.5em;
+}
+
+.transaction-items-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  max-height: min(50svh, 400px);
+  overflow-y: auto;
+  border-block-end: 2px solid hsl(229, 78%, 90%);
+}
+
+.transaction-item {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding-inline: 0.5em;
+  padding-block: 0.2em;
+}
+
+.transaction-item:nth-child(2n) {
+  background-color: hsl(229, 78%, 55%);
+}
+
+.transaction-item.active {
+  background-color: hsl(229, 78%, 90%);
+  color: hsl(229, 78%, 50%);
+}
+
+.transaction-details {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em;
+}

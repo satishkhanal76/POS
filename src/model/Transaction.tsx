@@ -1,34 +1,59 @@
-import { ITransactionItem, TransactionItemType } from "./TransactionItem";
+import { IItem } from "./Item";
+import TransactionItem, {
+  ITransactionItemViewer,
+  ITransactionItem,
+  TransactionItemType,
+} from "./TransactionItem";
 
-export interface ITransaction {
+import { v4 as uuidv4 } from "uuid";
+
+export interface ITransactionViewer {
+  getTimestamp: () => number;
   getId: () => string;
-  getItems: () => ITransactionItem[];
-  getItemsByType: (type: TransactionItemType) => ITransactionItem[];
-  getItem: (id: string) => ITransactionItem | undefined;
+  getItems: () => ITransactionItemViewer[];
+  getItemsByType: (type: TransactionItemType) => ITransactionItemViewer[];
+  getItem: (id: string) => ITransactionItemViewer | undefined;
   getTotal: () => number;
+}
 
+export interface ITransaction extends ITransactionViewer {
   /**
    * Adds an item to the transaction
    * @param item the item to be added
    * @returns
    */
-  addItem: (item: ITransactionItem) => void;
+  addItem: (item: IItem) => ITransactionItemViewer;
 
   /**
-   * Removes an item from the transaction
+   * Decrements the quantity of an item from the transaction
    * @param id the item id
-   * @returns the removed item
+   * @returns the decremented item
    */
-  removeItem: (id: string) => ITransactionItem | null;
+  decrementItem: (id: string) => ITransactionItemViewer | null;
+
+  removeItem: (id: string) => ITransactionItemViewer | null;
+
+  getLastItem: () => ITransactionItemViewer | null;
+
+  changeItemQuantity: (
+    transactionItem: ITransactionItemViewer,
+    quantity: number
+  ) => void;
+
+  addTransactionItem: (
+    transactionItem: ITransactionItem
+  ) => ITransactionItemViewer;
 }
 
 export default class Transaction implements ITransaction {
+  private timestamp: number;
   private id: string;
   private transactionItems: ITransactionItem[];
   private total: number;
 
-  constructor(id: string) {
-    this.id = id;
+  constructor(id?: string, timestamp?: number) {
+    this.id = id || uuidv4();
+    this.timestamp = timestamp || Date.now();
     this.transactionItems = [];
     this.total = 0;
   }
@@ -42,6 +67,9 @@ export default class Transaction implements ITransaction {
     );
   }
 
+  public getTimestamp() {
+    return this.timestamp;
+  }
   public getId() {
     return this.id;
   }
@@ -67,17 +95,60 @@ export default class Transaction implements ITransaction {
     return this.total;
   }
 
-  public addItem(transactionItems: ITransactionItem) {
-    this.transactionItems.push(transactionItems);
-    this.calculateTotal();
+  public addItem(item: IItem): ITransactionItemViewer {
+    let transactionItem: ITransactionItem | undefined =
+      this.transactionItems.find((t) => t.getItem().getId() === item.getId());
+
+    if (transactionItem) {
+      transactionItem.setQuantity(transactionItem.getQuantity() + 1);
+    } else {
+      transactionItem = new TransactionItem({ id: this.getId(), item });
+      this.addTransactionItem(transactionItem);
+    }
+    return transactionItem;
   }
 
-  public removeItem(id: string) {
+  public decrementItem(id: string) {
     const index = this.transactionItems.findIndex(
       (transactionItem) => transactionItem.getItem().getId() === id
     );
     if (index < 0) return null;
-    const transactionItem = this.transactionItems.splice(index, 1)[0];
+    const transactionItem = this.transactionItems[index];
+    if (transactionItem.getQuantity() > 1) {
+      transactionItem.setQuantity(transactionItem.getQuantity() - 1);
+    } else {
+      this.transactionItems.splice(index, 1)[0];
+    }
+    this.calculateTotal();
+    return transactionItem;
+  }
+
+  public getLastItem() {
+    return this.transactionItems[this.transactionItems.length - 1];
+  }
+
+  public removeItem(id: string) {
+    const itemIndex = this.transactionItems.findIndex(
+      (transactionItem) => transactionItem.getItem().getId() === id
+    );
+
+    const transactionItem =
+      itemIndex >= 0 ? this.transactionItems.splice(itemIndex, 1)[0] : null;
+    this.calculateTotal();
+    return transactionItem;
+  }
+
+  public changeItemQuantity(
+    transactionItem: ITransactionItemViewer,
+    quantity: number
+  ) {
+    this.transactionItems
+      .find((t) => t === transactionItem)
+      ?.setQuantity(quantity);
+  }
+
+  public addTransactionItem(transactionItem: ITransactionItem) {
+    this.transactionItems.push(transactionItem);
     this.calculateTotal();
     return transactionItem;
   }

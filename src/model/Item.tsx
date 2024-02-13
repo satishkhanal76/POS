@@ -1,4 +1,4 @@
-import { ItemSchema } from "../database/ItemDB";
+import { ItemSchema } from "../database/ItemOS";
 
 export interface IItem {
   getId: () => string;

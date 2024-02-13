@@ -1,45 +1,76 @@
-import { IDB } from "./Database";
+import { IDB, IObjectStoreDB } from "./Database";
 
 /**
  * G (Generic) is a database schema
  */
-export interface IObjectStore<G> {
+export interface IObjectStore<G, I> {
   getAll: () => Promise<G[]>;
 
   getOne: (id: string) => Promise<G>;
 
   deleteOne: (id: string) => Promise<G>;
+
+  /**
+   *  Gte the object store name
+   * @returns the object store name (equivalent to a table in a database)
+   */
+  getObjectStoreName: () => string;
+
+  getObjectAsSchema: (object: I) => G;
+
+  addOne: (model: I) => Promise<I>;
+
+  addMany: (models: I[]) => Promise<I[]>;
+
+  getDb: () => Promise<IDB>;
 }
 
 /**
- * the generic S denotes the schema (the interface of the database schema)
+ * the generic G denotes the schema (the interface of the database schema)
+ * the generic I denotes an object item (the model of the S)
  */
-export default class ObjectStore<G> implements IObjectStore<G> {
+export default class ObjectStore<G, I>
+  implements IObjectStore<G, I>, IObjectStoreDB
+{
   protected db: IDB;
   protected objectStoreName: string;
+  protected objectStoreParams: IDBObjectStoreParameters;
 
-  constructor(db: IDB, objecStoreName: string) {
+  constructor(
+    db: IDB,
+    objecStoreName: string,
+    objectStoreParams?: IDBObjectStoreParameters
+  ) {
     this.db = db;
     this.objectStoreName = objecStoreName;
+    this.objectStoreParams = objectStoreParams || {
+      keyPath: "id",
+    };
+
+    this.addObjectStoreToDB();
   }
 
-  protected async getReadOnlyTransaction() {
+  private addObjectStoreToDB() {
+    this.db.addObjectStore(this);
+  }
+
+  protected async createReadOnlyTransaction() {
     const db = await this.db.getDatabase();
     return db?.transaction(this.objectStoreName, "readonly");
   }
 
-  protected async getReadWriteTransaction() {
+  protected async createReadWriteTransaction() {
     const db = await this.db.getDatabase();
     return db?.transaction(this.objectStoreName, "readwrite");
   }
 
   protected async getReadOnlyObjectStore() {
-    const transaction = await this.getReadOnlyTransaction();
+    const transaction = await this.createReadOnlyTransaction();
     return transaction?.objectStore(this.objectStoreName);
   }
 
   protected async getReadWriteObjectStore() {
-    const transaction = await this.getReadWriteTransaction();
+    const transaction = await this.createReadWriteTransaction();
     return transaction?.objectStore(this.objectStoreName);
   }
 
@@ -75,5 +106,42 @@ export default class ObjectStore<G> implements IObjectStore<G> {
       request?.addEventListener("success", () => resolve(data));
       request?.addEventListener("error", () => reject(request));
     });
+  }
+
+  public getObjectStoreName() {
+    return this.objectStoreName;
+  }
+
+  public getObjectSoreParams() {
+    return this.objectStoreParams;
+  }
+
+  public getObjectAsSchema(object: I) {
+    console.trace(object);
+    throw new Error("Not Implemented!");
+    return {} as G;
+  }
+
+  public async addOne(model: I): Promise<I> {
+    return new Promise(async (resolve, reject) => {
+      const objectStore = await this.getReadWriteObjectStore();
+
+      objectStore.transaction.oncomplete = () => {
+        resolve(model);
+      };
+      objectStore.transaction.onerror = (err) => {
+        reject(err);
+      };
+
+      objectStore.add(this.getObjectAsSchema(model));
+    });
+  }
+
+  public async addMany(models: I[]): Promise<I[]> {
+    return await Promise.all(models.map((m) => this.addOne(m)));
+  }
+
+  public async getDb() {
+    return this.db;
   }
 }

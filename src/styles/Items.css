@@ -1,0 +1,35 @@
+.items-title {
+  font-size: 1.8em;
+  margin: 0;
+  padding-block: 0.5em;
+  text-transform: uppercase;
+}
+
+.items-container {
+  background-color: rgba(51, 84, 230, 0.4);
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.1em;
+  align-items: center;
+  margin-block-start: 0.1em;
+  padding: 0.3rem;
+}
+
+.item:nth-child(2n) {
+  background-color: rgba(51, 84, 230, 0.5);
+  /* background-color: red; */
+}
+.item .item-delete-button {
+  outline: none;
+  border: none;
+  padding: 0.5em 0.6em;
+  background-color: hsl(229, 78%, 50%);
+  color: white;
+  cursor: pointer;
+}
+.item .item-delete-button:hover {
+  background-color: hsl(229, 78%, 55%);
+}

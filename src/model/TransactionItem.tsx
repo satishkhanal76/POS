@@ -5,7 +5,8 @@ export enum TransactionItemType {
   DISCOUNT,
 }
 
-export interface ITransactionItem {
+export interface ITransactionItemViewer {
+  getId: () => string;
   getItem: () => IItem;
   getQuantity: () => number;
   getIsQuantityChangable: () => boolean;
@@ -13,25 +14,33 @@ export interface ITransactionItem {
   getPrice: () => number;
 }
 
-export interface TransactionItemParams {
-  item: IItem;
-  quantity: number;
-  isQuantityChangeable: boolean;
-  type: TransactionItemType;
+export interface ITransactionItem extends ITransactionItemViewer {
+  setQuantity: (quantity: number) => void;
 }
 
-export default class TransactionItem implements ITransactionItem {
+export interface TransactionItemParams {
+  id: string;
+  item: IItem;
+  quantity?: number;
+  isQuantityChangeable?: boolean;
+  type?: TransactionItemType;
+}
+
+export default class TransactionItem implements ITransactionItemViewer {
+  private id: string;
   private item: IItem;
   private quantity: number;
   private isQuantityChangeable: boolean;
   private type: TransactionItemType;
 
   constructor({
+    id,
     item,
     quantity = 1,
     isQuantityChangeable = true,
     type = TransactionItemType.PRODUCT,
   }: TransactionItemParams) {
+    this.id = id;
     this.item = item;
     this.quantity = quantity;
     this.isQuantityChangeable = isQuantityChangeable;
@@ -40,6 +49,14 @@ export default class TransactionItem implements ITransactionItem {
     if (this.type === TransactionItemType.DISCOUNT) {
       this.isQuantityChangeable = false;
     }
+  }
+
+  public setQuantity(quantity: number) {
+    this.quantity = quantity;
+  }
+
+  public getId() {
+    return this.id;
   }
   public getItem() {
     return this.item;

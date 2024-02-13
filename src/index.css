@@ -1,0 +1,12 @@
+:root {
+  --primary-bg: hsl(221, 73%, 32%);
+
+  --primary-text-color: white;
+}
+body {
+  background-color: var(--primary-bg);
+  color: var(--primary-text-color);
+}
+a {
+  color: var(--primary-text-color);
+}

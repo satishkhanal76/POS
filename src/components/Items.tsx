@@ -1,45 +1,75 @@
-import { useState } from "react";
-import DB from "../database/Database";
-import ItemForm, { IFormData } from "./ItemForm";
-import { v4 as uuidv4 } from "uuid";
-import { IItem, Item } from "../model/Item";
-import ItemDB, { IItemDB, ItemSchema } from "../database/ItemDB";
-// import ItemController from "../controllers/ItemController";
-
+import { useEffect, useState } from "react";
+import { IItem } from "../model/Item";
+import ItemController, { IItemFormData } from "../controllers/ItemController";
+import { useDatabase } from "../contexts/DatabaseContext";
+import CustomForm from "./CustomForm";
+import "../styles/Items.css";
 const Items = () => {
-  const db = new DB();
-  const itemDB: IItemDB = new ItemDB(db);
+  const [items, setItems] = useState<IItem[]>([]);
 
-  // const itemController = new ItemController();
+  const { itemOS } = useDatabase();
 
-  const [items, setItems] = useState<ItemSchema[]>([]);
+  const itemController = new ItemController(itemOS);
 
-  const handleAddingItem = async (formData: IFormData) => {
-    let obj: ItemSchema = {
-      id: uuidv4(),
-      name: formData.name,
-      price: Number.parseFloat(formData.price.toString()),
-    };
+  const handleAddingItem = async (formData: IItemFormData) => {
+    const item = await itemController.handleFormSubmit(formData);
 
-    const item: IItem = new Item(obj as ItemSchema);
-
-    itemDB.addItem(item);
-
-    try {
-      const allItems = await itemDB.getAll();
-
-      setItems(allItems);
-    } catch (err) {
-      console.log("THere aas an error");
+    if (item) {
+      setItems([...items, item]);
     }
   };
+
+  const handleDelete = async (item: IItem) => {
+    const deletedItem = await itemController.deleteItem(item);
+    if (deletedItem) {
+      setItems(items.filter((item) => item.getId() !== deletedItem.getId()));
+    }
+  };
+
+  useEffect(() => {
+    itemController.getAllItems().then((data) => setItems(data));
+  }, []);
+
   return (
     <>
-      <ItemForm onFormSubmit={handleAddingItem} />
-      <div>
-        {items.map((item: ItemSchema) => (
-          <div key={item.id}>
-            {item.name} - {item.price}
+      {/* <ItemForm onFormSubmit={handleAddingItem} /> */}
+      <CustomForm<IItemFormData>
+        inputsProps={[
+          {
+            name: "name",
+            id: "name",
+            type: "text",
+            placeholder: "Item Name..",
+            label: "Name:",
+          },
+          {
+            name: "price",
+            id: "price",
+            type: "text",
+            placeholder: "Enter Base Price..",
+            label: "Price:",
+          },
+          {
+            name: "button",
+            id: "submit-button",
+            type: "submit",
+            value: "Add Item.",
+          },
+        ]}
+        onFormSubmit={handleAddingItem}
+        formTitle="Add A Item"
+      ></CustomForm>
+      <h2 className="items-title">Items</h2>
+      <div className="items-container">
+        {items.map((item: IItem) => (
+          <div className="item" key={item.getId()}>
+            {item.getName()} - ${item.getPrice()}
+            <button
+              className="item-delete-button"
+              onClick={() => handleDelete(item)}
+            >
+              Delete
+            </button>
           </div>
         ))}
       </div>
