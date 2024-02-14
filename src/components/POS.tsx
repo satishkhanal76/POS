@@ -5,6 +5,7 @@ import TransactionController from "../controllers/TransactionController";
 import { useDatabase } from "../contexts/DatabaseContext";
 import Transaction, { ITransaction } from "../model/Transaction";
 import { v4 as uuidv4 } from "uuid";
+import { IItem } from "../model/Item";
 
 interface IPOSState {
   activeTransaction: ITransaction | null;
@@ -23,7 +24,7 @@ const POS = () => {
   useEffect(() => {
     setPosState((p) => ({
       ...p,
-      activeTransaction: new Transaction(uuidv4()),
+      // activeTransaction: new Transaction(uuidv4()),
     }));
   }, []);
 
@@ -40,10 +41,7 @@ const POS = () => {
         posState.activeTransaction,
         transactionsOS
       );
-    setPosState((p) => ({
-      ...p,
-      activeTransaction: new Transaction(uuidv4()),
-    }));
+    handleCreateNewTransaction();
   };
 
   const handleLoadTransaction = async () => {
@@ -54,6 +52,7 @@ const POS = () => {
     );
     if (!transaction) {
       alert("Out of Transactions!");
+      setPosState((p) => ({ ...p, outOfPrevTransaction: true }));
       return;
     }
     setPosState((p) => ({
@@ -63,11 +62,30 @@ const POS = () => {
     }));
   };
 
+  const handleVoidTransaction = () => {
+    setPosState((p) => ({
+      ...p,
+      activeTransaction: null,
+    }));
+  };
+
+  const handleCreateNewTransaction = (item?: IItem) => {
+    const transaction = new Transaction(uuidv4());
+    if (item) transaction.addItem(item);
+    setPosState((p) => ({
+      ...p,
+      activeTransaction: transaction,
+      viewingTransaction: false,
+    }));
+  };
+
   return (
     <div className="pos-container">
       <CTransaction
+        onCreateNewTransaction={handleCreateNewTransaction}
         onLoadTransaction={handleLoadTransaction}
         onPostTransaction={handlePostTransaction}
+        onVoidTransaction={handleVoidTransaction}
         viewingTransaction={posState.viewingTransaction}
         transaction={posState.activeTransaction}
       />

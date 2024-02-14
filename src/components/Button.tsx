@@ -1,6 +1,7 @@
 import React from "react";
 
-interface IButtonProps extends React.HtmlHTMLAttributes<HTMLButtonElement> {
+export interface IButtonProps
+  extends React.HtmlHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
 }
 
