@@ -1,5 +1,5 @@
 import React, { HtmlHTMLAttributes, useRef, useState } from "react";
-import "../styles/CustomForm.css";
+import "./CustomForm.css";
 
 interface IInputProps extends React.HTMLProps<HTMLInputElement> {
   label?: string;

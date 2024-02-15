@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useDatabase } from "../contexts/DatabaseContext";
+import { useDatabase } from "../../contexts/DatabaseContext";
 import CustomerController, {
   ICustomerFormData,
-} from "../controllers/CustomerController";
+} from "../../controllers/CustomerController";
 import CustomForm from "./CustomForm";
-import { ICustomer } from "../model/Customer";
+import { ICustomer } from "../../model/Customer";
 
 const Customers = () => {
   const [customers, setCustomers] = useState<ICustomer[]>([]);

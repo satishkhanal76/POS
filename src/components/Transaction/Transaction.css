@@ -63,6 +63,7 @@
   justify-content: space-between;
   padding-inline: 0.5em;
   padding-block: 0.2em;
+  user-select: none;
 }
 
 .transaction-item:nth-child(2n) {

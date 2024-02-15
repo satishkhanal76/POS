@@ -26,7 +26,10 @@ export interface TransactionItemParams {
   type?: TransactionItemType;
 }
 
-export default class TransactionItem implements ITransactionItemViewer {
+export default class TransactionItem
+  extends EventTarget
+  implements ITransactionItemViewer
+{
   private id: string;
   private item: IItem;
   private quantity: number;
@@ -40,6 +43,7 @@ export default class TransactionItem implements ITransactionItemViewer {
     isQuantityChangeable = true,
     type = TransactionItemType.PRODUCT,
   }: TransactionItemParams) {
+    super();
     this.id = id;
     this.item = item;
     this.quantity = quantity;
@@ -53,6 +57,12 @@ export default class TransactionItem implements ITransactionItemViewer {
 
   public setQuantity(quantity: number) {
     this.quantity = quantity;
+
+    this.dispatchEvent(
+      new CustomEvent("quantity-change", {
+        detail: { quantity: this.quantity },
+      })
+    );
   }
 
   public getId() {

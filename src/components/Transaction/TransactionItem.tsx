@@ -1,24 +1,23 @@
+import { HtmlHTMLAttributes } from "react";
 import { ITransactionItemViewer } from "../../model/TransactionItem";
 import "./Transaction.css";
 
-interface CTransactionItemProps {
+interface TransactionItemProps extends HtmlHTMLAttributes<HTMLDivElement> {
   transactionItem: ITransactionItemViewer;
   isActiveTransactionItem: boolean;
-  handleClick: (transactionItem: ITransactionItemViewer) => void;
 }
 
-const CTransactionItem = ({
+const TransactionItem = ({
   transactionItem,
   isActiveTransactionItem,
-  handleClick,
-}: CTransactionItemProps) => {
+  ...otherProps
+}: TransactionItemProps) => {
   return (
     <div
-      onClick={() => handleClick(transactionItem)}
-      key={transactionItem.getItem().getId()}
       className={
         isActiveTransactionItem ? "transaction-item active" : "transaction-item"
       }
+      {...otherProps}
     >
       <span className="quantity">{transactionItem.getQuantity()}</span>
       <span className="name">{transactionItem.getItem().getName()}</span>
@@ -27,4 +26,4 @@ const CTransactionItem = ({
   );
 };
 
-export default CTransactionItem;
+export default TransactionItem;

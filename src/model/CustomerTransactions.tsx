@@ -1,12 +1,12 @@
 import { ICustomer } from "./Customer";
 import { ITransactions } from "./Transactions";
 
-export interface ICustomerTransaction {
+export interface ICustomerTransactions {
   getCustomer: () => ICustomer;
   getTransactions: () => ITransactions;
 }
 
-export default class CustomerTransaction implements ICustomerTransaction {
+export default class CustomerTransactions implements ICustomerTransactions {
   private customer: ICustomer;
   private transactions: ITransactions;
 

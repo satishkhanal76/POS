@@ -4,7 +4,7 @@ import { IDB, IObjectStoreDB } from "./Database";
  * G (Generic) is a database schema
  */
 export interface IObjectStore<G, I> {
-  getAll: () => Promise<G[]>;
+  getAll: (id?: string) => Promise<G[]>;
 
   getOne: (id: string) => Promise<G>;
 
@@ -74,10 +74,10 @@ export default class ObjectStore<G, I>
     return transaction?.objectStore(this.objectStoreName);
   }
 
-  public getAll(): Promise<G[]> {
+  public getAll(id?: string): Promise<G[]> {
     return new Promise(async (resolve, reject) => {
       const objectStore = await this.getReadOnlyObjectStore();
-      const request = objectStore?.getAll();
+      const request = objectStore?.getAll(id);
       request?.addEventListener("success", () => resolve(request.result));
       request?.addEventListener("error", () => reject(request));
     });

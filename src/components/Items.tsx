@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { IItem } from "../model/Item";
 import ItemController, { IItemFormData } from "../controllers/ItemController";
 import { useDatabase } from "../contexts/DatabaseContext";
-import CustomForm from "./CustomForm";
+import CustomForm from "./Customer/CustomForm";
 import "../styles/Items.css";
 const Items = () => {
   const [items, setItems] = useState<IItem[]>([]);

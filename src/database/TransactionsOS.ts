@@ -1,16 +1,17 @@
-import { ITransaction } from "../model/Transaction";
+import { ITransaction, ITransactionViewer } from "../model/Transaction";
 import { IDB } from "./Database";
 import ObjectStore, { IObjectStore } from "./ObjectStore";
 
 export interface TransactionsSchema {
   timestamp: number;
   id: string;
+  total: number;
 }
 
 export interface ITransactionsOS
   extends IObjectStore<TransactionsSchema, ITransaction> {
   getLatestTransaction: (
-    currenltyViewingTransaction?: ITransaction | null
+    currenltyViewingTransaction?: ITransactionViewer | null
   ) => Promise<TransactionsSchema | null>;
 }
 
@@ -29,11 +30,15 @@ export default class TransactionsOS
   }
 
   public getObjectAsSchema(object: ITransaction) {
-    return { timestamp: object.getTimestamp(), id: object.getId() };
+    return {
+      timestamp: object.getTimestamp(),
+      id: object.getId(),
+      total: object.getTotal(),
+    };
   }
 
   public async getLatestTransaction(
-    currenltyViewingTransaction?: ITransaction | null
+    currenltyViewingTransaction?: ITransactionViewer | null
   ): Promise<TransactionsSchema | null> {
     return new Promise(async (resolve, reject) => {
       const os = await this.getReadOnlyObjectStore();
