@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import CustomerController, {
   ICustomerFormData,
 } from "../../controllers/CustomerController";
 import CustomForm from "./CustomForm";
 import { ICustomer } from "../../model/Customer";
+import { useLocale } from "../../contexts/Locale";
 
 const Customers = () => {
+  const text = useLocale();
   const [customers, setCustomers] = useState<ICustomer[]>([]);
   const { customerOS } = useDatabase();
   const customerController = new CustomerController(customerOS);
@@ -31,7 +33,7 @@ const Customers = () => {
   useEffect(() => {
     customerController
       .getAllCustomers()
-      .then((allCustomers) => setCustomers([...customers, ...allCustomers]));
+      .then((allCustomers) => setCustomers(allCustomers));
   }, []);
   return (
     <div>
@@ -41,35 +43,39 @@ const Customers = () => {
             name: "name",
             id: "name",
             type: "text",
-            placeholder: "Customer Name..",
-            label: "Name:",
+            placeholder: text.INPUT_CUSTOMER_NAME_PLACE_HOLDER,
+            label: text.INPUT_CUSTOMER_NAME_LABEL,
           },
           {
             name: "phoneNumber",
             id: "phone-number",
             type: "text",
-            placeholder: "Phone Number..",
-            label: "Phone Number:",
+            placeholder: text.INPUT_CUSTOMER_PHONE_PLACE_HOLDER,
+            label: text.INPUT_CUSTOMER_PHONE_LABEL,
           },
           {
             name: "button",
             id: "submit-button",
             type: "submit",
-            value: "Add Customer",
+            value: text.CUSTOMER_FORM_SUBMIT_BUTTON,
           },
         ]}
         onFormSubmit={handleFormSubmit}
-        formTitle="Add A Customer"
+        formTitle={text.CUSTOMER_FORM_TITLE}
       ></CustomForm>
+      <h2 className="customers-title">{text.CUSTOMERS_TITLE}</h2>
       <div className="customers-container">
         {customers.map((customer: ICustomer) => {
           return (
             <div className="customer" key={customer.getId()}>
-              <div className="name">Name: {customer.getName()}</div>
-              <div className="phone-number">
-                Phone: {customer.getPhoneNumber()}
-              </div>
-              <button onClick={(eve) => handleDelete(customer)}>Delete</button>
+              <div className="name">{customer.getName()}</div>
+              <div className="phone-number">{customer.getPhoneNumber()}</div>
+              <button
+                className="delete-button"
+                onClick={() => handleDelete(customer)}
+              >
+                {text.CUSTOMER_DELETE_BUTTON}
+              </button>
             </div>
           );
         })}

@@ -1,24 +1,26 @@
 import { Link } from "react-router-dom";
 import "./NavBar.css";
+import { useLocale } from "../contexts/Locale";
 
 const NavBar = () => {
+  const text = useLocale();
   return (
     <>
       <nav className="top-nav">
         <div className="nav-left">
           <Link className="link-item" to={"/"}>
-            POS
+            {text.WEB_NAME}
           </Link>
         </div>
         <div className="nav-right">
           <Link className="link-item" to={"/customers"}>
-            Customers
+            {text.NAVBAR_ITEM_1}
           </Link>
           <Link className="link-item" to={"/items"}>
-            Items
+            {text.NAVBAR_ITEM_2}
           </Link>
           <Link className="link-item" to={"/customers-transactions"}>
-            Customers Transactions
+            {text.NAVBAR_ITEM_3}
           </Link>
         </div>
       </nav>

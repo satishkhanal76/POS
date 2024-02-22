@@ -1,6 +1,15 @@
-import { ITransaction, ITransactionViewer } from "../model/Transaction";
+import Transaction, {
+  ITransaction,
+  ITransactionViewer,
+} from "../model/Transaction";
+import TransactionItem from "../model/TransactionItem";
 import { IDB } from "./Database";
-import ObjectStore, { IObjectStore } from "./ObjectStore";
+import ObjectStore, {
+  IObjectStore,
+  ObjectRequestError,
+  ObjectRequestErrorsTypes,
+} from "./ObjectStore";
+import { ITransactionItemsOS } from "./TransactionItemsOS";
 
 export interface TransactionsSchema {
   timestamp: number;
@@ -9,19 +18,23 @@ export interface TransactionsSchema {
 }
 
 export interface ITransactionsOS
-  extends IObjectStore<TransactionsSchema, ITransaction> {
+  extends IObjectStore<TransactionsSchema, Transaction> {
   getLatestTransaction: (
     currenltyViewingTransaction?: ITransactionViewer | null
-  ) => Promise<TransactionsSchema | null>;
+  ) => Promise<Transaction | null>;
+
+  postTransaction: (transaction: Transaction) => Promise<Transaction>;
 }
 
 export default class TransactionsOS
-  extends ObjectStore<TransactionsSchema, ITransaction>
+  extends ObjectStore<TransactionsSchema, Transaction>
   implements ITransactionsOS
 {
   private static OBJECT_STORE_NAME = "TRANSACTIONS";
-  constructor(db: IDB) {
+  private transactionItemsOS: ITransactionItemsOS;
+  constructor(db: IDB, transactionItemsOS: ITransactionItemsOS) {
     super(db, TransactionsOS.OBJECT_STORE_NAME);
+    this.transactionItemsOS = transactionItemsOS;
   }
 
   public onObjectStoreCreation(objectStore: IDBObjectStore) {
@@ -37,9 +50,34 @@ export default class TransactionsOS
     };
   }
 
+  public async getSchemaAsObject(
+    schema: TransactionsSchema
+  ): Promise<Transaction> {
+    let transactionItems;
+    const transaction = new Transaction(schema.id, schema.timestamp);
+    try {
+      transactionItems = await this.transactionItemsOS.getAllByTransactionId(
+        schema.id
+      );
+      transaction.addTransactionItems(transactionItems);
+    } catch (err) {
+      const unknownError = err as ObjectRequestError;
+      if (
+        unknownError &&
+        unknownError.type === ObjectRequestErrorsTypes.EMPTY_RESPONSE
+      ) {
+        console.log(unknownError.defaultMessage);
+      } else {
+        console.error(err);
+      }
+    }
+    transaction.setIsPosted(true);
+    return transaction;
+  }
+
   public async getLatestTransaction(
     currenltyViewingTransaction?: ITransactionViewer | null
-  ): Promise<TransactionsSchema | null> {
+  ): Promise<Transaction | null> {
     return new Promise(async (resolve, reject) => {
       const os = await this.getReadOnlyObjectStore();
       const timestampIndex = os.index("timestamp");
@@ -56,7 +94,7 @@ export default class TransactionsOS
       cursorReq.onsuccess = (event: Event) => {
         const cursor: IDBCursorWithValue = (event.target as IDBRequest).result;
         if (cursor) {
-          resolve(cursor.value);
+          resolve(this.getSchemaAsObject(cursor.value));
         } else {
           resolve(null);
         }
@@ -67,5 +105,11 @@ export default class TransactionsOS
         reject("Error");
       };
     });
+  }
+
+  public async postTransaction(transaction: Transaction) {
+    const transactionItems = transaction.getAllTransactionItems();
+    await this.transactionItemsOS.addMany(transactionItems);
+    return await this.addOne(transaction);
   }
 }

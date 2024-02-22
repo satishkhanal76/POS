@@ -54,14 +54,16 @@ export interface ITransaction extends ITransactionViewer {
   changeItemQuantity: (id: string, quantity: number) => void;
 
   setIsPosted: (isPosted: boolean) => void;
+
+  getAllTransactionItems: () => TransactionItem[];
 }
 
 export interface ITransactionCreator extends ITransaction {
   addTransactionItem: (
-    transactionItem: ITransactionItem
+    transactionItem: TransactionItem
   ) => ITransactionItemViewer;
   addTransactionItems: (
-    transactionItems: ITransactionItem[]
+    transactionItems: TransactionItem[]
   ) => ITransactionItemViewer[];
 }
 
@@ -70,7 +72,7 @@ export default class Transaction
 {
   private timestamp: number;
   private id: string;
-  private transactionItems: ITransactionItem[];
+  private transactionItems: TransactionItem[];
   private total: number;
   private hasBeenPosted: boolean;
 
@@ -82,7 +84,11 @@ export default class Transaction
     this.hasBeenPosted = false;
   }
 
-  public addTransactionItems(transactionItems: ITransactionItem[]) {
+  public getAllTransactionItems() {
+    return this.transactionItems;
+  }
+
+  public addTransactionItems(transactionItems: TransactionItem[]) {
     this.transactionItems.push(...transactionItems);
     this.calculateTotal();
 
@@ -177,7 +183,7 @@ export default class Transaction
       ?.setQuantity(quantity);
   }
 
-  public addTransactionItem(transactionItem: ITransactionItem) {
+  public addTransactionItem(transactionItem: TransactionItem) {
     this.transactionItems.push(transactionItem);
     this.calculateTotal();
     return transactionItem;

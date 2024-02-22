@@ -3,8 +3,8 @@ import { IItem, Item } from "../model/Item";
 import { v4 as uuidv4 } from "uuid";
 import Controller, { IController } from "./Controller";
 
-export interface IItemController<S, I, OS> extends IController<S, I, OS> {
-  handleFormSubmit: (data: S) => Promise<I | null>;
+export interface IItemsController<S, I, OS> extends IController<S, I, OS> {
+  handleFormSubmit: (data: IItemFormData) => Promise<I | null>;
 
   getAllItems: () => Promise<I[]>;
 
@@ -16,33 +16,37 @@ export interface IItemFormData {
   price: number;
 }
 
-export default class ItemController
-  extends Controller<ItemSchema, IItem, ItemOS>
-  implements IItemController<ItemSchema, IItem, ItemOS>
+export default class ItemsController
+  extends Controller<ItemSchema, Item, ItemOS>
+  implements IItemsController<ItemSchema, Item, ItemOS>
 {
+  private items: Item[];
+
   constructor(itemOS: ItemOS) {
     super(itemOS);
+
+    this.items = [];
   }
 
   public async handleFormSubmit({ name, price }: IItemFormData) {
     if (name === "" || price == 0) return null;
-    const item: IItem = new Item({ id: uuidv4(), name, price } as ItemSchema);
-
-    //validate here
-
+    const item = new Item({ id: uuidv4(), name, price } as ItemSchema);
+    this.items.push(item);
     return this.addOne(item);
   }
 
   public async getAllItems() {
-    const itemsFromDB: ItemSchema[] = await this.getAll();
-    const items: IItem[] = itemsFromDB.map((item) => new Item(item));
-    return items;
+    if (this.items.length <= 0) {
+      const items = await this.getAll();
+      this.items.push(...items);
+    }
+    return this.items;
   }
 
   public async deleteItem(item: IItem) {
     const deleted = await this.deleteOne(item.getId());
     if (deleted) {
-      return item;
+      return deleted;
     }
     return null;
   }

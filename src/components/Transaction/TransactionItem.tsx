@@ -1,6 +1,7 @@
 import { HtmlHTMLAttributes } from "react";
 import { ITransactionItemViewer } from "../../model/TransactionItem";
 import "./Transaction.css";
+import Price from "../Items/Price";
 
 interface TransactionItemProps extends HtmlHTMLAttributes<HTMLDivElement> {
   transactionItem: ITransactionItemViewer;
@@ -21,7 +22,7 @@ const TransactionItem = ({
     >
       <span className="quantity">{transactionItem.getQuantity()}</span>
       <span className="name">{transactionItem.getItem().getName()}</span>
-      <span className="price">${transactionItem.getPrice()}</span>
+      <Price price={transactionItem.getPrice()}></Price>
     </div>
   );
 };

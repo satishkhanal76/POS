@@ -1,14 +1,25 @@
 import { IDB, IObjectStoreDB } from "./Database";
 
+export enum ObjectRequestErrorsTypes {
+  EMPTY_RESPONSE,
+  OTHER,
+}
+
+export interface ObjectRequestError {
+  type: ObjectRequestErrorsTypes;
+  defaultMessage?: string;
+  payload?: Object;
+}
+
 /**
  * G (Generic) is a database schema
  */
 export interface IObjectStore<G, I> {
-  getAll: (id?: string) => Promise<G[]>;
+  getAll: (id?: string) => Promise<I[]>;
 
-  getOne: (id: string) => Promise<G>;
+  getOne: (id: string) => Promise<I>;
 
-  deleteOne: (id: string) => Promise<G>;
+  deleteOne: (id: string) => Promise<I>;
 
   /**
    *  Gte the object store name
@@ -17,12 +28,16 @@ export interface IObjectStore<G, I> {
   getObjectStoreName: () => string;
 
   getObjectAsSchema: (object: I) => G;
+  getSchemaAsObject: (schema: G) => Promise<I>;
 
   addOne: (model: I) => Promise<I>;
 
   addMany: (models: I[]) => Promise<I[]>;
 
   getDb: () => Promise<IDB>;
+
+  getAllByIndexName: (indexName: string, id?: string) => Promise<I[]>;
+  geOneByIndexName: (indexName: string, id: string) => Promise<I>;
 }
 
 /**
@@ -74,27 +89,50 @@ export default class ObjectStore<G, I>
     return transaction?.objectStore(this.objectStoreName);
   }
 
-  public getAll(id?: string): Promise<G[]> {
+  public getAll(id?: string): Promise<I[]> {
     return new Promise(async (resolve, reject) => {
       const objectStore = await this.getReadOnlyObjectStore();
       const request = objectStore?.getAll(id);
-      request?.addEventListener("success", () => resolve(request.result));
+      request?.addEventListener("success", async () =>
+        resolve(
+          await Promise.all(
+            request.result.map((result) => this.getSchemaAsObject(result))
+          )
+        )
+      );
       request?.addEventListener("error", () => reject(request));
     });
   }
 
-  public getOne(id: string): Promise<G> {
+  public getOne(id: string): Promise<I> {
     return new Promise(async (resolve, reject) => {
       const objectStore = await this.getReadOnlyObjectStore();
+
       const request = objectStore?.index("id").get(id);
-      request?.addEventListener("success", () => resolve(request.result));
-      request?.addEventListener("error", () => reject(request));
+
+      request?.addEventListener("success", () => {
+        if (request.result) resolve(this.getSchemaAsObject(request.result));
+
+        const error: ObjectRequestError = {
+          type: ObjectRequestErrorsTypes.EMPTY_RESPONSE,
+          defaultMessage: `Record with the ${id} on ${this.objectStoreName} was not found! Probably deleted!`,
+        };
+        reject(error);
+        return;
+      });
+      request?.addEventListener("error", (err) => {
+        const error: ObjectRequestError = {
+          type: ObjectRequestErrorsTypes.OTHER,
+          payload: err,
+        };
+        reject(error);
+      });
     });
   }
 
-  public deleteOne(id: string): Promise<G> {
+  public deleteOne(id: string): Promise<I> {
     return new Promise(async (resolve, reject) => {
-      let data: Promise<G>;
+      let data: Promise<I>;
       try {
         data = this.getOne(id);
       } catch (err) {
@@ -104,7 +142,54 @@ export default class ObjectStore<G, I>
       const objectStore = await this.getReadWriteObjectStore();
       const request = objectStore?.delete(id);
       request?.addEventListener("success", () => resolve(data));
-      request?.addEventListener("error", () => reject(request));
+      request?.addEventListener("error", (err) => {
+        const error: ObjectRequestError = {
+          type: ObjectRequestErrorsTypes.OTHER,
+          payload: err,
+        };
+        reject(error);
+      });
+    });
+  }
+
+  public async getAllByIndexName(indexName: string, id?: string): Promise<I[]> {
+    return new Promise(async (resolve, reject) => {
+      const indexStore = (await this.getReadOnlyObjectStore()).index(indexName);
+      const request = id ? indexStore.getAll(id) : indexStore.getAll();
+
+      request.onsuccess = async () => {
+        // console.log(request.result);
+        resolve(
+          await Promise.all(
+            request.result.map((result) => this.getSchemaAsObject(result))
+          )
+        );
+      };
+      request.onerror = (err) => {
+        const error: ObjectRequestError = {
+          type: ObjectRequestErrorsTypes.OTHER,
+          payload: err,
+        };
+        reject(error);
+      };
+    });
+  }
+
+  public async geOneByIndexName(indexName: string, id: string): Promise<I> {
+    return new Promise(async (resolve, reject) => {
+      const indexStore = (await this.getReadOnlyObjectStore()).index(indexName);
+      const request = indexStore.get(id);
+
+      request.onsuccess = () => {
+        resolve(this.getSchemaAsObject(request.result));
+      };
+      request.onerror = (err) => {
+        const error: ObjectRequestError = {
+          type: ObjectRequestErrorsTypes.OTHER,
+          payload: err,
+        };
+        reject(error);
+      };
     });
   }
 
@@ -130,7 +215,11 @@ export default class ObjectStore<G, I>
         resolve(model);
       };
       objectStore.transaction.onerror = (err) => {
-        reject(err);
+        const error: ObjectRequestError = {
+          type: ObjectRequestErrorsTypes.OTHER,
+          payload: err,
+        };
+        reject(error);
       };
 
       objectStore.add(this.getObjectAsSchema(model));
@@ -143,5 +232,12 @@ export default class ObjectStore<G, I>
 
   public async getDb() {
     return this.db;
+  }
+
+  public async getSchemaAsObject(schema: G): Promise<I> {
+    return new Promise((resolve, reject) => {
+      reject("Unemplemented");
+      throw new Error("Unimplemented");
+    });
   }
 }

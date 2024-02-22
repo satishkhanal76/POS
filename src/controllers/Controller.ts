@@ -3,11 +3,11 @@ import ObjectStore from "../database/ObjectStore";
 export interface IController<Schema, I, OS> {
   getObjectStore: () => OS;
 
-  getOne: (id: string) => Promise<Schema>;
+  getOne: (id: string) => Promise<I>;
 
-  getAll: () => Promise<Schema[]>;
+  getAll: () => Promise<I[]>;
 
-  deleteOne: (id: string) => Promise<Schema>;
+  deleteOne: (id: string) => Promise<I>;
 
   addOne: (model: I) => Promise<I>;
 

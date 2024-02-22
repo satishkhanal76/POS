@@ -1,0 +1,12 @@
+.delete-button {
+  outline: none;
+  border: none;
+  padding: 0.5em 0.6em;
+  background-color: hsl(229, 78%, 50%);
+  color: white;
+  cursor: pointer;
+}
+
+.delete-button:hover {
+  background-color: hsl(229, 78%, 55%);
+}

@@ -36,10 +36,7 @@ export default class CustomerController
   }
 
   public async getAllCustomers() {
-    const dbCustomers = await this.getAll();
-    return dbCustomers.map(
-      (dbCustomer) => new Customer(dbCustomer as CustomerParams)
-    );
+    return await this.getAll();
   }
 
   public async deleteCustomer(customer: ICustomer) {

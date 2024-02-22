@@ -1,30 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useDatabase } from "../../contexts/DatabaseContext";
-import CustomerTransaction, {
-  ICustomerTransaction,
-} from "../../model/CustomerTransaction";
-import TransactionController, {
-  ITransactionController,
-} from "../../controllers/TransactionController";
-import Customer from "../../model/Customer";
-import { CustomersTransactionsSchema } from "../../database/CustomersTransactionsOS";
 
 import "./Customer.css";
+import CustomersTransactionsController from "../../controllers/CustomersTransactionsController";
+import { ICustomerTransactions } from "../../model/CustomerTransactions";
+import { useClientGlobal } from "../../contexts/ClientGlobal";
+import { useLocale } from "../../contexts/Locale";
+import Price from "../Items/Price";
 
 interface CustomersTransactionsState {
-  customersTransactions: (ICustomerTransaction | null)[];
+  customersTransactions: (ICustomerTransactions | null)[];
 }
 
 const CustomersTransactions = () => {
-  const {
-    cutomersTransactionsOS,
-    transactionOS,
-    transactionsOS,
-    itemOS,
-    customerOS,
-  } = useDatabase();
-  const transactionController: ITransactionController =
-    new TransactionController(transactionOS);
+  const { currencyCharacter } = useClientGlobal();
+  const text = useLocale();
+  const { cutomersTransactionsOS } = useDatabase();
+  const customersTransactionsController = new CustomersTransactionsController(
+    cutomersTransactionsOS
+  );
 
   const [customersTransactionsState, setCustomersTransactionsState] =
     useState<CustomersTransactionsState>({
@@ -33,34 +27,11 @@ const CustomersTransactions = () => {
 
   useEffect(() => {
     const func = async () => {
-      const cts = await cutomersTransactionsOS.getAll();
-      let customerTransactionsReq;
-      customerTransactionsReq = cts.map(
-        async (ct: CustomersTransactionsSchema) => {
-          const transaction = await transactionController.getTransactionById(
-            ct.transactionId,
-            transactionsOS,
-            itemOS
-          );
-          const customerSchema = await customerOS.getOne(ct.customerId);
-          if (!customerSchema || !transaction) return null;
-          const customer = new Customer(customerSchema);
-          const cutomertransaction: ICustomerTransaction =
-            new CustomerTransaction({
-              id: ct.id,
-              customer,
-              timestamp: ct.timestamp,
-              transaction,
-            });
-          return cutomertransaction || null;
-        }
-      );
-
-      let customerTransactions = await Promise.all(customerTransactionsReq);
+      const cts = await customersTransactionsController.getAllItems();
 
       setCustomersTransactionsState((g) => ({
         ...g,
-        customersTransactions: customerTransactions,
+        customersTransactions: cts,
       }));
     };
 
@@ -69,21 +40,18 @@ const CustomersTransactions = () => {
   return (
     <div className="customers-transactions-controller">
       <div className="customer-transaction">
-        <span>Customer Name</span>
-        <span>Total</span>
-        <span>Date</span>
+        <span>{text.CUSTOMER_NAME}</span>
+        <span>{text.TOTAL}</span>
       </div>
 
       {customersTransactionsState.customersTransactions.map((ct, i) => {
         return (
           <div key={i} className="customer-transaction">
             <span className="customer-name">{ct?.getCustomer().getName()}</span>
-            <span className="customer-total">
-              ${ct?.getTransaction().getTotal()}
-            </span>
-            <span className="transaction-date">
-              {new Date(ct?.getTimestamp() || "").toLocaleString()}
-            </span>
+            <Price
+              className="customer-total"
+              price={ct?.getTransactions().getTotal() || 0}
+            ></Price>
           </div>
         );
       })}

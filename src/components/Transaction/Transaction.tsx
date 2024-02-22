@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { ITransaction } from "../../model/Transaction";
 import { ITransactionItemViewer } from "../../model/TransactionItem";
 
-import SearchableDropDown from "../DropDown/SearchableDropDown";
 import { IItem } from "../../model/Item";
 import "./Transaction.css";
 import IntegerValidator from "../../validators/IntegerValidator";
@@ -14,26 +13,30 @@ import TransactionController, {
 import { useDatabase } from "../../contexts/DatabaseContext";
 import TransactionsItemsContainer from "./TransactionsItemsContainer";
 import CustomerTransaction from "../../model/CustomerTransaction";
-import Customer from "../../model/Customer";
+import { ICustomer } from "../../model/Customer";
 import { v4 as uuidv4 } from "uuid";
+import CustomerController from "../../controllers/CustomerController";
+import ItemSelectionModal from "./ItemSelectionModal";
+import CustomerSelectionModal from "../Customer/CustomerSelectionModal";
+import { rt, useLocale } from "../../contexts/Locale";
+import TransactionView from "./TransactionView";
 
 interface TransactionProps {}
 
 export interface ITransactionState {
   transaction: ITransaction | null;
   activeTransactionItem: ITransactionItemViewer | null;
-  isModalOpen: boolean;
   transactionController: ITransactionController;
+  isAddModalOpen: boolean;
+  isCustomerModalOpen: boolean;
+  customers: ICustomer[];
 }
 
 const Transaction = ({}: TransactionProps) => {
-  const {
-    transactionOS,
-    transactionsOS,
-    itemOS,
-    customerOS,
-    cutomersTransactionsOS,
-  } = useDatabase();
+  const text = useLocale();
+
+  const { transactionsOS, customerOS, cutomersTransactionsOS, itemOS } =
+    useDatabase();
 
   const [transactionState, setTransactionState] = useState<ITransactionState>(
     {} as ITransactionState
@@ -42,7 +45,7 @@ const Transaction = ({}: TransactionProps) => {
   useEffect(() => {
     const transactionController =
       transactionState.transactionController ||
-      new TransactionController(transactionOS);
+      new TransactionController(transactionsOS);
 
     const loadTransaction = async () => {
       const queryParameters = new URLSearchParams(location.search);
@@ -52,33 +55,45 @@ const Transaction = ({}: TransactionProps) => {
           ...g,
           transaction: null,
           activeTransactionItem: null,
-          isModalOpen: false,
+          isAddModalOpen: false,
           transactionController: transactionController,
+          isCustomerModalOpen: false,
+          items: [],
+          customers: [],
         }));
         return;
       }
-      const t = await transactionController.getTransactionById(
-        id,
-        transactionsOS,
-        itemOS
-      );
+      const t = await transactionController.getTransactionById(id);
       setTransactionState((g) => ({
         ...g,
         transaction: t,
         activeTransactionItem: null,
-        isModalOpen: false,
+        isAddModalOpen: false,
         transactionController: transactionController,
+        items: [],
       }));
       return;
     };
 
+    const loadCustomers = async () => {
+      const customerController = new CustomerController(customerOS);
+      const allCustomers: ICustomer[] =
+        await customerController.getAllCustomers();
+      setTransactionState((g) => ({
+        ...g,
+        customers: allCustomers,
+      }));
+    };
+
     loadTransaction();
+
+    loadCustomers();
   }, []);
 
   const { transaction, transactionController } = transactionState;
 
   const handleAddBtnClick = () => {
-    setTransactionState((t) => ({ ...t, isModalOpen: true }));
+    setTransactionState((t) => ({ ...t, isAddModalOpen: true }));
   };
 
   const handleRemoveBtnClick = () => {
@@ -105,7 +120,9 @@ const Transaction = ({}: TransactionProps) => {
     do {
       itemQuantity = new IntegerValidator(
         prompt(
-          `How many of ${activeItem.getItem().getName()} would you like?`,
+          rt(text.PROMPT_CHANGE_QUANTITY, {
+            ITEM_NAME: activeItem.getItem().getName(),
+          }),
           activeItem.getQuantity().toString()
         ),
         { minValue: 1 }
@@ -135,11 +152,13 @@ const Transaction = ({}: TransactionProps) => {
       ...p,
       transaction: t,
       activeTransactionItem: transactionItem,
-      isModalOpen: false,
+      isAddModalOpen: false,
     }));
   };
 
-  const handleAddItem = (item: IItem) => {
+  const handleAddItem = (item: IItem | null) => {
+    if (!item) return;
+
     if (!transaction) return handleCreateNewTransaction(item);
 
     const transactionItem = transaction.addItem(item);
@@ -147,14 +166,14 @@ const Transaction = ({}: TransactionProps) => {
     setTransactionState((t) => ({
       ...t,
       activeTransactionItem: transactionItem,
-      isModalOpen: false,
+      isAddModalOpen: false,
     }));
   };
 
   const handlePostTransaction = async () => {
     if (!transaction || transaction.isPosted()) return;
 
-    await transactionController.postTransaction(transaction, transactionsOS);
+    await transactionController.postTransaction(transaction);
     setTransactionState((t) => ({
       ...t,
       transaction: null,
@@ -172,14 +191,13 @@ const Transaction = ({}: TransactionProps) => {
 
   const handleLoadPrevTransaction = async () => {
     const prevTransaction = await transactionController.getLatestTransaction(
-      transactionsOS,
-      itemOS,
       transaction
     );
     if (!prevTransaction) {
-      alert("Out of Transactions!");
+      alert(text.OUT_OF_TRANSACTIONS);
       return;
     }
+    updateURL(prevTransaction);
     setTransactionState((t) => ({
       ...t,
       transaction: prevTransaction,
@@ -187,37 +205,51 @@ const Transaction = ({}: TransactionProps) => {
     }));
   };
 
-  const handleAddToCustomer = async () => {
-    const customersSchema = await customerOS.getAll();
+  const updateURL = (transaction: ITransaction) => {
+    const url = new URL(window.location.toString() + "transaction");
+    url.searchParams.set("id", transaction.getId());
+    history.pushState({}, "", url);
+  };
 
-    const chosenCustomerSchema = customersSchema.find((customerSchema) =>
-      confirm(`Would you like to continue with ${customerSchema.name}? `)
-    );
+  const selectCustomer = async () => {
+    setTransactionState((t) => ({
+      ...t,
+      isCustomerModalOpen: true,
+    }));
+  };
 
+  const handleAddCustomer = async (customer: ICustomer | null) => {
+    const transaction = transactionState.transaction;
+    if (!customer) return;
     if (!transaction) return;
-    if (!chosenCustomerSchema) return;
 
-    const customer = new Customer(chosenCustomerSchema);
     const customerTransaction = new CustomerTransaction({
       id: uuidv4(),
       timestamp: Date.now(),
-      customer: customer,
-      transaction: transaction,
+      customer,
+      transaction,
     });
 
     cutomersTransactionsOS.addOne(customerTransaction);
 
-    // console.log("ADD TO CUSTOMER");
+    alert(
+      rt(text.TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS, {
+        CUSTOMER_NAME: customer.getName(),
+      })
+    );
+
+    handleCreateNewTransaction();
+    setTransactionState((t) => ({ ...t, isCustomerModalOpen: false }));
   };
 
   const buttonsProps: IButtonProps[] = [
     {
-      children: "Add",
+      children: text.BUTTON_ADD,
       disabled: transaction?.isPosted() ? true : false,
       onClick: handleAddBtnClick,
     },
     {
-      children: "Remove",
+      children: text.BUTTON_REMOVE,
       disabled:
         transaction?.isPosted() || !transactionState.activeTransactionItem
           ? true
@@ -225,7 +257,7 @@ const Transaction = ({}: TransactionProps) => {
       onClick: handleRemoveBtnClick,
     },
     {
-      children: "Change Quantity",
+      children: text.BUTTON_CHANGE_QUANTITY,
       disabled:
         transaction?.isPosted() || !transactionState.activeTransactionItem
           ? true
@@ -233,65 +265,64 @@ const Transaction = ({}: TransactionProps) => {
       onClick: handleChangeQuantity,
     },
     {
-      children: "Post Transaction",
+      children: text.BUTTON_POST_TRANSACTION,
       disabled:
         transaction?.isPosted() || !transaction?.hasItems() ? true : false,
       onClick: handlePostTransaction,
     },
     {
-      children: "Load Prev Transaction",
+      children: text.BUTTON_LOAD_PREV_TRANASACTION,
       disabled: transaction && !transaction.isPosted() ? true : false,
       onClick: handleLoadPrevTransaction,
     },
     {
       children: transaction?.isPosted()
-        ? "Create new Transaction"
-        : "Void Transaction",
+        ? text.BUTTON_CREATE_NEW_TRANSACTION
+        : text.BUTTON_VOID_TRANSACTION,
       disabled: !transaction ? true : false,
       onClick: transaction?.isPosted()
         ? () => handleCreateNewTransaction()
         : handleVoidTransaction,
     },
     {
-      children: "Add To Customer",
+      children: text.BUTTON_ADD_TO_CUSTOMER,
       disabled: !transaction?.isPosted() ? true : false,
-      onClick: handleAddToCustomer,
+      onClick: selectCustomer,
     },
   ];
 
   return (
     <>
-      {transactionState.isModalOpen && (
-        <SearchableDropDown handleAdd={handleAddItem} />
-      )}
+      <ItemSelectionModal
+        isModalOpen={transactionState.isAddModalOpen}
+        handleAddItem={handleAddItem}
+      />
+
+      <CustomerSelectionModal
+        isModalOpen={transactionState.isCustomerModalOpen}
+        handleAddItem={handleAddCustomer}
+      />
+
       <TransactionButtons
         buttonsClassName="big-button"
         buttonsClassNameWhenActive="big-button active"
         buttonsProps={buttonsProps}
       />
 
-      <div className="transaction-container">
-        <div className="transaction-title">
-          {transaction
-            ? `Transaction - ${new Date(
-                transaction.getTimestamp()
-              ).toISOString()} `
-            : `No Active Transaction - Add Item`}
-        </div>
-
-        <TransactionsItemsContainer
-          transactionItems={transaction?.getItems() || []}
-          activeItem={transactionState.activeTransactionItem}
-          onDoubleClick={handleChangeQuantity}
-          onClick={(transactionItem) =>
-            setTransactionState((t) => ({
-              ...t,
-              activeTransactionItem: transactionItem,
-            }))
-          }
-          total={transaction?.getTotal() || 0}
-        />
-      </div>
+      {transactionState.transaction &&
+        transactionState.activeTransactionItem && (
+          <TransactionView
+            transaction={transactionState.transaction}
+            onDoubleClick={handleChangeQuantity}
+            onClick={(transactionItem) => {
+              setTransactionState((t) => ({
+                ...t,
+                activeTransactionItem: transactionItem,
+              }));
+            }}
+            activeItem={transactionState.activeTransactionItem}
+          ></TransactionView>
+        )}
     </>
   );
 };

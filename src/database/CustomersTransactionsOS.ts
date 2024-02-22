@@ -1,8 +1,13 @@
-import { ICustomerTransaction } from "../model/CustomerTransaction";
+import CustomerTransaction, {
+  ICustomerTransaction,
+} from "../model/CustomerTransaction";
+import CustomerTransactions from "../model/CustomerTransactions";
+import { ICustomerOS } from "./CustomerOS";
 import { IDB } from "./Database";
 import ObjectStore, { IObjectStore } from "./ObjectStore";
+import { ITransactionsOS } from "./TransactionsOS";
 
-export interface CustomersTransactionsSchema {
+export interface CustomerTransactionsSchema {
   timestamp: number;
   id: string;
   customerId: string;
@@ -10,18 +15,31 @@ export interface CustomersTransactionsSchema {
 }
 
 export interface ICustomersTransactionsOS
-  extends IObjectStore<CustomersTransactionsSchema, ICustomerTransaction> {
-  getCustomerTransactions: (cutomerId: string) => CustomersTransactionsSchema[];
+  extends IObjectStore<CustomerTransactionsSchema, CustomerTransaction> {
+  getCustomerTransactions: (
+    cutomerId: string
+  ) => Promise<CustomerTransaction[]>;
 }
 
-export default class CustomersTransactionsOS extends ObjectStore<
-  CustomersTransactionsSchema,
-  ICustomerTransaction
-> {
+export default class CustomersTransactionsOS
+  extends ObjectStore<CustomerTransactionsSchema, CustomerTransaction>
+  implements
+    ICustomersTransactionsOS,
+    IObjectStore<CustomerTransactionsSchema, CustomerTransaction>
+{
   private static OBJECT_STORE_NAME = "CUSTOMERS_TRANSACTIONS";
 
-  constructor(db: IDB) {
+  private customerOS: ICustomerOS;
+  private transactionsOS: ITransactionsOS;
+
+  constructor(
+    db: IDB,
+    customerOS: ICustomerOS,
+    transactionsOS: ITransactionsOS
+  ) {
     super(db, CustomersTransactionsOS.OBJECT_STORE_NAME);
+    this.customerOS = customerOS;
+    this.transactionsOS = transactionsOS;
   }
 
   public onObjectStoreCreation(objectStore: IDBObjectStore) {
@@ -42,10 +60,24 @@ export default class CustomersTransactionsOS extends ObjectStore<
     };
   }
 
+  public async getSchemaAsObject(
+    schema: CustomerTransactionsSchema
+  ): Promise<CustomerTransaction> {
+    const customer = await this.customerOS.getOne(schema.customerId);
+    const transaction = await this.transactionsOS.getOne(schema.transactionId);
+    const customerTransaction = new CustomerTransaction({
+      ...schema,
+      customer: customer,
+      transaction: transaction,
+    });
+    return customerTransaction;
+  }
+
   public async getCustomerTransactions(customerId: string) {
-    const customerIdIndex = (await this.getReadOnlyObjectStore()).index(
-      "customerId"
-    );
-    return customerIdIndex.getAll(customerId);
+    return this.getAllByIndexName("customerId", customerId);
+  }
+
+  public async getAllCustomersTransactions() {
+    return this.getAllByIndexName("customerId");
   }
 }

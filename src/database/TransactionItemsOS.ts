@@ -1,6 +1,10 @@
+import { Item } from "../model/Item";
 import { ITransaction } from "../model/Transaction";
-import { ITransactionItemViewer as ITransactionItemsViewer } from "../model/TransactionItem";
+import TransactionItem, {
+  ITransactionItemViewer as ITransactionItemsViewer,
+} from "../model/TransactionItem";
 import { IDB, IObjectStoreDB } from "./Database";
+import { IItemOS } from "./ItemOS";
 import ObjectStore, { IObjectStore } from "./ObjectStore";
 import { v4 as uuidv4 } from "uuid";
 
@@ -12,19 +16,20 @@ export interface TransactionItemsSchema {
 }
 
 export interface ITransactionItemsOS
-  extends IObjectStore<TransactionItemsSchema, ITransactionItemsViewer> {
-  getTransactionItemsAsSchema: (
-    transaction: ITransaction
-  ) => Promise<TransactionItemsSchema[]>;
+  extends IObjectStore<TransactionItemsSchema, TransactionItem> {
+  getAllByTransactionId: (transactionId: string) => Promise<TransactionItem[]>;
 }
 
 export default class TransactionItemsOS
-  extends ObjectStore<TransactionItemsSchema, ITransactionItemsViewer>
+  extends ObjectStore<TransactionItemsSchema, TransactionItem>
   implements IObjectStoreDB, ITransactionItemsOS
 {
   private static OBJECT_STORE_NAME = "TRANSACTION_ITEMS";
-  constructor(db: IDB) {
+
+  private itemOS: IItemOS;
+  constructor(db: IDB, itemOS: IItemOS) {
     super(db, TransactionItemsOS.OBJECT_STORE_NAME);
+    this.itemOS = itemOS;
   }
 
   public onObjectStoreCreation(objectStore: IDBObjectStore) {
@@ -44,26 +49,22 @@ export default class TransactionItemsOS
     } as TransactionItemsSchema;
   }
 
-  public async getTransactionItemsAsSchema(
-    transaction: ITransaction
-  ): Promise<TransactionItemsSchema[]> {
-    return new Promise(async (resolve, reject) => {
-      const readOnlyOS = await this.getReadOnlyObjectStore();
-      const transactionIDIndex = readOnlyOS.index("transactionId");
-
-      const request = transactionIDIndex.getAll(transaction.getId());
-
-      let transactionItems: TransactionItemsSchema[];
-
-      request.onsuccess = () => {
-        transactionItems = request.result;
-      };
-
-      readOnlyOS.transaction.oncomplete = () => {
-        resolve(transactionItems);
-      };
-    });
-
-    return [];
+  public async getAllByTransactionId(
+    transactionId: string
+  ): Promise<TransactionItem[]> {
+    return this.getAllByIndexName("transactionId", transactionId);
   }
+
+  public async getSchemaAsObject(schema: TransactionItemsSchema) {
+    return new TransactionItem({
+      ...schema,
+      item: await this.itemOS.getOne(schema.itemId),
+    });
+  }
+
+  // public async getTransactionItemsAsSchema(
+  //   transaction: ITransaction
+  // ): Promise<TransactionItemsSchema[]> {
+  //   return this.getObjectAsSchema(transaction);
+  // }
 }

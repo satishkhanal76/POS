@@ -1,36 +1,36 @@
-import { useEffect, useRef, useState } from "react";
-import { useDatabase } from "../../contexts/DatabaseContext";
-import ItemController from "../../controllers/ItemController";
-import { IItem } from "../../model/Item";
-
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import "./DropDown.css";
 
+export interface ISearchableItem {
+  id: string;
+  name: string;
+  children: ReactNode;
+}
+
 interface AddItemsModalProps {
-  handleAdd: (item: IItem) => void;
+  handleAdd: (searchableItem: ISearchableItem) => void;
+  items: ISearchableItem[];
 }
 
 interface ItemDetails {
-  item: IItem;
+  item: ISearchableItem;
   matchesSearch: boolean;
 }
 
-const SearchableDropDown = ({ handleAdd }: AddItemsModalProps) => {
+const SearchableModal = ({ handleAdd, items }: AddItemsModalProps) => {
   const [itemsDetails, setItemsDetails] = useState<ItemDetails[]>();
-
-  const { itemOS } = useDatabase();
-
-  const itemController = new ItemController(itemOS);
-
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setItemsDetails(
+      items.map((item) => ({ item, matchesSearch: true } as ItemDetails))
+    );
+  }, [items]);
+
+  useEffect(() => {
+    //focus everytime the component mounts and there is a new inputRef
     inputRef.current?.focus();
-    itemController
-      .getAllItems()
-      .then((data) =>
-        setItemsDetails(data.map((d) => ({ item: d, matchesSearch: true })))
-      );
-  }, []);
+  }, [inputRef]);
 
   const handleOnChange = (eve: React.ChangeEvent<HTMLInputElement>) => {
     const input = eve.target.value;
@@ -38,12 +38,13 @@ const SearchableDropDown = ({ handleAdd }: AddItemsModalProps) => {
 
     setItemsDetails((i) => {
       return i?.map((itemDetails) => {
-        return itemDetails.item.getName().toUpperCase().indexOf(f) > -1
+        return itemDetails.item.name.toUpperCase().indexOf(f) > -1
           ? { ...itemDetails, matchesSearch: true }
           : { ...itemDetails, matchesSearch: false };
       });
     });
   };
+
   return (
     <div className="dropdown-wrapper">
       <div className="dropdown-container">
@@ -65,14 +66,13 @@ const SearchableDropDown = ({ handleAdd }: AddItemsModalProps) => {
                   handleAdd(itemDetails.item);
                 }}
                 tabIndex={1}
-                key={itemDetails.item.getId()}
+                key={itemDetails.item.id}
                 className="dropdown-item"
                 onClick={() => {
                   handleAdd(itemDetails.item);
                 }}
               >
-                <span className="name">{itemDetails.item.getName()}</span>
-                <span className="price">${itemDetails.item.getPrice()}</span>
+                {itemDetails.item.children}
               </div>
             ))}
         </div>
@@ -81,4 +81,4 @@ const SearchableDropDown = ({ handleAdd }: AddItemsModalProps) => {
   );
 };
 
-export default SearchableDropDown;
+export default SearchableModal;

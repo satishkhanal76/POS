@@ -4,7 +4,7 @@ import "./App.css";
 import NavBar from "./components/NavBar";
 import POS from "./components/POS";
 import Customers from "./components/Customer/Customers";
-import Items from "./components/Items";
+import Items from "./components/Items/Items";
 import CustomersTransactions from "./components/Customer/CustomersTransactions";
 
 function App() {

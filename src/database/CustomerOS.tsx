@@ -1,4 +1,4 @@
-import { ICustomer } from "../model/Customer";
+import Customer, { ICustomer } from "../model/Customer";
 import { IDB, IObjectStoreDB } from "./Database";
 import ObjectStore, { IObjectStore } from "./ObjectStore";
 
@@ -8,12 +8,12 @@ export interface CustomerSchema {
   phoneNumber: string;
 }
 
-export interface ICustomerOS extends IObjectStore<CustomerSchema, ICustomer> {
+export interface ICustomerOS extends IObjectStore<CustomerSchema, Customer> {
   // addOne: (customer: ICustomer) => void;
 }
 
 export default class CustomerOS
-  extends ObjectStore<CustomerSchema, ICustomer>
+  extends ObjectStore<CustomerSchema, Customer>
   implements IObjectStoreDB, ICustomerOS
 {
   private static OBJECT_STORE_NAME = "CUSTOMER";
@@ -32,5 +32,11 @@ export default class CustomerOS
       name: customer.getName(),
       phoneNumber: customer.getPhoneNumber(),
     } as CustomerSchema;
+  }
+
+  public getSchemaAsObject(schema: CustomerSchema): Promise<Customer> {
+    return new Promise((resolve, reject) => {
+      resolve(new Customer(schema));
+    });
   }
 }

@@ -12,19 +12,28 @@ interface IDataBaseContext {
   database: IDB;
   itemOS: ItemOS;
   customerOS: CustomerOS;
-  transactionOS: TransactionItemsOS;
+  transactionItemsOS: TransactionItemsOS;
   transactionsOS: TransactionsOS;
   cutomersTransactionsOS: CustomersTransactionsOS;
 }
 const database: IDB = new DB();
+const itemOS = new ItemOS(database);
+const customerOS = new CustomerOS(database);
+const transactionItemsOS = new TransactionItemsOS(database, itemOS);
+const transactionsOS = new TransactionsOS(database, transactionItemsOS);
+const cutomersTransactionsOS = new CustomersTransactionsOS(
+  database,
+  customerOS,
+  transactionsOS
+);
 
 const values: IDataBaseContext = {
-  database: database,
-  itemOS: new ItemOS(database),
-  customerOS: new CustomerOS(database),
-  transactionOS: new TransactionItemsOS(database),
-  transactionsOS: new TransactionsOS(database),
-  cutomersTransactionsOS: new CustomersTransactionsOS(database),
+  database,
+  itemOS,
+  customerOS,
+  transactionItemsOS,
+  transactionsOS,
+  cutomersTransactionsOS,
 };
 
 export const DatabaseContext = createContext<IDataBaseContext>(values);
