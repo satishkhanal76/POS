@@ -3,7 +3,7 @@ import { useDatabase } from "../../contexts/DatabaseContext";
 
 import "./Customer.css";
 import CustomersTransactionsController from "../../controllers/CustomersTransactionsController";
-import { ICustomerTransactions } from "../../model/CustomerTransactions";
+import { ICustomerTransactions } from "../../models/CustomerTransactions";
 import { useClientGlobal } from "../../contexts/ClientGlobal";
 import { useLocale } from "../../contexts/Locale";
 import Price from "../Items/Price";

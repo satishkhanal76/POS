@@ -1,18 +1,16 @@
 import IntegerValidator, { IntegerValidatorOptions } from "./IntegerValidator";
 
 export interface FloatValidatorOptions extends IntegerValidatorOptions {
-  roundDecimal?: boolean;
   numOfDecimalPlaces?: number;
 }
 
 export default class FloatValidator extends IntegerValidator {
   protected declare options: FloatValidatorOptions;
-  constructor(value: any, options: FloatValidatorOptions) {
+  constructor(value: any, options?: FloatValidatorOptions) {
     super(value, options);
     this.options = {
-      ...this.options,
-      roundDecimal: true,
       numOfDecimalPlaces: 2,
+      ...this.options,
     };
 
     this.value = Number.parseFloat(value.toString());
@@ -21,8 +19,10 @@ export default class FloatValidator extends IntegerValidator {
 
   protected validate(): void {
     super.validate();
-    if (this.options.roundDecimal) {
-    }
+  }
+
+  public getRoundedValue(): string {
+    return this.value.toFixed(this.options.numOfDecimalPlaces);
   }
 
   public getSerializedValue() {

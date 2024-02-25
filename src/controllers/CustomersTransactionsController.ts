@@ -2,11 +2,11 @@ import Controller, { IController } from "./Controller";
 import CustomersTransactionsOS, {
   CustomerTransactionsSchema,
 } from "../database/CustomersTransactionsOS";
-import CustomerTransaction from "../model/CustomerTransaction";
+import CustomerTransaction from "../models/CustomerTransaction";
 import CustomerTransactions, {
   ICustomerTransactions,
-} from "../model/CustomerTransactions";
-import Transactions from "../model/Transactions";
+} from "../models/CustomerTransactions";
+import Transactions from "../models/Transactions";
 
 export interface ICustomersTransactionsController
   extends IController<

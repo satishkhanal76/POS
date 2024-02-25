@@ -1,7 +1,7 @@
 .top-nav {
   display: flex;
   justify-content: space-between;
-  background-color: hsl(229, 78%, 50%);
+  background-color: var(--secondary-bg);
   flex-wrap: wrap;
   gap: 0.4em;
 }
@@ -15,11 +15,17 @@
 }
 
 .link-item {
-  padding: 1em;
+  --hover-transition-duraction: 300ms;
+
+  padding-block: 1em;
+  padding-inline: 0.5em;
   text-decoration: none;
   text-transform: uppercase;
+  transition: background-color var(--hover-transition-duraction) ease,
+    color var(--hover-transition-duraction) ease;
 }
 
 .link-item:hover {
-  background-color: hsl(229, 78%, 60%);
+  background-color: var(--complimentary-bg);
+  color: var(--secondary-bg);
 }

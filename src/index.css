@@ -1,12 +1,41 @@
 :root {
-  --primary-bg: hsl(221, 73%, 32%);
+  --zinc-50: #fafafa;
+  --zinc-100: #f4f4f5;
+  --zinc-200: #e4e4e7;
+  --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa;
+  --zinc-500: #71717a;
+  --zinc-600: #52525b;
+  --zinc-700: #3f3f46;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
+  --zinc-950: #09090b;
 
-  --primary-text-color: white;
+  --rose-600: #e11d48;
+  --green-600: #16a34a;
+
+  --primary-bg: var(--zinc-900);
+  --secondary-bg: var(--zinc-800);
+  --complimentary-bg: var(--zinc-200);
+
+  --primary-color: var(--zinc-300);
+  --secondary-color: var(--zinc-200);
+  --complimentary-color: var(--zinc-900);
 }
 body {
   background-color: var(--primary-bg);
-  color: var(--primary-text-color);
+  color: var(--primary-color);
 }
+
 a {
-  color: var(--primary-text-color);
+  color: var(--zinc-50);
+}
+
+h1,
+h2 {
+  color: var(--zinc-100);
+}
+
+p {
+  color: var(--zinc-400);
 }

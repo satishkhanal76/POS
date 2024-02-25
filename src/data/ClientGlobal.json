@@ -1,3 +1,4 @@
 {
-  "currencyCharacter": "$"
+  "currencyCharacter": "$",
+  "numOfDecimalPlaces": 2
 }

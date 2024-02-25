@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import SearchableModal, { ISearchableItem } from "../DropDown/SearchableModal";
 import CustomerController from "../../controllers/CustomerController";
-import { ICustomer } from "../../model/Customer";
+import { ICustomer } from "../../models/Customer";
 
 interface ItemSelectionModalProps {
   handleAddItem: (customer: ICustomer | null) => void;

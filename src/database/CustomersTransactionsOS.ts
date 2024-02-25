@@ -1,7 +1,6 @@
 import CustomerTransaction, {
   ICustomerTransaction,
-} from "../model/CustomerTransaction";
-import CustomerTransactions from "../model/CustomerTransactions";
+} from "../models/CustomerTransaction";
 import { ICustomerOS } from "./CustomerOS";
 import { IDB } from "./Database";
 import ObjectStore, { IObjectStore } from "./ObjectStore";

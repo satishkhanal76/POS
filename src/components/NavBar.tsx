@@ -19,8 +19,11 @@ const NavBar = () => {
           <Link className="link-item" to={"/items"}>
             {text.NAVBAR_ITEM_2}
           </Link>
-          <Link className="link-item" to={"/customers-transactions"}>
+          <Link className="link-item" to={"/transactions"}>
             {text.NAVBAR_ITEM_3}
+          </Link>
+          <Link className="link-item" to={"/customers-transactions"}>
+            {text.NAVBAR_ITEM_4}
           </Link>
         </div>
       </nav>

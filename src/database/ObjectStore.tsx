@@ -38,6 +38,10 @@ export interface IObjectStore<G, I> {
 
   getAllByIndexName: (indexName: string, id?: string) => Promise<I[]>;
   geOneByIndexName: (indexName: string, id: string) => Promise<I>;
+
+  getAllAsJSONString: () => Promise<string>;
+
+  addManyFromJSON: (json: string) => Promise<I[]>;
 }
 
 /**
@@ -63,6 +67,19 @@ export default class ObjectStore<G, I>
     };
 
     this.addObjectStoreToDB();
+  }
+
+  public async addManyFromJSON(json: string) {
+    try {
+      const schemas: G[] = JSON.parse(json.toString());
+
+      const models = await Promise.all(
+        schemas.map((schema) => this.getSchemaAsObject(schema))
+      );
+      return await this.addMany(models);
+    } catch (err) {
+      throw new Error("Item can't be parsed and/or added!");
+    }
   }
 
   private addObjectStoreToDB() {
@@ -115,7 +132,7 @@ export default class ObjectStore<G, I>
 
         const error: ObjectRequestError = {
           type: ObjectRequestErrorsTypes.EMPTY_RESPONSE,
-          defaultMessage: `Record with the ${id} on ${this.objectStoreName} was not found! Probably deleted!`,
+          defaultMessage: `Record with the id of ${id} on ${this.objectStoreName} was not found!`,
         };
         reject(error);
         return;
@@ -159,12 +176,25 @@ export default class ObjectStore<G, I>
 
       request.onsuccess = async () => {
         // console.log(request.result);
-        resolve(
-          await Promise.all(
-            request.result.map((result) => this.getSchemaAsObject(result))
-          )
+        const settledPromise = await Promise.allSettled(
+          request.result.map((result) => this.getSchemaAsObject(result))
         );
+
+        const fulfilledResponses = settledPromise.filter(
+          (p) => p.status === "fulfilled"
+        ) as PromiseFulfilledResult<I>[];
+
+        const rejectedResponses = settledPromise.filter(
+          (p) => p.status === "rejected"
+        );
+
+        if (rejectedResponses.length >= 1) {
+          console.error(rejectedResponses);
+        }
+
+        resolve(fulfilledResponses.map((p) => p.value));
       };
+
       request.onerror = (err) => {
         const error: ObjectRequestError = {
           type: ObjectRequestErrorsTypes.OTHER,
@@ -239,5 +269,10 @@ export default class ObjectStore<G, I>
       reject("Unemplemented");
       throw new Error("Unimplemented");
     });
+  }
+  public async getAllAsJSONString(): Promise<string> {
+    const items = await this.getAll();
+    const itemsObjectArray = items.map((item) => this.getObjectAsSchema(item));
+    return JSON.stringify(itemsObjectArray, null, 2);
   }
 }

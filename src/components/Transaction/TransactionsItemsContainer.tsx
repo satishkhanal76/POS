@@ -1,41 +1,56 @@
 import React from "react";
-import { ITransactionItemViewer } from "../../model/TransactionItem";
 import TransactionItem from "./TransactionItem";
-import { useClientGlobal } from "../../contexts/ClientGlobal";
 import { useLocale } from "../../contexts/Locale";
 import Price from "../Items/Price";
+import { IProductTransactionItem } from "../../models/ProductTransactionItem";
+import { IDiscountTransactionItem } from "../../models/DiscountTransactionItem";
 
 interface TransactionsItemsContainerProps {
-  transactionItems: ITransactionItemViewer[];
-  onDoubleClick: (transactionItem: ITransactionItemViewer) => void;
-  onClick: (transactionItem: ITransactionItemViewer) => void;
+  productItems: IProductTransactionItem[];
+  discountItems: IDiscountTransactionItem[];
+
+  onDoubleClick: (
+    transactionItem: IProductTransactionItem | IDiscountTransactionItem
+  ) => void;
+  onClick: (
+    transactionItem: IProductTransactionItem | IDiscountTransactionItem
+  ) => void;
   total: number;
-  activeItem: ITransactionItemViewer;
+  activeItem: IProductTransactionItem | IDiscountTransactionItem;
 }
 
 const TransactionsItemsContainer = ({
-  transactionItems,
+  productItems,
+  discountItems,
   onDoubleClick,
   onClick,
   activeItem,
   total,
 }: TransactionsItemsContainerProps) => {
   const { TOTAL } = useLocale();
-  const { currencyCharacter } = useClientGlobal();
-
   return (
     <div>
       <div className="transaction-items-container">
-        {transactionItems &&
-          transactionItems.map((transactionItem, i) => (
-            <TransactionItem
-              onDoubleClick={() => onDoubleClick(transactionItem)}
-              key={i}
-              transactionItem={transactionItem}
-              isActiveTransactionItem={activeItem === transactionItem}
-              onClick={() => onClick(transactionItem)}
-            />
-          ))}
+        {productItems.map((transactionItem, i) => (
+          <TransactionItem
+            isDiscountItem={false}
+            onDoubleClick={() => onDoubleClick(transactionItem)}
+            key={i}
+            transactionItem={transactionItem}
+            isActiveTransactionItem={activeItem === transactionItem}
+            onClick={() => onClick(transactionItem)}
+          />
+        ))}
+        {discountItems.map((transactionItem, i) => (
+          <TransactionItem
+            isDiscountItem={true}
+            onDoubleClick={() => onDoubleClick(transactionItem)}
+            key={i}
+            transactionItem={transactionItem}
+            isActiveTransactionItem={activeItem === transactionItem}
+            onClick={() => onClick(transactionItem)}
+          />
+        ))}
       </div>
       <div className="transaction-details">
         <span>{TOTAL}</span>

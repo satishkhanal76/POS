@@ -2,7 +2,7 @@ import CustomerOS, {
   CustomerSchema,
   ICustomerOS,
 } from "../database/CustomerOS";
-import Customer, { CustomerParams, ICustomer } from "../model/Customer";
+import Customer, { CustomerParams, ICustomer } from "../models/Customer";
 import { v4 as uuidv4 } from "uuid";
 import Controller, { IController } from "./Controller";
 

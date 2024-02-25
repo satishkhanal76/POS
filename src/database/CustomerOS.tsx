@@ -1,4 +1,4 @@
-import Customer, { ICustomer } from "../model/Customer";
+import Customer, { ICustomer } from "../models/Customer";
 import { IDB, IObjectStoreDB } from "./Database";
 import ObjectStore, { IObjectStore } from "./ObjectStore";
 

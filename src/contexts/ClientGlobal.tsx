@@ -3,6 +3,7 @@ import ClientJSON from "../data/ClientGlobal.json";
 
 interface IClientGlobalContext {
   currencyCharacter: string;
+  numOfDecimalPlaces: number;
 }
 
 const values: IClientGlobalContext = ClientJSON;

@@ -1,26 +1,36 @@
 import { ReactNode, createContext, useContext } from "react";
 import DB, { IDB } from "../database/Database";
-import ItemOS, { IItemOS } from "../database/ItemOS";
+import ProductOS, { IProductOS } from "../database/ProductOS";
 import CustomerOS, { ICustomerOS } from "../database/CustomerOS";
-import TransactionItemsOS, {
-  ITransactionItemsOS,
-} from "../database/TransactionItemsOS";
+import TransactionProductsOS, {
+  ITransactionProductsOS,
+} from "../database/TransactionProductsOS";
 import TransactionsOS from "../database/TransactionsOS";
 import CustomersTransactionsOS from "../database/CustomersTransactionsOS";
+import DiscountOS from "../database/DiscountOS";
+import TransactionDiscountsOS from "../database/TransactionDiscountsOS";
 
 interface IDataBaseContext {
   database: IDB;
-  itemOS: ItemOS;
+  itemOS: ProductOS;
+  discountOS: DiscountOS;
   customerOS: CustomerOS;
-  transactionItemsOS: TransactionItemsOS;
+  transactionItemsOS: TransactionProductsOS;
+  transactionDiscountsOS: TransactionDiscountsOS;
   transactionsOS: TransactionsOS;
   cutomersTransactionsOS: CustomersTransactionsOS;
 }
 const database: IDB = new DB();
-const itemOS = new ItemOS(database);
+const itemOS = new ProductOS(database);
+const discountOS = new DiscountOS(database);
 const customerOS = new CustomerOS(database);
-const transactionItemsOS = new TransactionItemsOS(database, itemOS);
-const transactionsOS = new TransactionsOS(database, transactionItemsOS);
+const transactionItemsOS = new TransactionProductsOS(database, itemOS);
+const transactionDiscountsOS = new TransactionDiscountsOS(database, discountOS);
+const transactionsOS = new TransactionsOS(
+  database,
+  transactionItemsOS,
+  transactionDiscountsOS
+);
 const cutomersTransactionsOS = new CustomersTransactionsOS(
   database,
   customerOS,
@@ -30,8 +40,10 @@ const cutomersTransactionsOS = new CustomersTransactionsOS(
 const values: IDataBaseContext = {
   database,
   itemOS,
+  discountOS,
   customerOS,
   transactionItemsOS,
+  transactionDiscountsOS,
   transactionsOS,
   cutomersTransactionsOS,
 };

@@ -1,25 +1,23 @@
 import { useLocale } from "../../contexts/Locale";
-import { IItem } from "../../model/Item";
-import ItemsController from "../../controllers/ItemsController";
-import { useDatabase } from "../../contexts/DatabaseContext";
 import Price from "./Price";
-
+import { IProductItem } from "../../models/ProductItem";
+import "./ItemsView.css";
 interface ItemsViewProps {
-  items: IItem[];
+  items: IProductItem[];
 
-  handleDelete: (item: IItem) => void;
+  handleDelete: (item: IProductItem) => void;
 }
 
 const ItemsView = ({ items, handleDelete }: ItemsViewProps) => {
   const text = useLocale();
 
   return (
-    <>
+    <div className="items-container">
       <h2 className="items-title">{text.ITEMS_TITLE}</h2>
-      <div className="items-container">
-        {items.map((item: IItem) => (
+      <div className="items">
+        {items.map((item: IProductItem) => (
           <div className="item" key={item.getId()}>
-            {item.getName()} <Price price={item.getPrice()}></Price>
+            {item.getName()} <Price price={item.getAmount()}></Price>
             <button
               className="delete-button"
               onClick={() => handleDelete(item)}
@@ -29,7 +27,7 @@ const ItemsView = ({ items, handleDelete }: ItemsViewProps) => {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 };
 

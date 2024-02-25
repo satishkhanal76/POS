@@ -1,9 +1,5 @@
 import TransactionsOS, { TransactionsSchema } from "../database/TransactionsOS";
-import Transaction, {
-  ITransaction,
-  ITransactionViewer,
-} from "../model/Transaction";
-
+import Transaction, { ITransaction } from "../models/Transaction";
 import Controller, { IController } from "./Controller";
 import { v4 as uuidv4 } from "uuid";
 
@@ -16,46 +12,66 @@ export interface ITransactionController {
    * @param transactionsOS
    * @returns
    */
-  postTransaction: (transaction: ITransaction) => Promise<ITransactionViewer>;
+  postTransaction: (transaction: ITransaction) => Promise<ITransaction | null>;
 
   getLatestTransaction: (
-    currenltyViewingTransaction: ITransactionViewer | null
+    currenltyViewingTransaction: ITransaction | null
   ) => Promise<ITransaction | null>;
 
   getNewTransaction: () => ITransaction;
 
   getTransactionById: (id: string) => Promise<ITransaction | null>;
+  getAllTransactionsByTimestamp: () => Promise<ITransaction[]>;
+
+  getAllAsJSONString: () => Promise<string>;
 }
 
 export default class TransactionController
   extends Controller<TransactionsSchema, Transaction, TransactionsOS>
   implements
-    TransactionControllerI<TransactionsSchema, Transaction, TransactionsOS>
+    TransactionControllerI<TransactionsSchema, Transaction, TransactionsOS>,
+    ITransactionController
 {
+  #transaction: Transaction;
   constructor(transactionsOS: TransactionsOS) {
     super(transactionsOS);
+    this.#transaction = this.getNewTransaction();
+  }
+
+  public async getAllTransactionsByTimestamp(): Promise<ITransaction[]> {
+    return await this.objectStore.getAllTransactionsByTimestamp();
   }
 
   public async postTransaction(
-    transaction: Transaction
-  ): Promise<ITransactionViewer> {
-    return this.objectStore.postTransaction(transaction);
+    transaction: ITransaction
+  ): Promise<ITransaction | null> {
+    if (transaction.getId() === this.#transaction.getId()) {
+      return this.objectStore.postTransaction(this.#transaction);
+    }
+    return null;
   }
 
   public async getLatestTransaction(
-    currenltyViewingTransaction: ITransactionViewer | null
+    currenltyViewingTransaction: ITransaction | null
   ): Promise<ITransaction | null> {
-    const schema = await this.objectStore.getLatestTransaction(
+    const transaction = await this.objectStore.getLatestTransaction(
       currenltyViewingTransaction
     );
-    return schema;
+    if (transaction) {
+      this.#transaction = transaction;
+    }
+    return transaction;
   }
 
   public getNewTransaction() {
-    return new Transaction(uuidv4());
+    return (this.#transaction = new Transaction(uuidv4()));
   }
 
   public async getTransactionById(id: string) {
-    return await this.getOne(id);
+    return (this.#transaction = await this.getOne(id));
+  }
+
+  public async getAllAsJSONString() {
+    return this.objectStore.getAllAsJSONString();
   }
 }

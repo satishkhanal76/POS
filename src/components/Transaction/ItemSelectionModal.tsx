@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { IItem } from "../../model/Item";
 import ItemsController from "../../controllers/ItemsController";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import SearchableModal, { ISearchableItem } from "../DropDown/SearchableModal";
+import ProductItem, { IProductItem } from "../../models/ProductItem";
 
 interface ItemSelectionModalProps {
-  handleAddItem: (item: IItem | null) => void;
+  handleAddItem: (item: ProductItem | null) => void;
   isModalOpen?: boolean;
 }
 
@@ -14,7 +14,7 @@ const ItemSelectionModal = ({
   isModalOpen = false,
 }: ItemSelectionModalProps) => {
   const { itemOS } = useDatabase();
-  const [items, setItems] = useState<IItem[]>([]);
+  const [items, setItems] = useState<ProductItem[]>([]);
   const itemsController = new ItemsController(itemOS);
 
   useMemo(() => {
@@ -32,7 +32,7 @@ const ItemSelectionModal = ({
     children: (
       <>
         <span className="name">{item.getName()}</span>
-        <span className="price">${item.getPrice()}</span>
+        <span className="price">${item.getAmount()}</span>
       </>
     ),
   }));

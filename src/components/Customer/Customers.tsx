@@ -4,7 +4,7 @@ import CustomerController, {
   ICustomerFormData,
 } from "../../controllers/CustomerController";
 import CustomForm from "./CustomForm";
-import { ICustomer } from "../../model/Customer";
+import { ICustomer } from "../../models/Customer";
 import { useLocale } from "../../contexts/Locale";
 
 const Customers = () => {
@@ -63,22 +63,24 @@ const Customers = () => {
         onFormSubmit={handleFormSubmit}
         formTitle={text.CUSTOMER_FORM_TITLE}
       ></CustomForm>
-      <h2 className="customers-title">{text.CUSTOMERS_TITLE}</h2>
       <div className="customers-container">
-        {customers.map((customer: ICustomer) => {
-          return (
-            <div className="customer" key={customer.getId()}>
-              <div className="name">{customer.getName()}</div>
-              <div className="phone-number">{customer.getPhoneNumber()}</div>
-              <button
-                className="delete-button"
-                onClick={() => handleDelete(customer)}
-              >
-                {text.CUSTOMER_DELETE_BUTTON}
-              </button>
-            </div>
-          );
-        })}
+        <h2 className="customers-title">{text.CUSTOMERS_TITLE}</h2>
+        <div className="customers">
+          {customers.map((customer: ICustomer) => {
+            return (
+              <div className="customer" key={customer.getId()}>
+                <div className="name">{customer.getName()}</div>
+                <div className="phone-number">{customer.getPhoneNumber()}</div>
+                <button
+                  className="delete-button"
+                  onClick={() => handleDelete(customer)}
+                >
+                  {text.CUSTOMER_DELETE_BUTTON}
+                </button>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

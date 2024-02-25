@@ -1,5 +1,5 @@
-import { ICustomer } from "./Customer";
 import { ITransaction } from "./Transaction";
+import { ICustomer } from "./Customer";
 
 export interface ICustomerTransaction {
   getCustomer: () => ICustomer;

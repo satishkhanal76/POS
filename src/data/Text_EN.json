@@ -2,7 +2,8 @@
   "WEB_NAME": "POS",
   "NAVBAR_ITEM_1": "CUSTOMERS",
   "NAVBAR_ITEM_2": "ITEMS",
-  "NAVBAR_ITEM_3": "CUSTOMERS TRANSACTIONS",
+  "NAVBAR_ITEM_3": "TRANSACTIONS",
+  "NAVBAR_ITEM_4": "CUSTOMERS TRANSACTIONS",
   "BUTTON_ADD": "Add",
   "BUTTON_REMOVE": "Remove",
   "BUTTON_CHANGE_QUANTITY": "Change Quantity",
@@ -11,6 +12,7 @@
   "BUTTON_VOID_TRANSACTION": "Void Transaction",
   "BUTTON_ADD_TO_CUSTOMER": "Add To Customer",
   "BUTTON_CREATE_NEW_TRANSACTION": "Create New Transaction",
+  "BUTTON_DISCOUNT": "Discount",
   "TOTAL": "Total",
   "CUSTOMER_FORM_TITLE": "ADD A CUSTOMER",
   "CUSTOMER_FORM_SUBMIT_BUTTON": "ADD CUSTOMER",
@@ -34,5 +36,6 @@
   "PROMPT_CHANGE_QUANTITY": "How many ${ITEM_NAME}s?",
   "ITEM_DELETION_WARNING_MESSAGE": "Deleting an item will cause any transactions that have that item to cause error.\nAre you sure you want to proceed?",
   "CUSTOMERS_TITLE": "Customers",
-  "CUSTOMER_DELETE_BUTTON": "Delete"
+  "CUSTOMER_DELETE_BUTTON": "Delete",
+  "DISCOUNT_PROMPT_MESSAGE": "How much discount on this transaction?"
 }

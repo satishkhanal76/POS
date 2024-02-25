@@ -7,6 +7,7 @@
   text-transform: uppercase;
   margin: 0;
   padding: 0;
+  color: var(--zinc-50);
 }
 
 .input-container-wrapper {
@@ -18,36 +19,49 @@
 }
 
 .input-container {
-  --text-color: black;
   display: flex;
   flex-direction: column;
-  /* margin-inline: auto; */
   max-width: 500px;
   margin-block-start: 1em;
 }
 
 .input-container .input-label {
   margin-block: 0.5em;
+  color: var(--zinc-100);
 }
 
 .input-container .input {
   outline: none;
   border: none;
   padding: 0.5em;
-  color: var(--text-color);
+  background-color: var(--secondary-bg);
+  color: var(--primary-color);
+  border-radius: 0.3em;
 }
 
 .input::placeholder {
-  color: var(--text-color);
+  color: var(--primary-color);
+}
+
+.input[name="name"] {
+  /* text-transform: capitalize; */
 }
 
 .input[name="button"] {
+  --background-color: var(--secondary-bg);
+  --border-color: var(--primary-color);
+  --color: var(--secondary-color);
+
   cursor: pointer;
   text-transform: uppercase;
-  background-color: hsl(229, 78%, 50%);
-  color: white;
+  padding-inline: 1em;
+  color: var(--color);
+  background-color: var(--background-color);
+  border: 0.1em solid var(--border-color);
+  border-radius: 2em;
 }
 
 .input[name="button"]:hover {
-  background-color: hsl(229, 78%, 55%);
+  --background-color: var(--complimentary-bg);
+  --color: var(--complimentary-color);
 }

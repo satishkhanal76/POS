@@ -1,15 +1,12 @@
-import Transaction, {
-  ITransaction,
-  ITransactionViewer,
-} from "../model/Transaction";
-import TransactionItem from "../model/TransactionItem";
+import Transaction, { ITransaction } from "../models/Transaction";
 import { IDB } from "./Database";
 import ObjectStore, {
   IObjectStore,
   ObjectRequestError,
   ObjectRequestErrorsTypes,
 } from "./ObjectStore";
-import { ITransactionItemsOS } from "./TransactionItemsOS";
+import { ITransactionDiscountsOS } from "./TransactionDiscountsOS";
+import { ITransactionProductsOS } from "./TransactionProductsOS";
 
 export interface TransactionsSchema {
   timestamp: number;
@@ -19,8 +16,10 @@ export interface TransactionsSchema {
 
 export interface ITransactionsOS
   extends IObjectStore<TransactionsSchema, Transaction> {
+  getAllTransactionsByTimestamp: () => Promise<ITransaction[]>;
+
   getLatestTransaction: (
-    currenltyViewingTransaction?: ITransactionViewer | null
+    currenltyViewingTransaction?: ITransaction | null
   ) => Promise<Transaction | null>;
 
   postTransaction: (transaction: Transaction) => Promise<Transaction>;
@@ -31,10 +30,16 @@ export default class TransactionsOS
   implements ITransactionsOS
 {
   private static OBJECT_STORE_NAME = "TRANSACTIONS";
-  private transactionItemsOS: ITransactionItemsOS;
-  constructor(db: IDB, transactionItemsOS: ITransactionItemsOS) {
+  private transactionItemsOS: ITransactionProductsOS;
+  private transactionDiscountsOS: ITransactionDiscountsOS;
+  constructor(
+    db: IDB,
+    transactionItemsOS: ITransactionProductsOS,
+    transactionDiscountsOS: ITransactionDiscountsOS
+  ) {
     super(db, TransactionsOS.OBJECT_STORE_NAME);
     this.transactionItemsOS = transactionItemsOS;
+    this.transactionDiscountsOS = transactionDiscountsOS;
   }
 
   public onObjectStoreCreation(objectStore: IDBObjectStore) {
@@ -53,13 +58,21 @@ export default class TransactionsOS
   public async getSchemaAsObject(
     schema: TransactionsSchema
   ): Promise<Transaction> {
-    let transactionItems;
+    let transactionProductItems, transactionDiscountItems;
     const transaction = new Transaction(schema.id, schema.timestamp);
     try {
-      transactionItems = await this.transactionItemsOS.getAllByTransactionId(
-        schema.id
+      transactionProductItems =
+        await this.transactionItemsOS.getAllByTransactionId(schema.id);
+      transactionDiscountItems =
+        await this.transactionDiscountsOS.getAllByTransactionId(schema.id);
+
+      transactionProductItems.forEach((item) =>
+        transaction.addTransactionProductItem(item)
       );
-      transaction.addTransactionItems(transactionItems);
+
+      transactionDiscountItems.forEach((item) =>
+        transaction.addTransactionDiscountItem(item)
+      );
     } catch (err) {
       const unknownError = err as ObjectRequestError;
       if (
@@ -75,8 +88,12 @@ export default class TransactionsOS
     return transaction;
   }
 
+  public async getAllTransactionsByTimestamp() {
+    return await this.getAllByIndexName("timestamp");
+  }
+
   public async getLatestTransaction(
-    currenltyViewingTransaction?: ITransactionViewer | null
+    currenltyViewingTransaction?: ITransaction | null
   ): Promise<Transaction | null> {
     return new Promise(async (resolve, reject) => {
       const os = await this.getReadOnlyObjectStore();
@@ -108,8 +125,12 @@ export default class TransactionsOS
   }
 
   public async postTransaction(transaction: Transaction) {
-    const transactionItems = transaction.getAllTransactionItems();
-    await this.transactionItemsOS.addMany(transactionItems);
+    const transactionProductItems = transaction.getAllTransactionProductItems();
+    const transactionDiscountItems =
+      transaction.getAllTransactionDiscountItems();
+    this.transactionItemsOS.addMany(transactionProductItems);
+    this.transactionDiscountsOS.addMany(transactionDiscountItems);
+
     return await this.addOne(transaction);
   }
 }

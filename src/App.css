@@ -1,12 +1,19 @@
-.delete-button {
-  outline: none;
-  border: none;
-  padding: 0.5em 0.6em;
-  background-color: hsl(229, 78%, 50%);
-  color: white;
+button {
+  --background-color: var(--secondary-bg);
+  --border-color: var(--primary-color);
+  --color: var(--secondary-color);
+
   cursor: pointer;
+  text-transform: uppercase;
+  padding-inline: 1em;
+  padding-block: 0.3em;
+  color: var(--color);
+  background-color: var(--background-color);
+  border: 0.1em solid var(--border-color);
+  border-radius: 0.3em;
 }
 
-.delete-button:hover {
-  background-color: hsl(229, 78%, 55%);
+button:hover {
+  --background-color: var(--complimentary-bg);
+  --color: var(--complimentary-color);
 }
