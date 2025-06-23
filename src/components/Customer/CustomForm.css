@@ -12,16 +12,14 @@
 
 .input-container-wrapper {
   display: flex;
-  gap: 1em;
-  align-items: flex-end;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  flex-direction: column;
+  flex: 1;
+  
 }
 
 .input-container {
   display: flex;
   flex-direction: column;
-  max-width: 500px;
   margin-block-start: 1em;
 }
 

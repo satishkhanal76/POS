@@ -37,7 +37,7 @@ const cutomersTransactionsOS = new CustomersTransactionsOS(
   transactionsOS
 );
 
-const values: IDataBaseContext = {
+const DATABASE_OS: IDataBaseContext = {
   database,
   itemOS,
   discountOS,
@@ -48,7 +48,7 @@ const values: IDataBaseContext = {
   cutomersTransactionsOS,
 };
 
-export const DatabaseContext = createContext<IDataBaseContext>(values);
+export const DatabaseContext = createContext<IDataBaseContext>(DATABASE_OS);
 
 interface IDatabaseProvider {
   children: ReactNode;
@@ -60,7 +60,7 @@ export function useDatabase() {
 
 export function DatabaseProvider({ children }: IDatabaseProvider) {
   return (
-    <DatabaseContext.Provider value={values}>
+    <DatabaseContext.Provider value={DATABASE_OS}>
       {children}
     </DatabaseContext.Provider>
   );

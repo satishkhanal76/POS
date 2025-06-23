@@ -42,6 +42,7 @@ const POS = () => {
   const { transactionsOS, customerOS, cutomersTransactionsOS, discountOS } =
     useDatabase();
 
+
   const [transactionState, setTransactionState] = useState<ITransactionState>(
     {} as ITransactionState
   );

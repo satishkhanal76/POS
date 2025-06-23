@@ -1,0 +1,57 @@
+/* FullScreenModal.css */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background for the overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  position: relative;
+  background-color: var(--primary-bg, white);
+  border: 0.5em solid var(--secondary-bg, black);
+  padding: 20px;
+  width: auto;
+  height: auto;
+  min-width: 500px; /* Minimum width */
+  max-width: 90%;  /* Max width (takes 90% of the screen) */
+  min-height: 400px; /* Minimum height */
+  max-height: 90%;  /* Max height (takes 90% of the screen) */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  border-radius: 8px;
+  overflow-y: auto;
+  color: var(--primary-color);
+}
+
+.closeButton {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 30px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.content {
+  flex: 1;
+}
+
+/* Media Query for smaller screens like phones */
+@media (max-width: 600px) {
+  .modal {
+    width: 95%; /* Take up 95% of the width on smaller screens */
+    height: 95%; /* Take up 95% of the height */
+    max-width: 100%;
+    max-height: 100%;
+  }
+}

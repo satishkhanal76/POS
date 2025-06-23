@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
-import { IProductItem } from "../../models/ProductItem";
+import ProductItem, { IProductItem } from "../../models/ProductItem";
 import ItemsController, {
   IItemFormData,
 } from "../../controllers/ItemsController";
@@ -8,6 +8,34 @@ import CustomForm from "../Customer/CustomForm";
 import { useLocale } from "../../contexts/Locale";
 import ItemsView from "./ItemsView";
 import "./Items.css";
+
+
+class TestItemController {
+  constructor() {
+
+  }
+
+  handleFormSubmit(formData: IItemFormData): any {
+
+  }
+
+  deleteItem(item: IProductItem): any {
+
+
+  }
+
+  getAllAsJSONString(): any {
+
+  }
+
+  addManyFromJSON(content: string): any {
+
+  }
+
+  async getAllItems(): Promise<any> {
+    return [new ProductItem({id: "1", name: "Apple", amount: 20}), new ProductItem({id: "2", name: "Banana", amount: 30})]
+  }
+} 
 
 const Items = () => {
   const text = useLocale();
@@ -69,7 +97,7 @@ const Items = () => {
     reader.readAsText(file);
   };
 
-  useMemo(() => {
+  useEffect(() => {
     itemController.getAllItems().then((data) => setItems(data));
   }, []);
 
@@ -115,7 +143,7 @@ const Items = () => {
         </button>
       </div>
 
-      <ItemsView handleDelete={handleDelete} items={items}></ItemsView>
+      <ItemsView items={items}></ItemsView>
     </>
   );
 };

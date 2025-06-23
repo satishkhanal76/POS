@@ -5,6 +5,7 @@ import ProductItem, {
   IProductItem,
   ProductItemParams,
 } from "../models/ProductItem";
+import CustomSet from "../Data-Structures/UniqueSet";
 
 export interface IItemsController<S, I, OS> extends IController<S, I, OS> {
   handleFormSubmit: (data: IItemFormData) => Promise<I | null>;
@@ -27,12 +28,12 @@ export default class ItemsController
   extends Controller<ProductSchema, ProductItem, ProductOS>
   implements IItemsController<ProductSchema, ProductItem, ProductOS>
 {
-  private items: ProductItem[];
+  private items: CustomSet<ProductItem>;
 
   constructor(itemOS: ProductOS) {
     super(itemOS);
 
-    this.items = [];
+    this.items = new CustomSet<ProductItem>();
   }
 
   public async handleFormSubmit({ name, price }: IItemFormData) {
@@ -42,21 +43,24 @@ export default class ItemsController
       name,
       amount: price,
     } as ProductItemParams);
-    this.items.push(item);
+    this.items.add(item);
     return this.addOne(item);
   }
 
   public async getAllItems() {
-    if (this.items.length <= 0) {
+    if (this.items.size <= 0) {
       const items = await this.getAll();
-      this.items.push(...items);
+      
+      items.forEach(item => this.items.add(item));
     }
-    return this.items;
+    return [...this.items];
   }
 
   public async deleteItem(item: IProductItem) {
     const deleted = await this.deleteOne(item.getId());
+    
     if (deleted) {
+      this.items.delete(deleted);
       return deleted;
     }
     return null;
