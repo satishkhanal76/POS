@@ -1,6 +1,5 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { MdClose } from "react-icons/md";
-// import "./DropDown.css";
 
 import './SearchableModal.css';
 import { useLocale } from "../../contexts/Locale";

@@ -4,7 +4,6 @@ import { IProductItem } from '../../models/ProductItem'
 import ItemsView from '../Items/ItemsView'
 import { useDatabase } from '../../contexts/DatabaseContext'
 import ItemsController from '../../controllers/ItemsController'
-import { useLocale } from '../../contexts/Locale'
 import Button from '../Button'
 
 

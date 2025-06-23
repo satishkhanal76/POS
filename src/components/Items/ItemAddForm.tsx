@@ -48,13 +48,14 @@ const ItemAddForm = ({onClose, onAddItem}: IItemAddFormProps) => {
         name: "button",
         id: "submit-button",
         type: "submit",
+        className: "btn",
         value: text.INPUT_FORM_SUBMIT_BUTTON,
       },
     ];
 
   return (
-    <FullScreenModal onClose={onClose}>
-      <CustomForm<IItemFormData> inputsProps={FORM_INPUTS} onFormSubmit={handleAddingItem} formTitle={text.ITEM_FORM_TITLE}></CustomForm>
+    <FullScreenModal title={text.ITEM_FORM_TITLE} onClose={onClose}>
+      <CustomForm<IItemFormData> inputsProps={FORM_INPUTS} onFormSubmit={handleAddingItem}></CustomForm>
     </FullScreenModal>
   )
 }

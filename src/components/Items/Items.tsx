@@ -8,6 +8,7 @@ import CustomForm from "../Customer/CustomForm";
 import { useLocale } from "../../contexts/Locale";
 import ItemsView from "./ItemsView";
 import "./Items.css";
+import FullScreenModal from "../Modals/FullScreenModal";
 
 
 class TestItemController {
@@ -103,32 +104,34 @@ const Items = () => {
 
   return (
     <>
-      <CustomForm<IItemFormData>
-        inputsProps={[
-          {
-            name: "name",
-            id: "name",
-            type: "text",
-            placeholder: text.INPUT_ITEM_NAME_PLACE_HOLDER,
-            label: text.INPUT_ITEM_NAME_LABEL,
-          },
-          {
-            name: "price",
-            id: "price",
-            type: "text",
-            placeholder: text.INPUT_ITEM_PRICE_PLACE_HOLDER,
-            label: text.INPUT_ITEM_PRICE_LABEL,
-          },
-          {
-            name: "button",
-            id: "submit-button",
-            type: "submit",
-            value: text.INPUT_FORM_SUBMIT_BUTTON,
-          },
-        ]}
-        onFormSubmit={handleAddingItem}
-        formTitle={text.ITEM_FORM_TITLE}
-      ></CustomForm>
+      <FullScreenModal onClose={() => {}}>
+        <CustomForm<IItemFormData>
+          inputsProps={[
+            {
+              name: "name",
+              id: "name",
+              type: "text",
+              placeholder: text.INPUT_ITEM_NAME_PLACE_HOLDER,
+              label: text.INPUT_ITEM_NAME_LABEL,
+            },
+            {
+              name: "price",
+              id: "price",
+              type: "text",
+              placeholder: text.INPUT_ITEM_PRICE_PLACE_HOLDER,
+              label: text.INPUT_ITEM_PRICE_LABEL,
+            },
+            {
+              name: "button",
+              id: "submit-button",
+              type: "submit",
+              className: "btn",
+              value: text.INPUT_FORM_SUBMIT_BUTTON,
+            },
+          ]}
+          onFormSubmit={handleAddingItem}
+        ></CustomForm>
+      </FullScreenModal>
 
       <div className="backup-file-container">
         <button onClick={handleDownloadClick}>Download All Items</button>

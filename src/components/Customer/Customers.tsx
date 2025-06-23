@@ -6,8 +6,12 @@ import CustomerController, {
 import CustomForm from "./CustomForm";
 import { ICustomer } from "../../models/Customer";
 import { useLocale } from "../../contexts/Locale";
+import FullScreenModal from "../Modals/FullScreenModal";
 
 const Customers = () => {
+  const [isAddModalOpen, setIsModalOpen] = useState<boolean>(false);
+  
+
   const text = useLocale();
   const [customers, setCustomers] = useState<ICustomer[]>([]);
   const { customerOS } = useDatabase();
@@ -37,33 +41,36 @@ const Customers = () => {
   }, []);
   return (
     <div>
-      <CustomForm<ICustomerFormData>
-        inputsProps={[
-          {
-            name: "name",
-            id: "name",
-            type: "text",
-            placeholder: text.INPUT_CUSTOMER_NAME_PLACE_HOLDER,
-            label: text.INPUT_CUSTOMER_NAME_LABEL,
-          },
-          {
-            name: "phoneNumber",
-            id: "phone-number",
-            type: "text",
-            placeholder: text.INPUT_CUSTOMER_PHONE_PLACE_HOLDER,
-            label: text.INPUT_CUSTOMER_PHONE_LABEL,
-          },
-          {
-            name: "button",
-            id: "submit-button",
-            type: "submit",
-            value: text.CUSTOMER_FORM_SUBMIT_BUTTON,
-          },
-        ]}
-        onFormSubmit={handleFormSubmit}
-        formTitle={text.CUSTOMER_FORM_TITLE}
-      ></CustomForm>
+      {isAddModalOpen && <FullScreenModal title={text.CUSTOMER_FORM_TITLE} onClose={() => setIsModalOpen(false)}>
+          <CustomForm<ICustomerFormData>
+          inputsProps={[
+            {
+              name: "name",
+              id: "name",
+              type: "text",
+              placeholder: text.INPUT_CUSTOMER_NAME_PLACE_HOLDER,
+              label: text.INPUT_CUSTOMER_NAME_LABEL,
+            },
+            {
+              name: "phoneNumber",
+              id: "phone-number",
+              type: "text",
+              placeholder: text.INPUT_CUSTOMER_PHONE_PLACE_HOLDER,
+              label: text.INPUT_CUSTOMER_PHONE_LABEL,
+            },
+            {
+              name: "button",
+              id: "submit-button",
+              type: "submit",
+              value: text.CUSTOMER_FORM_SUBMIT_BUTTON,
+              className: "btn"
+            },
+          ]}
+          onFormSubmit={handleFormSubmit}
+        ></CustomForm>
+      </FullScreenModal>}
       <div className="customers-container">
+        <button className="btn" onClick={() => setIsModalOpen(true)}>Add Customer</button>
         <h2 className="customers-title">{text.CUSTOMERS_TITLE}</h2>
         <div className="customers">
           {customers.map((customer: ICustomer) => {

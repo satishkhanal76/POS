@@ -41,5 +41,6 @@
   "DISCOUNT_PROMPT_MESSAGE": "How much discount on this transaction?",
   "ADD_ITEM_MODAL_TITLE": "Add Item.",
   "SEARCH_MODAL_DEFAULT_TITLE": "Search For an Item..",
-  "SEARCH_BOX_DEFAULT_PLACEHOLDER": "Search..."
+  "SEARCH_BOX_DEFAULT_PLACEHOLDER": "Search...",
+  "FULL_SCREEN_MODAL_TITLE": "Title"
 }

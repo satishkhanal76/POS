@@ -9,7 +9,7 @@ interface ICustomForm<IFormDataType extends { [key: string]: any }>
   extends HtmlHTMLAttributes<HTMLFormElement> {
   inputsProps: IInputProps[];
   onFormSubmit: (formData: IFormDataType) => void;
-  formTitle: string;
+  formTitle?: string;
 }
 
 function CustomForm<IFormDataType extends { [key: string]: any }>({
@@ -44,7 +44,7 @@ function CustomForm<IFormDataType extends { [key: string]: any }>({
         onFormSubmit(formData);
       }}
     >
-      <h3 className="form-title">{formTitle}</h3>
+      {formTitle && <h3 className="form-title">{formTitle}</h3>}
       <div className="input-container-wrapper">
         {inputsProps.map((inputProp: IInputProps, i: number) => {
           return (
