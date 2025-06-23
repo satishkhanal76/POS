@@ -8,10 +8,14 @@ import POSPage from "./components/pages/POSPage";
 import CustomersPage from "./components/pages/CustomersPage";
 import TransactionPage from "./components/pages/TransactionPage";
 import TransactionsPage from "./components/pages/TransactionsPage";
+import { useEffect } from "react";
 
 function App() {
+  useEffect(() => {
+    document.body.classList.add("light-theme");
+  }, [])
   return (
-    <div className="App">
+    <div className="container App">
       <NavBar />
       <Routes>
         <Route path="/" Component={() => <POSPage />}></Route>

@@ -5,17 +5,16 @@
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.5);
+  /* opacity: 0.5; */
 }
 
 .dropdown-container {
   position: relative;
-  background-color: hsl(0, 0%, 21%);
+  background-color: var(--bg-primary);
   /* padding: 1rem; */
-  color: white;
-  max-width: 500px;
+  color: var(--color-slate100);
   min-width: min(80%, 400px);
 
-  max-height: 80%;
   min-height: min(70%, 400px);
 
   overflow: auto;

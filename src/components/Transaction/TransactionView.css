@@ -1,7 +1,6 @@
 .transaction-container {
-  background-color: var(--secondary-bg);
-  /* box-shadow: 0 0 1.5em rgba(255, 255, 255, 0.5); */
-  padding-block: 1em;
+  box-shadow: inset 0 0 5px var(--color-slate100);
+  padding: 1.5em 2em;
   border-radius: 0.5em;
 
   display: flex;
@@ -12,7 +11,7 @@
 .transaction-title {
   text-align: center;
   font-weight: 600;
-  font-size: 1.2em;
+  font-size: var(--size-l);
   margin-block-end: 0.5em;
 }
 
@@ -22,30 +21,30 @@
   gap: 0.5em;
   max-height: min(50svh, 400px);
   overflow-y: auto;
-  border-block-end: 2px solid var(--complimentary-bg);
+  padding-block-end: 1.5rem;
+  border-block-end: 2px solid var(--color-slate100);
 }
 
 .transaction-item {
-  --background-color: inherit;
-  --color: inherit;
+  /* --background-color: inherit;
+  --color: inherit; */
 
   cursor: pointer;
   display: flex;
   justify-content: space-between;
-  padding-inline: 0.8em;
-  padding-block: 0.2em;
+  padding: 0.2em 0.8em;
   user-select: none;
-  background-color: var(--background-color);
-  color: var(--color);
+  background-color: var(--background-color, inherit);
+  color: var(--color, inherit);
 }
 
 .transaction-item:nth-child(2n) {
-  --background-color: var(--primary-bg);
+  --background-color: var(--color-slate600);
 }
 
 .transaction-item.active {
-  --background-color: var(--complimentary-bg);
-  --color: var(--complimentary-color);
+  --background-color: var(--color-slate100);
+  --color: var(--bg-primary);
 }
 
 .transaction-item.deduction {
@@ -59,5 +58,5 @@
 .transaction-details {
   display: flex;
   justify-content: space-between;
-  padding: 0.5em;
+  padding: 0.5em 0.2em;
 }

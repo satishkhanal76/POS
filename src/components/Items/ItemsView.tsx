@@ -7,8 +7,6 @@ import  { useDatabase } from "../../contexts/DatabaseContext";
 import ItemsController from "../../controllers/ItemsController";
 interface ItemsViewProps {
   items: IProductItem[];
-
-  // handleDelete: (item: IProductItem) => void;
 }
 
 

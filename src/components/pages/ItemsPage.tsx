@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import Items from '../Items/Items'
-import FullScreenModal from '../Modals/FullScreenModal'
 import ItemAddForm from '../Items/ItemAddForm'
-import ProductItem, { IProductItem } from '../../models/ProductItem'
+import { IProductItem } from '../../models/ProductItem'
 import ItemsView from '../Items/ItemsView'
 import { useDatabase } from '../../contexts/DatabaseContext'
 import ItemsController from '../../controllers/ItemsController'
@@ -31,12 +29,11 @@ const ItemsPage = () => {
 
   return (
     <>
-      {/* <Items></Items> */}
-      <Button onClick={() => setIsModalOpen(true)}>Add Item</Button>
       {isAddModalOpen && <ItemAddForm onClose={onClose} onAddItem={() => {
         updateItems();
         setIsModalOpen(false);
       }}/>}
+      <Button onClick={() => setIsModalOpen(true)}>Add New Item</Button>
       <ItemsView items={items}></ItemsView>
     </>
   )

@@ -1,5 +1,6 @@
 {
   "WEB_NAME": "POS",
+  "NAVBAR_ITEM_HOME": "POS",
   "NAVBAR_ITEM_1": "CUSTOMERS",
   "NAVBAR_ITEM_2": "ITEMS",
   "NAVBAR_ITEM_3": "TRANSACTIONS",
@@ -37,5 +38,8 @@
   "ITEM_DELETION_WARNING_MESSAGE": "Deleting an item will cause any transactions that have that item to cause error.\nAre you sure you want to proceed?",
   "CUSTOMERS_TITLE": "Customers",
   "CUSTOMER_DELETE_BUTTON": "Delete",
-  "DISCOUNT_PROMPT_MESSAGE": "How much discount on this transaction?"
+  "DISCOUNT_PROMPT_MESSAGE": "How much discount on this transaction?",
+  "ADD_ITEM_MODAL_TITLE": "Add Item.",
+  "SEARCH_MODAL_DEFAULT_TITLE": "Search For an Item..",
+  "SEARCH_BOX_DEFAULT_PLACEHOLDER": "Search..."
 }

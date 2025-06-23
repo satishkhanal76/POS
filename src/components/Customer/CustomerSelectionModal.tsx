@@ -7,10 +7,12 @@ import { ICustomer } from "../../models/Customer";
 interface ItemSelectionModalProps {
   handleAddItem: (customer: ICustomer | null) => void;
   isModalOpen?: boolean;
+  onClose: () => void;
 }
 
 const CustomerSelectionModal = ({
   handleAddItem,
+  onClose,
   isModalOpen = false,
 }: ItemSelectionModalProps) => {
   const { customerOS } = useDatabase();
@@ -39,6 +41,7 @@ const CustomerSelectionModal = ({
   if (isModalOpen)
     return (
       <SearchableModal
+        onClose={onClose}
         items={searchableItemProps}
         handleAdd={(searchableItem: ISearchableItem) =>
           handleAddItem(

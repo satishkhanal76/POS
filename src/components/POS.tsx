@@ -344,16 +344,28 @@ const POS = () => {
   return (
     <>
       <ItemSelectionModal
+        onClose={() => {
+          setTransactionState((t) => ({
+            ...t,
+            isAddModalOpen: false,
+          }));
+        }}
         isModalOpen={transactionState.isAddModalOpen}
         handleAddItem={handleAddItem}
       />
       <CustomerSelectionModal
+        onClose={() => {
+          setTransactionState((t) => ({
+            ...t,
+            isCustomerModalOpen: false,
+          }));
+        }}
         isModalOpen={transactionState.isCustomerModalOpen}
         handleAddItem={handleAddCustomer}
       />
       <TransactionButtons
-        buttonsClassName="big-button"
-        buttonsClassNameWhenActive="big-button active"
+        buttonsClassName="btn inactive"
+        buttonsClassNameWhenActive="btn active"
         buttonsProps={buttonsProps}
       />
       {!transaction && <h2>{text.INACTIVE_TRANSACTION_TITLE}</h2>}

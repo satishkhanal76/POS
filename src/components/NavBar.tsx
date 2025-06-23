@@ -7,12 +7,9 @@ const NavBar = () => {
   return (
     <>
       <nav className="top-nav">
-        <div className="nav-left">
           <Link className="link-item" to={"/"}>
-            {text.WEB_NAME}
+            {text.NAVBAR_ITEM_HOME}
           </Link>
-        </div>
-        <div className="nav-right">
           <Link className="link-item" to={"/customers"}>
             {text.NAVBAR_ITEM_1}
           </Link>
@@ -25,7 +22,6 @@ const NavBar = () => {
           <Link className="link-item" to={"/customers-transactions"}>
             {text.NAVBAR_ITEM_4}
           </Link>
-        </div>
       </nav>
     </>
   );

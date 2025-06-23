@@ -1,14 +1,13 @@
-import React, { useState } from 'react'
+
 import CustomForm from '../Customer/CustomForm'
 import { useLocale } from '../../contexts/Locale'
 import FullScreenModal from '../Modals/FullScreenModal';
 import ItemsController, { IItemFormData } from '../../controllers/ItemsController';
 import { useDatabase } from '../../contexts/DatabaseContext';
-import ProductItem, { IProductItem } from '../../models/ProductItem';
+import  { IProductItem } from '../../models/ProductItem';
 
 
 interface IItemAddFormProps {
-  // onAddItem: (item: ProductItem) => void;
   onClose: () => void;
   onAddItem?: (item: IProductItem) => void;
 }
