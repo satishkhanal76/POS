@@ -7,7 +7,7 @@ export interface IButtonProps
 
 const Button = ({ disabled, children, ...otherProps }: IButtonProps) => {
   return (
-    <button disabled={disabled} {...otherProps}>
+    <button className="btn pill" disabled={disabled} {...otherProps}>
       {children}
     </button>
   );
