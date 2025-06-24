@@ -1,8 +1,18 @@
 import React from "react";
-import Transactions from "../Transactions/Transactions";
+import TransactionsView from "../Transactions/TransactionsView";
+import { useLocale } from "../../contexts/Locale";
 
 const TransactionsPage = () => {
-  return <Transactions />;
+  const text = useLocale();
+
+  return (
+      <>
+        <div className="page-title-container">
+          <h2>{text.TRANSACTIONS_TITLE}</h2>
+        </div>
+        <TransactionsView />
+      </>
+    );
 };
 
 export default TransactionsPage;

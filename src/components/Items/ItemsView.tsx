@@ -2,44 +2,30 @@ import { useLocale } from "../../contexts/Locale";
 import Price from "./Price";
 import { IProductItem } from "../../models/ProductItem";
 import "./ItemsView.css";
-import { useEffect, useState } from "react";
-import  { useDatabase } from "../../contexts/DatabaseContext";
-import ItemsController from "../../controllers/ItemsController";
+import { IItem } from "../../models/Item";
+import CustomTableView, { CustomTableColumn, CustomTableProps } from "../utils/CustomTableView";
 interface ItemsViewProps {
   items: IProductItem[];
+  handleDelete: (item: IItem) => void;
 }
 
 
-const ItemsView = ({ items }: ItemsViewProps) => {
-  
-  
-  const { itemOS } = useDatabase();
-  
-  const itemController = new ItemsController(itemOS);
-
-  const handleDelete = async (item: IProductItem) => {
-    const deletedItem = await itemController.deleteItem(item);
-  }
-  
+const ItemsView = ({ items, handleDelete }: ItemsViewProps) => {
   const text = useLocale();
 
+
+  const columns: CustomTableColumn<IItem>[] = [
+    {key: "name", header: text.ITEMS_TABLE_HEADER_NAME, render: (item) => <>{item.getName()}</>},
+    {key: "price", header: text.ITEMS_TABLE_HEADER_PRICE, render: (item) => <Price price={item.getAmount()} />},
+    {key: "actions", header: "", 
+      render: (item) => (
+        <button className="btn" onClick={() => handleDelete(item)}>{text.ITEM_DELETE_BUTTON}</button>
+      )
+    }
+  ]
+
   return (
-    <div className="items-container">
-      <h2 className="items-title">{text.ITEMS_TITLE}</h2>
-      <div className="items">
-        {items.map((item: IProductItem) => (
-          <div className="item" key={item.getId()}>
-            {item.getName()} <Price price={item.getAmount()}></Price>
-            <button
-              className="delete-button"
-              onClick={() => handleDelete(item)}
-            >
-              {text.ITEM_DELETE_BUTTON}
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
+      <CustomTableView data={items} columns={columns} rowKey={(item) => item.getId()} />
   );
 };
 

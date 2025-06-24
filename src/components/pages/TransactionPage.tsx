@@ -110,8 +110,8 @@ const TransactionPage = () => {
   return (
     <>
       <TransactionButtons
-        buttonsClassName="big-button"
-        buttonsClassNameWhenActive="big-button active"
+        buttonsClassName="btn inactive"
+        buttonsClassNameWhenActive="btn active"
         buttonsProps={buttonsProps}
       />
       {transaction && activeTransactionItem && (
@@ -127,7 +127,6 @@ const TransactionPage = () => {
           handleChangeQuantity={handleChangeQuantity}
         />
       )}
-      ;
     </>
   );
 };

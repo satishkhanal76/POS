@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useDatabase } from "../../contexts/DatabaseContext";
-import SearchableModal, { ISearchableItem } from "../DropDown/SearchableModal";
+import SearchableModal, { ISearchableItem } from "../Modals/SearchableModal";
 import CustomerController from "../../controllers/CustomerController";
 import { ICustomer } from "../../models/Customer";
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import ItemsController from "../../controllers/ItemsController";
 import { useDatabase } from "../../contexts/DatabaseContext";
-import SearchableModal, { ISearchableItem } from "../DropDown/SearchableModal";
+import SearchableModal, { ISearchableItem } from "./SearchableModal";
 import ProductItem from "../../models/ProductItem";
 import { useLocale } from "../../contexts/Locale";
 

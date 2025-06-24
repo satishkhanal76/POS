@@ -58,4 +58,9 @@ export default class CustomersTransactionsController
     return customersTransactions;
     // return stuffs;
   }
+  
+  public async getCustomerTransactions(customerId: string) {
+    return this.objectStore.getCustomerTransactions(customerId);
+    
+  }
 }
