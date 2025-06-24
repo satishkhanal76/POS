@@ -13,10 +13,9 @@
   z-index: 1000;
 }
 
-.modal {
+.modal-conatiner {
   position: relative;
   background-color: var(--primary-bg, white);
-  border: 0.5em solid var(--secondary-bg, black);
   padding: 20px;
   width: auto;
   height: auto;

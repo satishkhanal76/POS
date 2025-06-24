@@ -79,7 +79,6 @@
     .custom-table td {
         padding: 0.8em;
         font-size: var(--size-l);
-        position: relative;
     }
 
     .custom-table td::before {
