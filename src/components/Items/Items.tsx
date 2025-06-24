@@ -10,34 +10,6 @@ import ItemsView from "./ItemsView";
 import "./Items.css";
 import FullScreenModal from "../Modals/FullScreenModal";
 
-
-class TestItemController {
-  constructor() {
-
-  }
-
-  handleFormSubmit(formData: IItemFormData): any {
-
-  }
-
-  deleteItem(item: IProductItem): any {
-
-
-  }
-
-  getAllAsJSONString(): any {
-
-  }
-
-  addManyFromJSON(content: string): any {
-
-  }
-
-  async getAllItems(): Promise<any> {
-    return [new ProductItem({id: "1", name: "Apple", amount: 20}), new ProductItem({id: "2", name: "Banana", amount: 30})]
-  }
-} 
-
 const Items = () => {
   const text = useLocale();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -146,7 +118,7 @@ const Items = () => {
         </button>
       </div>
 
-      <ItemsView items={items}></ItemsView>
+      <ItemsView handleDelete={handleDelete} items={items}></ItemsView>
     </>
   );
 };
