@@ -69,3 +69,12 @@
 .modal-item:nth-child(2n + 1) {
   background-color: var(--color-slate600);
 }
+
+/* Mobile safety: never exceed device width */
+@media (max-width: 600px) {
+  .modal-conatiner {
+    width: calc(100svw - 1.5rem); /* gap on both sides */
+    max-width: 100svw;
+    border-radius: 6px;
+  }
+}

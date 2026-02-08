@@ -10,6 +10,7 @@ import TransactionsPage from "./components/pages/TransactionsPage";
 import { useEffect } from "react";
 import CustomersTransactionsPage from "./components/pages/CustomersTransactionsPage";
 import CustomerTransactionsPage from "./components/pages/CustomerTransactionsPage";
+import SettingsPage from "./components/pages/SettingsPage";
 
 function App() {
   useEffect(() => {
@@ -29,6 +30,7 @@ function App() {
         <Route path="/transaction" Component={() => <TransactionPage />} />
         <Route path="/transactions" Component={() => <TransactionsPage />} />
         <Route path="/customer-transactions" Component={() => <CustomerTransactionsPage />} />
+        <Route path="/settings" Component={() => <SettingsPage />} />
       </Routes>
     </div>
   );

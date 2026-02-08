@@ -19,6 +19,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5em;
+  min-height: 30svh;
   max-height: min(50svh, 400px);
   overflow-y: auto;
   padding-block-end: 1.5rem;
