@@ -1,3 +1,4 @@
+import BackupSettings from "../Settings/BackupSettings";
 import DemoSettings from "../Workspace/DemoSettings";
 import { useEffect, useState } from 'react';
 import { useClientGlobal } from '../../contexts/ClientGlobal';
@@ -86,6 +87,7 @@ export default function SettingsPage() {
           <p role="status" aria-live="polite">{status || (dirty ? 'You have unsaved changes.' : 'All changes saved.')}</p>
         </footer>
       </form>
+      <BackupSettings />
       <DemoSettings />
     </main>
   );
