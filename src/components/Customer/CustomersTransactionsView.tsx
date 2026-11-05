@@ -30,12 +30,12 @@ const CustomersTransactionsView = () => {
 
   const columns: CustomTableColumn<ICustomerTransactions>[] = [
       {key: "name", header: text.CUSTOMER_TABLE_HEADER_NAME, render: (customerTransaction) => <>{customerTransaction.getCustomer().getName()}</>},
-      {key: "total-num-of-transaction", header: text.CUSTOMERS_TRANSACTIONS_NUM_OF_TRANS, render: (customerTransaction) => <>{customerTransaction.getTransactions().getAllTransactions().length}</>},
-      {key: "total", header: text.CUSTOMERS_TRANSACTIONS_TOTAL, render: (customerTransaction) => <>{<Price price={customerTransaction.getTransactions().getTotal()} />}</>},
+      {key: "total-num-of-transaction", header: text.CUSTOMERS_TRANSACTIONS_NUM_OF_TRANS, variant: "numeric", render: (customerTransaction) => <>{customerTransaction.getTransactions().getAllTransactions().length}</>},
+      {key: "total", header: text.CUSTOMERS_TRANSACTIONS_TOTAL, variant: "numeric", render: (customerTransaction) => <>{<Price price={customerTransaction.getTransactions().getTotal()} />}</>},
     ];
     
   return (
-    <CustomTableView onRowClick={customerTransaction => navigate(`/customer-transactions?id=${customerTransaction.getCustomer().getId()}`)} data={customersTransactions} columns={columns} rowKey={customerTransaction => customerTransaction.getCustomer().getId()} />
+    <CustomTableView label="Customer transactions" emptyTitle="No customer sales yet" emptyDescription="Sales saved against a customer will appear here." onRowClick={customerTransaction => navigate(`/customer-transactions?id=${customerTransaction.getCustomer().getId()}`)} data={customersTransactions} columns={columns} rowKey={customerTransaction => customerTransaction.getCustomer().getId()} />
   );
 };
 

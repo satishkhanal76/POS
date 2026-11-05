@@ -3,7 +3,7 @@ import { useDatabase } from "../../contexts/DatabaseContext";
 import TransactionController from "../../controllers/TransactionController";
 import Price from "../Items/Price";
 
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useLocale } from "../../contexts/Locale";
 import { ITransaction } from "../../models/Transaction";
 import CustomTableView, { CustomTableColumn } from "../utils/CustomTableView";
@@ -39,12 +39,12 @@ const TransactionsView: React.FC<TransactionsViewProps> = ({ transactionsOverrid
 
   const columns: CustomTableColumn<ITransaction>[] = [
     {key: "name", header: text.TRANSACTION_TABLE_HEADER_TIME, render: (transaction) => <>{new Date(transaction.getTimestamp()).toLocaleString()}</>},
-    {key: "num-of-items", header: text.TRANSACTION_TABLE_HEADER_NUM_OF_ITEMS, render: (transaction) => <>{transaction.getAllTransactionItems().length}</>},
-    {key: "total", header: text.TRANSACTION_TABLE_HEADER_TOTAL, render: (transaction) => <>{<Price price={transaction.getTotal()} />}</>},
+    {key: "num-of-items", header: text.TRANSACTION_TABLE_HEADER_NUM_OF_ITEMS, variant: "numeric", render: (transaction) => <>{transaction.getAllTransactionItems().length}</>},
+    {key: "total", header: text.TRANSACTION_TABLE_HEADER_TOTAL, variant: "numeric", render: (transaction) => <>{<Price price={transaction.getTotal()} />}</>},
   ] 
 
   return (
-    <CustomTableView data={transactions} columns={columns} rowKey={(transaction) => transaction.getId()}
+    <CustomTableView label="Transactions" emptyTitle="No transactions yet" emptyDescription="Posted sales will appear here. Create a sale from the POS page to get started." data={transactions} columns={columns} rowKey={(transaction) => transaction.getId()}
       onRowClick={transaction => navigate(`/transaction?id=${transaction.getId()}`)}
     />
   );

@@ -316,3 +316,9 @@ Restore replaces the active workspace instead of merging, so records cannot coll
 `FullScreenModal` is the shared dialog shell for add forms and searchable selectors. It uses the native dialog element through a portal, providing focus containment, Escape dismissal, a labeled close button, backdrop dismissal, scroll locking, and focus restoration. Its component API remains title/onClose/children; feature controllers and persistence are unchanged.
 
 `SearchableModal` composes that shell and renders filtered, keyboard-operable selection buttons with result counts and empty states. Search results derive directly from the query and current items, avoiding duplicated result state. `CustomForm.css` owns shared form presentation; shell and search styles are scoped to their own classes and use the existing theme variables for light and dark appearances. Item selection uses the shared Price component for the saved currency and precision preferences.
+
+## Shared Data Tables
+
+All catalog, customer, transaction-history, and customer-summary tables use `CustomTableView<T>` with typed `CustomTableColumn<T>` definitions. Customer-specific history reuses TransactionsView. Column definitions remain in their feature views; the shared component handles presentation only.
+
+Columns support optional `align` and `variant` (`default`, `numeric`, `actions`) properties. Numeric and action variants align right by default; numeric cells use tabular digits. Table props provide accessible labels and feature-specific empty-state text. Row navigation supports click, Enter, and Space, while nested interactive controls keep their own behavior. Tables retain native table markup and scoped headers, and use a horizontally scrollable region on small screens. Styles are centralized in `CustomTableView.css` and use existing light/dark theme variables.

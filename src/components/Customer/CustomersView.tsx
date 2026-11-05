@@ -14,11 +14,11 @@ const CustomersView = ({customers, handleDelete}: ICustomersViewProps) => {
   const columns: CustomTableColumn<ICustomer>[] = [
     {key: "name", header: text.CUSTOMER_TABLE_HEADER_NAME, render: (customer) => <>{customer.getName()}</>},
     {key: "phone-number", header: text.CUSTOMER_TABLE_HEADER_PHONE, render: (customer) => <>{customer.getPhoneNumber()}</>},
-    {key: "actions", header: "", render: (customer) => <button onClick={() => handleDelete(customer)}>{text.CUSTOMER_TABLE_DELETE_BUTTON}</button>},
+    {key: "actions", header: "Actions", variant: "actions", render: (customer) => <button type="button" className="table-delete" aria-label={`Delete ${customer.getName()}`} onClick={() => handleDelete(customer)}>{text.CUSTOMER_TABLE_DELETE_BUTTON}</button>},
 
   ];
   return (
-    <CustomTableView data={customers} columns={columns} rowKey={(customer) => customer.getId()} />
+    <CustomTableView label="Customers" emptyTitle="No customers yet" emptyDescription="Use the add button above to add your first customer." data={customers} columns={columns} rowKey={(customer) => customer.getId()} />
   );
 };
 
