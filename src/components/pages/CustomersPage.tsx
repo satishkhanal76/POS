@@ -1,3 +1,4 @@
+import PageHeader from "../Layout/PageHeader";
 import React, { useEffect, useState } from "react";
 import FullScreenModal from "../Modals/FullScreenModal";
 import CustomForm from "../Customer/CustomForm";
@@ -70,12 +71,7 @@ const CustomersPage = () => {
               onFormSubmit={handleFormSubmit}
             ></CustomForm>
           </FullScreenModal>}
-          <div className="page-title-container">
-            <h2>{text.CUSTOMERS_TITLE}</h2>
-            <span onClick={() => setIsModalOpen(true)} title={text.ITEM_FORM_TITLE}>
-              <MdAdd />
-            </span>
-          </div>
+          <PageHeader title={text.CUSTOMERS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label="Add a customer" title="Add a customer"><MdAdd aria-hidden="true" /></button>} />
           <CustomersView handleDelete={handleDelete} customers={customers} />
         </>;
 };

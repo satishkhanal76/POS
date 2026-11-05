@@ -1,3 +1,4 @@
+import PageHeader from "../Layout/PageHeader";
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useDatabase } from '../../contexts/DatabaseContext';
@@ -45,7 +46,7 @@ export default function TransactionPage() {
   return (
     <main className="transaction-page">
       <Link className="transaction-back-link" to={returnTo}>← {customerHistory ? 'Back to customer transactions' : 'Back to transactions'}</Link>
-      <header className="transaction-page-heading"><h1>Transaction details</h1><p>A saved sale from your transaction history.</p></header>
+      <PageHeader title="Transaction Details" description="A saved sale from your transaction history." />
       {!current && <p role="status">Loading transaction…</p>}
       {current?.error && <p role="alert">{current.error}</p>}
       {current?.transaction && <TransactionView transaction={current.transaction} activeItem={selected} onClick={setSelected} onDoubleClick={() => {}} />}

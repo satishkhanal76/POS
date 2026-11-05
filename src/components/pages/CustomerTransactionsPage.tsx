@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import "./TransactionPage.css";
+import PageHeader from "../Layout/PageHeader";
 import React, { useEffect, useState } from 'react'
 import { useDatabase } from '../../contexts/DatabaseContext';
 import CustomersTransactionsController from '../../controllers/CustomersTransactionsController';
@@ -36,16 +39,13 @@ const CustomerTransactionsPage = () => {
   }, []);
 
   return (
-    <>
-      <div className='page-title-container'>
-        <h2>{rt(text.CUSTOMER_TRANSACTIONS_TITLE, {
-          CUSTOMER_NAME: customer?.getName()
-        })}</h2>
-      </div>
+    <main className="transaction-page">
+      <Link className="transaction-back-link" to="/customers-transactions">← Back to Customer Transactions</Link>
+      <PageHeader title={customer ? rt(text.CUSTOMER_TRANSACTIONS_TITLE, { CUSTOMER_NAME: customer.getName() }) : "Customer Transactions"} />
       {customerTransactions
         ? <TransactionsView transactionsOverride={customerTransactions.map(t => t.getTransaction())} />
         : <p role="status">Loading customer transactions…</p>}
-    </>
+    </main>
   )
 }
 

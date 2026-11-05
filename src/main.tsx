@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "./styles/typography.css";
 import { BrowserRouter } from "react-router-dom";
 import { DatabaseProvider } from "./contexts/DatabaseContext.tsx";
 import { ClientGlobalProvider } from "./contexts/ClientGlobal.tsx";

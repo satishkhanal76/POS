@@ -1,3 +1,4 @@
+import PageHeader from "../Layout/PageHeader";
 import React, { useEffect, useMemo, useState } from 'react'
 import ItemAddForm from '../Items/ItemAddForm'
 import { IProductItem } from '../../models/ProductItem'
@@ -45,12 +46,7 @@ const ItemsPage = () => {
         setIsModalOpen(false);
       }}/>}
 
-      <div className="page-title-container">
-        <h2>{text.ITEMS_TITLE}</h2>
-        <span onClick={() => setIsModalOpen(true)} title={text.ITEM_FORM_TITLE}>
-          <MdAdd />
-        </span>
-      </div>
+      <PageHeader title={text.ITEMS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label="Add an item" title="Add an item"><MdAdd aria-hidden="true" /></button>} />
       <ItemsView handleDelete={handleDelete} items={items}></ItemsView>
     </>
   )

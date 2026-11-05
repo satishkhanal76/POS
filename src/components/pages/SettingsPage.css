@@ -1,9 +1,7 @@
-.settings-page { max-width: 960px; margin: 2rem auto 4rem; }
-.settings-header { margin-bottom: 2rem; }
+.settings-page { max-width: 960px; margin: 0 auto 4rem; }
 .settings-eyebrow { color: var(--accent); font-size: .8rem; font-weight: 700; letter-spacing: .16em; }
-.settings-header h1 { font-size: 2.75rem; margin: .5rem 0; }
 .settings-section { border: 1px solid var(--color-slate600); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem; }
-.settings-section h2 { font-size: 1.3rem; margin: 0 0 .5rem; }
+.settings-section h2 { font-size: var(--text-section); margin: 0 0 .5rem; }
 .settings-field { display: grid; grid-template-columns: 1fr 220px; gap: 2rem; padding: 1.4rem 0; border-bottom: 1px solid var(--color-slate600); }
 .settings-field:last-child { border-bottom: 0; }
 .settings-field label { font-weight: 600; }

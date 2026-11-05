@@ -1,3 +1,4 @@
+import PageHeader from "../Layout/PageHeader";
 import BackupSettings from "../Settings/BackupSettings";
 import DemoSettings from "../Workspace/DemoSettings";
 import { useEffect, useState } from 'react';
@@ -33,11 +34,7 @@ export default function SettingsPage() {
 
   return (
     <main className="settings-page">
-      <header className="settings-header">
-        <span className="settings-eyebrow">MAKE IT YOURS</span>
-        <h1>Settings</h1>
-        <p>Set up your workspace. Changes are saved on this browser and device.</p>
-      </header>
+      <PageHeader title="Settings" eyebrow="Make It Yours" description="Set up your workspace. Changes are saved on this browser and device." />
       <form noValidate onSubmit={event => {
         event.preventDefault();
         try {

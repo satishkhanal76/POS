@@ -1,3 +1,4 @@
+import PageHeader from "./Layout/PageHeader";
 import "../styles/POS.css";
 import Price from "./Items/Price";
 import { MdOutlineShoppingBag } from "react-icons/md";
@@ -347,10 +348,8 @@ const POS = () => {
         handleAddItem={handleAddCustomer}
       />
       <main className="pos-workspace">
-        <header className="pos-heading">
-          <div><span className="pos-eyebrow">SALES WORKSPACE</span><h1>Point of sale</h1><p>Add items, review the order, and complete your transaction.</p></div>
-          <span className={`pos-status${transaction?.isPosted() ? ' is-posted' : ''}`}>{transaction?.isPosted() ? 'Posted transaction' : transaction ? 'In progress' : 'Ready for a new sale'}</span>
-        </header>
+        <PageHeader title="Point of Sale" eyebrow="Sales Workspace" description="Add items, review the order, and complete your transaction."
+          actions={<span className={`pos-status${transaction?.isPosted() ? ' is-posted' : ''}`}>{transaction?.isPosted() ? 'Posted transaction' : transaction ? 'In progress' : 'Ready for a new sale'}</span>} />
         <div className="pos-layout">
           <section className="pos-order" aria-label="Current order">
             {transaction && transactionState.activeTransactionItem ? (

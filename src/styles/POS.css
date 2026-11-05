@@ -1,19 +1,15 @@
-.pos-workspace { margin: 2rem auto 4rem; }
-.pos-heading { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.75rem; }
-.pos-eyebrow { color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .15em; }
-.pos-heading h1 { font-size: 2.5rem; margin: .5rem 0; }
-.pos-heading p { line-height: 1.5; }
+.pos-workspace { margin: 0 auto 4rem; }
 .pos-status { border: 1px solid var(--color-slate500); border-radius: 30px; padding: .5rem .8rem; color: var(--color-slate300); font-size: .8rem; white-space: nowrap; }
 .pos-status.is-posted { border-color: var(--accent); color: var(--accent); }
 .pos-layout { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 1.25rem; align-items: start; }
 .pos-order { min-width: 0; }
 .pos-actions-panel { border: 1px solid var(--color-slate600); border-radius: 16px; padding: 1.25rem; }
-.pos-actions-panel h2 { font-size: 1.15rem; margin: 0 0 .5rem; }
+.pos-actions-panel h2 { font-size: var(--text-section); margin: 0 0 .5rem; }
 .pos-actions-panel p { font-size: .85rem; line-height: 1.6; }
 .pos-actions-note { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--color-slate600); color: var(--color-slate400); font-size: .8rem; line-height: 1.6; }
 .pos-empty-order { border: 1px solid var(--color-slate600); border-radius: 16px; overflow: hidden; }
 .pos-empty-order > header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-slate600); }
-.pos-empty-order header h2 { font-size: 1.15rem; margin: 0; }
+.pos-empty-order header h2 { font-size: var(--text-section); margin: 0; }
 .pos-empty-order header > span { color: var(--color-slate400); font-size: .8rem; }
 .pos-empty-state { display: flex; align-items: center; flex-direction: column; padding: 3rem 1.5rem; text-align: center; min-height: 300px; justify-content: center; }
 .pos-empty-icon { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid var(--color-slate600); border-radius: 20px; color: var(--accent); font-size: 2rem; }
@@ -22,4 +18,4 @@
 .pos-start-button { margin-top: 1rem; padding: .8rem 1.2rem; border-radius: 9px; background: var(--color-slate100); color: var(--bg-primary); cursor: pointer; }
 .pos-workspace :is(button, [role=button]):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 @media (max-width: 1100px) { .pos-layout { grid-template-columns: minmax(0, 1fr) 230px; } }
-@media (max-width: 800px) { .pos-layout { grid-template-columns: 1fr; } .pos-heading { align-items: flex-start; flex-direction: column; gap: .6rem; } .pos-heading h1 { font-size: 2rem; } }
+@media (max-width: 800px) { .pos-layout { grid-template-columns: 1fr; } }

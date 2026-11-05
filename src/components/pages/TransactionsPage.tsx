@@ -1,3 +1,4 @@
+import PageHeader from "../Layout/PageHeader";
 import React from "react";
 import TransactionsView from "../Transactions/TransactionsView";
 import { useLocale } from "../../contexts/Locale";
@@ -7,9 +8,7 @@ const TransactionsPage = () => {
 
   return (
       <>
-        <div className="page-title-container">
-          <h2>{text.TRANSACTIONS_TITLE}</h2>
-        </div>
+        <PageHeader title={text.TRANSACTIONS_TITLE} />
         <TransactionsView />
       </>
     );

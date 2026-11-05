@@ -1,0 +1,29 @@
+/* Semantic typography tokens stay readable at every viewport size. */
+:root {
+  --text-caption: .75rem;
+  --text-small: .875rem;
+  --text-body: 1rem;
+  --text-section: 1.25rem;
+  --text-dialog: 1.375rem;
+  --text-page: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+  --line-body: 1.6;
+  --line-heading: 1.25;
+}
+body { font-size: var(--text-body); }
+button, input, select, textarea { font-family: inherit; font-size: inherit; }
+p { font-size: var(--text-body); line-height: var(--line-body); }
+a { font-size: inherit; }
+h1, h2, h3, h4, h5, h6 { line-height: var(--line-heading); font-weight: 600; overflow-wrap: anywhere; }
+h1 { font-size: var(--text-page); margin: 0 0 1rem; }
+h2 { font-size: var(--text-section); margin: 0 0 .75rem; }
+h3 { font-size: 1.125rem; margin: 0 0 .5rem; }
+h4, h5, h6 { font-size: var(--text-body); margin: 0 0 .5rem; }
+.page-header { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin: 2rem 0 1.75rem; }
+.page-header-copy { min-width: 0; }
+.page-header .page-headline { font-size: var(--text-page); line-height: var(--line-heading); font-weight: 600; letter-spacing: -.025em; margin: 0; text-transform: capitalize; }
+.page-header .page-description { color: var(--color-slate400); font-size: var(--text-body); line-height: var(--line-body); margin: .6rem 0 0; }
+.page-eyebrow { display: block; color: var(--accent); font-size: var(--text-caption); font-weight: 700; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .5rem; }
+.page-header-actions { display: flex; align-items: center; flex-shrink: 0; }
+.page-add-button { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--color-slate500); border-radius: 10px; background: var(--color-slate100); color: var(--bg-primary); font-size: 1.35rem; cursor: pointer; }
+.page-add-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 600px) { .page-header { gap: 1rem; } .page-header:has(.pos-status) { align-items: flex-start; flex-direction: column; } }

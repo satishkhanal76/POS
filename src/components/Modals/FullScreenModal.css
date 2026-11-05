@@ -1,7 +1,7 @@
 .pos-modal { box-sizing: border-box; width: min(540px, calc(100vw - 2rem)); max-width: none; max-height: calc(100dvh - 3rem); margin: auto; padding: 0; border: 1px solid var(--color-slate600); border-radius: 18px; background: var(--bg-primary); color: var(--color-slate100); box-shadow: 0 24px 80px #0004; overflow: auto; }
 .pos-modal::backdrop { background: #0b102176; backdrop-filter: blur(4px); }
 .pos-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-slate600); }
-.pos-modal-header h2 { margin: 0; font-size: 1.35rem; line-height: 1.4; font-weight: 600; text-transform: none; }
+.pos-modal-header h2 { margin: 0; font-size: var(--text-dialog); line-height: var(--line-heading); font-weight: 600; text-transform: capitalize; }
 .pos-modal-close { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border: 1px solid var(--color-slate600); border-radius: 10px; color: var(--color-slate300); font-size: 1.3rem; cursor: pointer; }
 .pos-modal-close:hover { background: var(--color-slate600); color: var(--color-slate100); }
 .pos-modal-content { padding: 1.5rem; }
