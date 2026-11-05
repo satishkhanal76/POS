@@ -214,3 +214,21 @@ test('settings switch back to the existing demo without resetting practice recor
   await go('transactions'); await rowCount(10);
   await page.getByText('1–10 of 35', { exact: true }).waitFor();
 });
+
+test('fresh demo populates catalog, customer summaries, sale history, and price history', async () => {
+  await go('settings');
+  page.once('dialog', dialog => { void dialog.accept(); });
+  await Promise.all([
+    page.waitForEvent('load'),
+    page.getByRole('button', { name: english.UI_RESTART_DEMO, exact: true }).click(),
+  ]);
+  await go('transactions'); await rowCount(10);
+  await page.getByText('1–10 of 24', { exact: true }).waitFor();
+  await go('customers-transactions'); await rowCount(3);
+  await page.locator('.custom-table tbody tr').first().click(); await rowCount(6);
+  await go('price-history'); await rowCount(6);
+  await go('items'); await rowCount(6);
+  await go('customers'); await rowCount(3);
+  await go('transaction?id=demo-sale-1');
+  await page.locator('.transaction-details').getByText('$11.25', { exact: true }).waitFor();
+});

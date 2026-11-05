@@ -1,8 +1,6 @@
 import { getLocaleText } from '../contexts/Locale';
 import { createDatabaseStores } from '../database/DatabaseStores';
-import { demoCustomers, demoProducts } from '../data/demoData';
-import Customer from '../models/Customer';
-import ProductItem from '../models/ProductItem';
+import DemoDataController from './DemoDataController';
 
 const MODE_KEY = 'pos.workspace';
 const WELCOME_KEY = 'pos.welcomeSeen';
@@ -36,18 +34,24 @@ class WorkspaceController {
   /** Clear every related demo store and optionally seed, together in one transaction. */
   public async resetDemo(seed: boolean): Promise<void> {
     const stores = createDatabaseStores('POS_DEMO');
+    const records = seed ? new DemoDataController(stores).build() : null;
     const db = await stores.database.getDatabase();
     try {
       await new Promise<void>((resolve, reject) => {
         const transaction = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
         transaction.oncomplete = () => resolve();
         transaction.onabort = () => reject(transaction.error || new Error(getLocaleText('UI_DEMO_RESET_FAILED')));
-        for (const name of Array.from(db.objectStoreNames)) transaction.objectStore(name).clear();
-        if (seed) {
-          const products = transaction.objectStore(stores.itemOS.getObjectStoreName());
-          const customers = transaction.objectStore(stores.customerOS.getObjectStoreName());
-          demoProducts.forEach(product => products.add(stores.itemOS.getObjectAsSchema(new ProductItem(product))));
-          demoCustomers.forEach(customer => customers.add(stores.customerOS.getObjectAsSchema(new Customer(customer))));
+        try {
+          for (const name of Array.from(db.objectStoreNames)) transaction.objectStore(name).clear();
+          if (records) {
+            for (const [name, rows] of Object.entries(records)) {
+              const store = transaction.objectStore(name);
+              for (const row of rows) store.add(row);
+            }
+          }
+        } catch (error) {
+          transaction.abort();
+          reject(error);
         }
       });
     } finally { db.close(); }

@@ -63,6 +63,7 @@ On Linux, Playwright may also need system packages; use `npx playwright install 
 | `settings.test.ts` | Typed drafts, validation, defaults, persistence and notification failures |
 | `localization.test.ts` | English/Nepali/custom, placeholders, uploads, storage synchronization and fallback |
 | `localization-audit.test.ts` | Built-in placeholder compatibility and preventing literal JSX copy |
+| `demo-data.test.ts` | Complete fresh-demo fixtures, historical pricing, linked summaries, relative dates, atomic reset failure |
 | `workspaces.test.ts` | First-visit choice, demo seeding/restart/clear, real-data isolation |
 | `browser/app.test.ts` | Pagination/back links, phone/tablet overflow, menu/dialogs, editing, discounts, locale/template uploads, backup download/restore |
 
