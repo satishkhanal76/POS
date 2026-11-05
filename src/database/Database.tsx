@@ -43,13 +43,15 @@ export default class DB implements IDB {
 
   private db: IDBDatabase | undefined;
 
-  constructor() {
+  private connection: Promise<IDBDatabase> | undefined;
+
+  constructor(private readonly name = DB.DB_NAME) {
     this.objectStoresMap = new Map();
   }
 
   public async connectDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const dbRequest = window.indexedDB.open(DB.DB_NAME, DB.DB_VERSION);
+      const dbRequest = window.indexedDB.open(this.name, DB.DB_VERSION);
       console.log("Conneting to database.");
       dbRequest.addEventListener("success", () => {
         this.onSuccess(dbRequest.result);
@@ -71,8 +73,7 @@ export default class DB implements IDB {
 
       dbRequest.addEventListener("error", (eve) => {
         this.onError(eve);
-        reject(dbRequest.result);
-        throw new Error("Database connection failed!");
+        reject(dbRequest.error || new Error("Database connection failed!"));
       });
     });
   }
@@ -94,7 +95,7 @@ export default class DB implements IDB {
           resolve("User Denied");
           return;
         }
-        const databaseDeletionReq = window.indexedDB.deleteDatabase(DB.DB_NAME);
+        const databaseDeletionReq = window.indexedDB.deleteDatabase(this.name);
         databaseDeletionReq.onsuccess = (eve) => {
           resolve("success");
         };
@@ -168,10 +169,16 @@ export default class DB implements IDB {
   }
 
   public async getDatabase() {
-    if (typeof this.db === "undefined") {
-      return (this.db = await this.connectDB());
+    if (this.db) return this.db;
+    if (!this.connection) {
+      this.connection = this.connectDB().then(database => {
+        this.db = database;
+        return database;
+      }).catch(error => {
+        this.connection = undefined;
+        throw error;
+      });
     }
-
-    return this.db;
+    return this.connection;
   }
 }

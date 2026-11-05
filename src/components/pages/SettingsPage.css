@@ -1,0 +1,29 @@
+.settings-page { max-width: 960px; margin: 2rem auto 4rem; }
+.settings-header { margin-bottom: 2rem; }
+.settings-eyebrow { color: var(--accent); font-size: .8rem; font-weight: 700; letter-spacing: .16em; }
+.settings-header h1 { font-size: 2.75rem; margin: .5rem 0; }
+.settings-section { border: 1px solid var(--color-slate600); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.25rem; }
+.settings-section h2 { font-size: 1.3rem; margin: 0 0 .5rem; }
+.settings-field { display: grid; grid-template-columns: 1fr 220px; gap: 2rem; padding: 1.4rem 0; border-bottom: 1px solid var(--color-slate600); }
+.settings-field:last-child { border-bottom: 0; }
+.settings-field label { font-weight: 600; }
+.settings-field p { line-height: 1.5; margin-bottom: 0; }
+.settings-control input:not([type=checkbox]) { width: 100%; border: 1px solid var(--color-slate500); padding: .7rem .85rem; border-radius: 8px; background: var(--bg-primary); color: var(--color-slate100); }
+.settings-page :is(input, button):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.settings-control input[aria-invalid=true] { border-color: var(--rose-600); }
+.settings-page .settings-error { color: var(--rose-600); font-size: .875rem; }
+.settings-toggle { display: flex; align-items: center; gap: .75rem; position: relative; cursor: pointer; min-height: 44px; }
+.settings-toggle input { position: absolute; width: 44px; height: 26px; opacity: 0; }
+.settings-toggle-track { width: 44px; height: 26px; border-radius: 20px; background: var(--color-slate500); padding: 3px; }
+.settings-toggle-track::before { content: ''; display: block; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform .15s; }
+.settings-toggle input:checked + span { background: var(--accent); }
+.settings-toggle input:checked + span::before { transform: translateX(18px); }
+.settings-toggle input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 3px; }
+.settings-preview { padding: 1.25rem 0 0; display: grid; gap: .5rem; }
+.settings-preview span, .settings-preview small { color: var(--color-slate400); }
+.settings-preview output { font-size: 2rem; font-weight: 700; overflow-wrap: anywhere; }
+.settings-action-buttons { display: flex; flex-wrap: wrap; gap: .75rem; }
+.settings-actions button { border: 1px solid var(--color-slate500); border-radius: 8px; padding: .75rem 1rem; cursor: pointer; }
+.settings-actions .settings-save { background: var(--color-slate100); color: var(--bg-primary); border-color: var(--color-slate100); }
+.settings-actions button:disabled { opacity: .45; cursor: default; }
+@media (max-width: 600px) { .settings-field { grid-template-columns: 1fr; gap: .75rem; } .settings-section { padding: 1rem; } .settings-control { max-width: 100%; } }

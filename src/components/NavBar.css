@@ -1,30 +1,25 @@
-.top-nav {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1em;
-  
-  flex-wrap: wrap;
-
-  padding-block: 1em;
+.top-nav { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1rem 0; border-bottom: 1px solid var(--color-slate600); }
+.nav-brand { display: inline-flex; align-items: center; gap: .6rem; color: var(--color-slate100); font-size: 1.1rem; font-weight: 700; letter-spacing: .04em; }
+.nav-brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--accent); color: white; }
+.nav-links { display: flex; align-items: center; gap: .3rem; }
+.top-nav .nav-control { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .65rem .9rem; border-radius: 8px; background: transparent; color: var(--color-slate300); font: inherit; font-size: .95rem; cursor: pointer; text-transform: none; }
+.top-nav .nav-control:hover, .top-nav .nav-control[aria-expanded=true] { background: var(--color-slate600); color: var(--color-slate100); }
+.top-nav .nav-control[aria-current=page], .top-nav .nav-control.is-active { color: var(--accent); box-shadow: inset 0 -2px var(--accent); }
+.top-nav .nav-settings { margin-left: .4rem; }
+.nav-dropdown { position: relative; }
+.nav-chevron { transition: transform .15s; }
+[aria-expanded=true] .nav-chevron { transform: rotate(180deg); }
+.nav-dropdown-links { position: absolute; top: calc(100% + .5rem); right: 0; z-index: 100; min-width: 230px; max-width: calc(100vw - 2rem); margin: 0; padding: .4rem; list-style: none; background: var(--bg-primary); border: 1px solid var(--color-slate500); border-radius: 12px; box-shadow: 0 12px 28px #0002; }
+.nav-dropdown-links a { display: block; padding: .85rem .9rem; border-radius: 7px; color: var(--color-slate200); font-size: .95rem; line-height: 1.4; text-transform: capitalize; }
+.nav-dropdown-links a:hover { background: var(--color-slate600); color: var(--color-slate100); }
+.nav-dropdown-links a[aria-current=page] { color: var(--accent); font-weight: 700; }
+.top-nav :is(a, button):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 600px) {
+  .top-nav { flex-direction: column; align-items: stretch; gap: .6rem; }
+  .nav-brand { align-self: flex-start; }
+  .nav-links { justify-content: space-between; gap: 0; }
+  .top-nav .nav-control { padding: .65rem .55rem; font-size: .875rem; }
+  .top-nav .nav-settings { margin-left: 0; }
+  .nav-dropdown-links { position: absolute; right: -2rem; min-width: 210px; }
 }
-
-
-.link-item {
-  --hover-transition-duraction: 300ms;
-  background-color: var(--color-slate200);
-  border-radius: 1em;
-  color: var(--bg-primary);
-  
-  color: var(--bg-primary);
-  padding-block: 1em;
-  padding-inline: 1.5em;
-  text-decoration: none;
-  text-transform: uppercase;
-
-  transition: background-color var(--hover-transition-duraction) ease,
-    color var(--hover-transition-duraction) ease;
-}
-
-.link-item:hover {
-  color: var(--color-slate100);
-}
+@media (prefers-reduced-motion: reduce) { .nav-chevron { transition: none; } }

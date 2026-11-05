@@ -1,4 +1,5 @@
 {
   "currencyCharacter": "$",
-  "numOfDecimalPlaces": 2
+  "numOfDecimalPlaces": 2,
+  "darkMode": false
 }

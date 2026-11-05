@@ -1,67 +1,26 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from "react";
-import ClientJSON from "../data/ClientGlobal.json";
+import { defaultSettings, loadSettings, Settings, STORAGE_KEY, UPDATE_EVENT } from "../settings/settings";
 
-interface IClientGlobalContext {
-  currencyCharacter: string;
-  numOfDecimalPlaces: number;
-}
+export const ClientGlobalContext = createContext<Settings>(defaultSettings);
+export function useClientGlobal() { return useContext(ClientGlobalContext); }
 
-const values: IClientGlobalContext = ClientJSON;
-
-const STORAGE_KEY = "pos.clientGlobal";
-const UPDATE_EVENT = "clientGlobal:updated";
-
-function loadClientGlobal(): IClientGlobalContext {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...values };
-    const parsed = JSON.parse(raw) as Partial<IClientGlobalContext>;
-    return { ...values, ...parsed };
-  } catch {
-    return { ...values };
-  }
-}
-
-export const ClientGlobalContext = createContext<IClientGlobalContext>(values);
-
-interface IClientGlobalProvider {
-  children: ReactNode;
-}
-
-export function useClientGlobal() {
-  return useContext(ClientGlobalContext);
-}
-
-export function ClientGlobalProvider({ children }: IClientGlobalProvider) {
-  const [clientGlobal, setClientGlobal] = useState<IClientGlobalContext>(() => {
-    // LocalStorage is available in the browser; this is a client-only app.
-    return loadClientGlobal();
-  });
-
+export function ClientGlobalProvider({ children }: { children: ReactNode }) {
+  const [settings, setSettings] = useState(loadSettings);
   useEffect(() => {
-    const onUpdated = (e: Event) => {
-      const ce = e as CustomEvent<IClientGlobalContext>;
-      if (!ce.detail) return;
-      setClientGlobal({ ...values, ...ce.detail });
+    const refresh = () => setSettings(loadSettings());
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY || event.key === null) refresh();
     };
-
-    window.addEventListener(UPDATE_EVENT, onUpdated as EventListener);
-
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== STORAGE_KEY) return;
-      setClientGlobal(loadClientGlobal());
-    };
+    window.addEventListener(UPDATE_EVENT, refresh);
     window.addEventListener("storage", onStorage);
-
     return () => {
-      window.removeEventListener(UPDATE_EVENT, onUpdated as EventListener);
+      window.removeEventListener(UPDATE_EVENT, refresh);
       window.removeEventListener("storage", onStorage);
     };
   }, []);
-
-  return (
-    <ClientGlobalContext.Provider value={clientGlobal}>
-      {children}
-    </ClientGlobalContext.Provider>
-  );
+  useEffect(() => {
+    document.body.classList.toggle("light-theme", !settings.darkMode);
+    document.documentElement.style.colorScheme = settings.darkMode ? "dark" : "light";
+  }, [settings.darkMode]);
+  return <ClientGlobalContext.Provider value={settings}>{children}</ClientGlobalContext.Provider>;
 }

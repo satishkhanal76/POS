@@ -1,3 +1,5 @@
+import DemoWelcome from "./components/Workspace/DemoWelcome";
+import DemoBanner from "./components/Workspace/DemoBanner";
 import { Route, Routes } from "react-router-dom";
 import "./styles/modern-normalize.css";
 import "./App.css";
@@ -7,18 +9,16 @@ import POSPage from "./components/pages/POSPage";
 import CustomersPage from "./components/pages/CustomersPage";
 import TransactionPage from "./components/pages/TransactionPage";
 import TransactionsPage from "./components/pages/TransactionsPage";
-import { useEffect } from "react";
 import CustomersTransactionsPage from "./components/pages/CustomersTransactionsPage";
 import CustomerTransactionsPage from "./components/pages/CustomerTransactionsPage";
 import SettingsPage from "./components/pages/SettingsPage";
 
 function App() {
-  useEffect(() => {
-    document.body.classList.add("light-theme");
-  }, [])
   return (
     <div className="container App">
       <NavBar />
+      <DemoBanner />
+      <DemoWelcome />
       <Routes>
         <Route path="/" Component={() => <POSPage />}></Route>
         <Route path="/customers" Component={() => <CustomersPage />}></Route>

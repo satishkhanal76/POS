@@ -1,328 +1,92 @@
-import React, { useEffect, useMemo, useState } from "react";
-import defaultClientGlobal from "../../data/ClientGlobal.json";
+import DemoSettings from "../Workspace/DemoSettings";
+import { useEffect, useState } from 'react';
+import { useClientGlobal } from '../../contexts/ClientGlobal';
+import { defaultSettings, fieldError, saveSettings, settingsSchema, SettingsDraft, toDraft } from '../../settings/settings';
+import './SettingsPage.css';
 
-type ClientGlobal = typeof defaultClientGlobal;
+export default function SettingsPage() {
+  const settings = useClientGlobal();
+  const [draft, setDraft] = useState(() => toDraft(settings));
+  const [status, setStatus] = useState('');
+  const savedDraft = toDraft(settings);
+  const dirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
+  const invalid = settingsSchema.some(field => fieldError(field, draft[field.key]));
 
-type FieldType = "string" | "number" | "boolean";
-
-type FieldSchema = {
-  key: keyof ClientGlobal;
-  label: string;
-  description?: string;
-  type: FieldType;
-  // number
-  min?: number;
-  max?: number;
-  step?: number;
-  // string
-  options?: string[]; // if provided, render as a select
-};
-
-const STORAGE_KEY = "pos.clientGlobal";
-const UPDATE_EVENT = "clientGlobal:updated";
-
-function loadClientGlobal(): ClientGlobal {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...defaultClientGlobal } as ClientGlobal;
-
-    const parsed = JSON.parse(raw) as Partial<ClientGlobal>;
-    return { ...defaultClientGlobal, ...parsed } as ClientGlobal;
-  } catch {
-    return { ...defaultClientGlobal } as ClientGlobal;
-  }
-}
-
-function saveClientGlobal(next: ClientGlobal) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  // Let the rest of the app react without a hard dependency.
-  window.dispatchEvent(new CustomEvent(UPDATE_EVENT, { detail: next }));
-}
-
-function resetClientGlobal() {
-  localStorage.removeItem(STORAGE_KEY);
-  const reset = { ...defaultClientGlobal } as ClientGlobal;
-  window.dispatchEvent(new CustomEvent(UPDATE_EVENT, { detail: reset }));
-  return reset;
-}
-
-const SettingsPage = () => {
-  const schema: FieldSchema[] = useMemo(
-    () => [
-      {
-        key: "currencyCharacter",
-        label: "Currency symbol",
-        description: "Shown next to prices (e.g., $, CA$, EUR, NPR).",
-        type: "string",
-        options: ["$", "CA$", "USD", "EUR", "GBP", "NPR", "INR", "JPY"],
-      },
-      {
-        key: "numOfDecimalPlaces",
-        label: "Decimal places",
-        description: "How many digits to show after the decimal (e.g., 2 for $9.99).",
-        type: "number",
-        min: 0,
-        max: 6,
-        step: 1,
-      },
-    ],
-    []
-  );
-
-  const [draft, setDraft] = useState<ClientGlobal>(() => {
-    // localStorage is available in browser only; safe in a client app.
-    return loadClientGlobal();
-  });
-
-  const [savedSnapshot, setSavedSnapshot] = useState<ClientGlobal>(() => loadClientGlobal());
-  const [status, setStatus] = useState<string>("");
-
+  // Preserve edits if another tab changes settings; Discard loads the latest values.
   useEffect(() => {
-    // If another tab or another part of the app updates the settings, reflect it here.
-    const onUpdated = (e: Event) => {
-      const ce = e as CustomEvent<ClientGlobal>;
-      if (!ce.detail) return;
-      setDraft(ce.detail);
-      setSavedSnapshot(ce.detail);
-    };
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
 
-    window.addEventListener(UPDATE_EVENT, onUpdated as EventListener);
-
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== STORAGE_KEY) return;
-      const next = loadClientGlobal();
-      setDraft(next);
-      setSavedSnapshot(next);
-    };
-    window.addEventListener("storage", onStorage);
-
-    return () => {
-      window.removeEventListener(UPDATE_EVENT, onUpdated as EventListener);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
-
-  const dirty = useMemo(() => {
-    return JSON.stringify(draft) !== JSON.stringify(savedSnapshot);
-  }, [draft, savedSnapshot]);
-
-  const updateField = (key: keyof ClientGlobal, value: unknown) => {
-    setDraft((prev) => ({ ...prev, [key]: value }));
-    setStatus("");
+  const displayDraft = dirty ? draft : savedDraft;
+  const update = (key: keyof SettingsDraft, value: string | boolean) => {
+    setDraft({ ...displayDraft, [key]: value });
+    setStatus('');
   };
-
-  const validate = (): string | null => {
-    const decimals = draft.numOfDecimalPlaces;
-    if (!Number.isInteger(decimals)) return "Decimal places must be an integer.";
-    if (decimals < 0 || decimals > 6) return "Decimal places must be between 0 and 6.";
-
-    const cur = (draft.currencyCharacter ?? "").trim();
-    if (!cur) return "Currency symbol cannot be empty.";
-
-    return null;
-  };
-
-  const onSave = () => {
-    const err = validate();
-    if (err) {
-      setStatus(err);
-      return;
-    }
-
-    const next = {
-      ...draft,
-      currencyCharacter: draft.currencyCharacter.trim(),
-    } as ClientGlobal;
-
-    saveClientGlobal(next);
-    setSavedSnapshot(next);
-    setDraft(next);
-    setStatus("Saved.");
-  };
-
-  const onReset = () => {
-    const reset = resetClientGlobal();
-    setSavedSnapshot(reset);
-    setDraft(reset);
-    setStatus("Reset to defaults.");
-  };
+  const decimals = Number(displayDraft.numOfDecimalPlaces);
+  const preview = fieldError(settingsSchema.find(field => field.key === 'numOfDecimalPlaces')!, displayDraft.numOfDecimalPlaces)
+    ? 'Enter valid decimal places to preview.'
+    : `${displayDraft.currencyCharacter}${(1234.5).toFixed(decimals)}`;
 
   return (
-    <div style={{ maxWidth: 900, margin: "0 auto", padding: "1.25rem" }}>
-      <h1 style={{ marginBottom: "0.25rem" }}>Settings</h1>
-      <p style={{ marginTop: 0, opacity: 0.85 }}>
-        Change how the app displays values. These settings are saved locally on this device.
-      </p>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr",
-          gap: "1rem",
-        }}
-      >
-        <div
-          style={{
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 10,
-            padding: "1rem",
-          }}
-        >
-          {schema.map((field) => {
-            const value = draft[field.key];
-
-            return (
-              <div key={String(field.key)} style={{ padding: "0.75rem 0" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
-                  <label style={{ fontWeight: 700 }}>{field.label}</label>
-                  {field.description ? (
-                    <span style={{ opacity: 0.75, fontSize: "0.95rem" }}>{field.description}</span>
-                  ) : null}
+    <main className="settings-page">
+      <header className="settings-header">
+        <span className="settings-eyebrow">MAKE IT YOURS</span>
+        <h1>Settings</h1>
+        <p>Set up your workspace. Changes are saved on this browser and device.</p>
+      </header>
+      <form noValidate onSubmit={event => {
+        event.preventDefault();
+        try {
+          const next = saveSettings(displayDraft);
+          setDraft(toDraft(next));
+          setStatus('Settings saved.');
+        } catch (error) {
+          setStatus(error instanceof Error && error.message.includes(':') ? error.message : 'Unable to save settings. Check browser storage and try again.');
+        }
+      }}>
+        {(['Prices', 'Appearance'] as const).map(group => (
+          <section className="settings-section" key={group} aria-labelledby={`group-${group}`}>
+            <h2 id={`group-${group}`}>{group}</h2>
+            {settingsSchema.filter(field => field.group === group).map(field => {
+              const id = `setting-${field.key}`;
+              const error = fieldError(field, displayDraft[field.key]);
+              return (
+                <div className="settings-field" key={field.key}>
+                  <div><label htmlFor={id}>{field.label}</label><p id={`${id}-help`}>{field.description}</p></div>
+                  <div className="settings-control">
+                    {field.type === 'boolean' ? (
+                      <label className="settings-toggle">
+                        <input id={id} type="checkbox" role="switch" checked={Boolean(displayDraft[field.key])} onChange={event => update(field.key, event.target.checked)} aria-describedby={`${id}-help`} />
+                        <span aria-hidden="true" className="settings-toggle-track" />
+                        <span>{displayDraft[field.key] ? 'On' : 'Off'}</span>
+                      </label>
+                    ) : (
+                      <input id={id} type={field.type === 'number' ? 'number' : 'text'} value={String(displayDraft[field.key])}
+                        min={field.min} max={field.max} step={field.integer ? 1 : 'any'} maxLength={field.maxLength}
+                        aria-invalid={!!error} aria-describedby={`${id}-help${error ? ` ${id}-error` : ''}`}
+                        onChange={event => update(field.key, event.target.value)} />
+                    )}
+                    {error && <p className="settings-error" id={`${id}-error`}>{error}</p>}
+                  </div>
                 </div>
-
-                <div style={{ marginTop: "0.5rem" }}>
-                  {field.type === "string" && field.options?.length ? (
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
-                      <select
-                        value={String(value ?? "")}
-                        onChange={(e) => updateField(field.key, e.target.value)}
-                        style={{ padding: "0.5rem 0.6rem", borderRadius: 8 }}
-                      >
-                        {field.options.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                        <option value="__custom__">Custom...</option>
-                      </select>
-
-                      {String(value) === "__custom__" ? null : (
-                        <input
-                          type="text"
-                          value={String(value ?? "")}
-                          onChange={(e) => updateField(field.key, e.target.value)}
-                          placeholder="$"
-                          aria-label={field.label}
-                          style={{ padding: "0.5rem 0.6rem", borderRadius: 8, width: 140 }}
-                        />
-                      )}
-
-                      <span style={{ opacity: 0.8 }}>
-                        Preview: <strong>{String(draft.currencyCharacter)}9.99</strong>
-                      </span>
-                    </div>
-                  ) : field.type === "string" ? (
-                    <input
-                      type="text"
-                      value={String(value ?? "")}
-                      onChange={(e) => updateField(field.key, e.target.value)}
-                      aria-label={field.label}
-                      style={{ padding: "0.5rem 0.6rem", borderRadius: 8, width: 220 }}
-                    />
-                  ) : field.type === "number" ? (
-                    <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
-                      <input
-                        type="number"
-                        value={Number(value)}
-                        min={field.min}
-                        max={field.max}
-                        step={field.step ?? 1}
-                        onChange={(e) => updateField(field.key, Number(e.target.value))}
-                        aria-label={field.label}
-                        style={{ padding: "0.5rem 0.6rem", borderRadius: 8, width: 140 }}
-                      />
-                      <span style={{ opacity: 0.8 }}>
-                        Preview: <strong>{String(draft.currencyCharacter)}{(9.9).toFixed(draft.numOfDecimalPlaces)}</strong>
-                      </span>
-                    </div>
-                  ) : field.type === "boolean" ? (
-                    <label style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
-                      <input
-                        type="checkbox"
-                        checked={Boolean(value)}
-                        onChange={(e) => updateField(field.key, e.target.checked)}
-                      />
-                      <span>{Boolean(value) ? "On" : "Off"}</span>
-                    </label>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
-
-          <div
-            style={{
-              display: "flex",
-              gap: "0.75rem",
-              alignItems: "center",
-              flexWrap: "wrap",
-              paddingTop: "0.75rem",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            <button
-              onClick={onSave}
-              disabled={!dirty}
-              style={{
-                padding: "0.55rem 1rem",
-                borderRadius: 999,
-                cursor: dirty ? "pointer" : "not-allowed",
-              }}
-            >
-              Save
-            </button>
-
-            <button
-              onClick={onReset}
-              style={{
-                padding: "0.55rem 1rem",
-                borderRadius: 999,
-              }}
-            >
-              Reset
-            </button>
-
-            <span style={{ opacity: status ? 0.9 : 0.6 }}>{status || (dirty ? "Unsaved changes." : "Up to date.")}</span>
+              );
+            })}
+            {group === 'Prices' && <div className="settings-preview"><span>Price preview</span><output>{preview}</output><small>Display formatting only; transaction amounts stay the same.</small></div>}
+          </section>
+        ))}
+        <footer className="settings-actions">
+          <div className="settings-action-buttons">
+            <button className="settings-save" type="submit" disabled={!dirty || !!invalid}>Save changes</button>
+            <button type="button" disabled={!dirty} onClick={() => { setDraft(savedDraft); setStatus('Changes discarded.'); }}>Discard</button>
+            <button type="button" onClick={() => { setDraft(toDraft(defaultSettings)); setStatus('Defaults loaded. Save changes to apply.'); }}>Restore defaults</button>
           </div>
-        </div>
-
-        <div
-          style={{
-            border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 10,
-            padding: "1rem",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <h2 style={{ margin: 0 }}>Current values</h2>
-            <span style={{ opacity: 0.7, fontSize: "0.9rem" }}>Stored in localStorage</span>
-          </div>
-          <pre
-            style={{
-              marginTop: "0.75rem",
-              padding: "0.85rem",
-              borderRadius: 10,
-              overflow: "auto",
-              background: "rgba(0,0,0,0.25)",
-            }}
-          >
-            {JSON.stringify(draft, null, 2)}
-          </pre>
-        </div>
-      </div>
-
-      <div style={{ marginTop: "1.25rem", opacity: 0.85 }}>
-        <p style={{ marginBottom: "0.25rem" }}>
-          <strong>Best practice going forward:</strong> keep this JSON as the defaults, and define a small
-          schema (label/description/min/max/options) so the UI can render correctly for each type.
-        </p>
-        <p style={{ marginTop: 0 }}>
-          Then provide these settings to the rest of your app via a Context/store. This page already emits
-          a window event ("{UPDATE_EVENT}") so you can subscribe anywhere.
-        </p>
-      </div>
-    </div>
+          <p role="status" aria-live="polite">{status || (dirty ? 'You have unsaved changes.' : 'All changes saved.')}</p>
+        </footer>
+      </form>
+      <DemoSettings />
+    </main>
   );
-};
-
-export default SettingsPage;
+}

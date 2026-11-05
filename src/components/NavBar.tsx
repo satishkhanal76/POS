@@ -1,30 +1,26 @@
-import { Link } from "react-router-dom";
-import "./NavBar.css";
-import { useLocale } from "../contexts/Locale";
+import { NavLink } from 'react-router-dom';
+import { useLocale } from '../contexts/Locale';
+import { navigationGroups } from '../data/navigation';
+import NavigationDropdown from './Navigation/NavigationDropdown';
+import './NavBar.css';
 
-const NavBar = () => {
+export default function NavBar() {
   const text = useLocale();
-  return (
-    <>
-      <nav className="top-nav">
-          <Link className="link-item" to={"/"}>
-            {text.NAVBAR_ITEM_HOME}
-          </Link>
-          <Link className="link-item" to={"/customers"}>
-            {text.NAVBAR_ITEM_1}
-          </Link>
-          <Link className="link-item" to={"/items"}>
-            {text.NAVBAR_ITEM_2}
-          </Link>
-          <Link className="link-item" to={"/transactions"}>
-            {text.NAVBAR_ITEM_3}
-          </Link>
-          <Link className="link-item" to={"/customers-transactions"}>
-            {text.NAVBAR_ITEM_4}
-          </Link>
-      </nav>
-    </>
-  );
-};
+  const translate = (key: string, fallback: string): string => text[key] || fallback;
 
-export default NavBar;
+  return (
+    <nav className="top-nav" aria-label="Main navigation">
+      <NavLink className="nav-brand" to="/" end aria-label="POS home">
+        <span className="nav-brand-mark" aria-hidden="true">P</span>
+        {text.WEB_NAME || 'POS'}
+      </NavLink>
+      <div className="nav-links">
+        <NavLink className="nav-control" to="/" end>{translate('NAVBAR_ITEM_HOME', 'POS')}</NavLink>
+        {navigationGroups.map(group => <NavigationDropdown key={group.id} group={group} translate={translate} />)}
+        <NavLink className="nav-control nav-settings" to="/settings">
+          {translate('NAVBAR_SETTINGS', 'Settings')}
+        </NavLink>
+      </div>
+    </nav>
+  );
+}

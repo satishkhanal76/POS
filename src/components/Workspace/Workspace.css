@@ -1,0 +1,11 @@
+.demo-banner { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: .8rem 1rem; margin-top: 1rem; border: 1px solid var(--accent); border-radius: 8px; font-size: .9rem; }
+.demo-banner a { text-decoration: underline; }
+.workspace-buttons { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
+.workspace-buttons button { border: 1px solid var(--color-slate500); padding: .8rem 1rem; border-radius: 8px; cursor: pointer; }
+.workspace-buttons button:first-child { background: var(--color-slate100); color: var(--bg-primary); }
+.workspace-buttons button:disabled { opacity: .5; cursor: wait; }
+.workspace-buttons button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.demo-welcome { width: min(530px, calc(100% - 2rem)); padding: 2rem; border: 1px solid var(--color-slate500); border-radius: 18px; background: var(--bg-primary); color: var(--color-slate100); box-shadow: 0 20px 80px #0004; }
+.demo-welcome::backdrop { background: #0008; }
+.demo-welcome h2 { font-size: 2rem; margin: .75rem 0; }
+.demo-welcome p, .demo-settings p { line-height: 1.6; }
