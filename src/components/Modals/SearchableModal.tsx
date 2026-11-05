@@ -1,97 +1,43 @@
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { MdClose } from "react-icons/md";
-
+import { ReactNode, useId, useState } from 'react';
+import { MdSearch, MdArrowForward } from 'react-icons/md';
+import FullScreenModal from './FullScreenModal';
+import { useLocale } from '../../contexts/Locale';
 import './SearchableModal.css';
-import { useLocale } from "../../contexts/Locale";
 
 export interface ISearchableItem {
   id: string;
   name: string;
   children: ReactNode;
 }
-
-interface AddItemsModalProps {
-  handleAdd: (searchableItem: ISearchableItem) => void;
+interface SearchableModalProps {
+  handleAdd: (item: ISearchableItem) => void;
   onClose: () => void;
   items: ISearchableItem[];
   title?: string;
   searchPlaceholderText?: string;
 }
 
-interface ItemDetails {
-  item: ISearchableItem;
-  matchesSearch: boolean;
-}
-
-const SearchableModal = ({ title, searchPlaceholderText, handleAdd, onClose, items }: AddItemsModalProps) => {
-  const [itemsDetails, setItemsDetails] = useState<ItemDetails[]>();
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const {SEARCH_MODAL_DEFAULT_TITLE, SEARCH_BOX_DEFAULT_PLACEHOLDER } = useLocale();
-
-  useEffect(() => {
-    setItemsDetails(
-      items.map((item) => ({ item, matchesSearch: true } as ItemDetails))
-    );
-  }, [items]);
-
-  useEffect(() => {
-    //focus everytime the component mounts and there is a new inputRef
-    inputRef.current?.focus();
-  }, [inputRef]);
-
-  const handleOnChange = (eve: React.ChangeEvent<HTMLInputElement>) => {
-    const input = eve.target.value;
-    const f = input.toUpperCase();
-
-    setItemsDetails((i) => {
-      return i?.map((itemDetails) => {
-        return itemDetails.item.name.toUpperCase().indexOf(f) > -1
-          ? { ...itemDetails, matchesSearch: true }
-          : { ...itemDetails, matchesSearch: false };
-      });
-    });
-  };
-
+export default function SearchableModal({ title, searchPlaceholderText, handleAdd, onClose, items }: SearchableModalProps) {
+  const [query, setQuery] = useState('');
+  const searchId = useId();
+  const text = useLocale();
+  const matches = items.filter(item => item.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
   return (
-    <div className="modal-wrapper">
-      <div className="modal-conatiner">
-        <div className="modal-title-container">
-          <h4>{title || SEARCH_MODAL_DEFAULT_TITLE}</h4>
-          <span onClick={onClose}><MdClose/></span>
-        </div>
-        <div className="modal-search-container">
-          <input
-            placeholder={searchPlaceholderText || SEARCH_BOX_DEFAULT_PLACEHOLDER}
-            onChange={(eve) => handleOnChange(eve)}
-            ref={inputRef}
-            tabIndex={1}
-            className="modal-search"
-            type="text"
-          />
-        </div>
-        <div className="modal-items-container">
-          {itemsDetails
-            ?.filter((itemDetails) => itemDetails.matchesSearch) //grabs all items that match the search details
-            ?.map((itemDetails) => (
-              <div
-                onBeforeInput={() => {
-                  handleAdd(itemDetails.item);
-                }}
-                tabIndex={1}
-                key={itemDetails.item.id}
-                className="modal-item"
-                onClick={() => {
-                  handleAdd(itemDetails.item);
-                }}
-              >
-                {itemDetails.item.children}
-              </div>
-            ))}
-        </div>
+    <FullScreenModal title={title || text.SEARCH_MODAL_DEFAULT_TITLE} onClose={onClose}>
+      <div className="modal-search-container">
+        <MdSearch aria-hidden="true" />
+        <label className="modal-visually-hidden" htmlFor={searchId}>Search by name</label>
+        <input id={searchId} placeholder={searchPlaceholderText || text.SEARCH_BOX_DEFAULT_PLACEHOLDER} value={query} onChange={event => setQuery(event.target.value)} className="modal-search" type="search" autoComplete="off" />
       </div>
-    </div>
+      <p className="modal-result-count" role="status">{matches.length} {matches.length === 1 ? 'result' : 'results'} · Select to add</p>
+      <div className="modal-items-container">
+        {matches.map(item => (
+          <button type="button" key={item.id} className="modal-item" onClick={() => handleAdd(item)}>
+            <span className="modal-item-details">{item.children}</span><MdArrowForward className="modal-item-arrow" aria-hidden="true" />
+          </button>
+        ))}
+        {!matches.length && <div className="modal-empty"><MdSearch aria-hidden="true" /><h3>{items.length ? 'No matches found' : 'Nothing to select yet'}</h3><p>{items.length ? 'Try another name or clear your search.' : 'Add items or customers from Manage, then return here.'}</p></div>}
+      </div>
+    </FullScreenModal>
   );
-};
-
-export default SearchableModal;
+}

@@ -1,53 +1,10 @@
-
-.custom-form .form-title {
-  text-align: center;
-  text-transform: uppercase;
-  margin: 0;
-  padding: 0;
-  color: var(--color-slate100);
-}
-
-.input-container-wrapper {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 2rem;
-
-  overflow-y: auto;
-}
-
-.input-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1em;
-}
-
-.input-container .input {
-    width: 100%;
-    padding: 0.5em;
-    background-color: var(--bg-primary);
-    outline: none;
-    border: 2px solid var(--color-slate100);
-    color: var(--color-slate100);
-    border-radius: 0.3em;
-    font-size: var(--size-m);
-}
-
-/* .input[name="button"] {
-  --background-color: var(--secondary-bg);
-  --border-color: var(--primary-color);
-  --color: var(--secondary-color);
-
-  cursor: pointer;
-  text-transform: uppercase;
-  padding-inline: 1em;
-  color: var(--color);
-  background-color: var(--background-color);
-  border: 0.1em solid var(--border-color);
-  border-radius: 2em;
-}
-
-.input[name="button"]:hover {
-  --background-color: var(--complimentary-bg);
-  --color: var(--complimentary-color);
-} */
+.custom-form { display: flex; flex-direction: column; gap: 1.5rem; }
+.custom-form .form-title { margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--color-slate100); }
+.custom-form .input-container-wrapper { display: flex; flex-direction: column; gap: 1.25rem; }
+.custom-form .input-container { display: flex; flex-direction: column; gap: .5rem; }
+.custom-form .input-label { font-size: .9rem; font-weight: 600; color: var(--color-slate200); }
+.custom-form .input { width: 100%; min-height: 46px; padding: .75rem .9rem; background: var(--bg-primary); border: 1px solid var(--color-slate500); color: var(--color-slate100); border-radius: 9px; font-size: 1rem; }
+.custom-form .input::placeholder { color: var(--color-slate400); }
+.custom-form input[type=submit] { width: 100%; min-height: 46px; padding: .8rem 1rem; margin-top: .25rem; border: 1px solid var(--color-slate100); border-radius: 9px; background: var(--color-slate100); color: var(--bg-primary); font: inherit; font-weight: 600; cursor: pointer; }
+.custom-form input[type=submit]:hover { opacity: .85; }
+.custom-form input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }

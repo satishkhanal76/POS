@@ -48,9 +48,9 @@ function CustomForm<IFormDataType extends { [key: string]: any }>({
       <div className="input-container-wrapper">
         {inputsProps.map((inputProp: IInputProps, i: number) => {
           return (
-            <div className="input-container" key={inputProp.id}>
+            <div className="input-container" key={inputProp.id || inputProp.name}>
               {inputProp.label && (
-                <label className="input-label" htmlFor={inputProp.name}>
+                <label className="input-label" htmlFor={inputProp.id || inputProp.name}>
                   {inputProp.label}
                 </label>
               )}
@@ -58,6 +58,7 @@ function CustomForm<IFormDataType extends { [key: string]: any }>({
                 className="input"
                 ref={i === 0 ? firstInputRef : null}
                 {...inputProp}
+                id={inputProp.id || inputProp.name}
                 onChange={handleFormChange}
                 value={formData[inputProp.name]}
               />

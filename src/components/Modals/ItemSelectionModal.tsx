@@ -1,3 +1,4 @@
+import Price from "../Items/Price";
 import { useMemo, useState } from "react";
 import ItemsController from "../../controllers/ItemsController";
 import { useDatabase } from "../../contexts/DatabaseContext";
@@ -35,10 +36,10 @@ const ItemSelectionModal = ({
     id: item.getId(),
     name: item.getName(),
     children: (
-      <div style={{display: "flex", justifyContent: "space-between"}}>
+      <span className="selection-item">
         <span className="name">{item.getName()}</span>
-        <span className="price">${item.getAmount()}</span>
-      </div>
+        <Price price={item.getAmount()} />
+      </span>
     ),
   }));
 

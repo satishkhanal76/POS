@@ -41,6 +41,7 @@ const CustomerSelectionModal = ({
   if (isModalOpen)
     return (
       <SearchableModal
+        title="Select a customer"
         onClose={onClose}
         items={searchableItemProps}
         handleAdd={(searchableItem: ISearchableItem) =>
