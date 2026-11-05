@@ -21,7 +21,7 @@ export default function NavBar() {
         }
       }}>
       <NavLink className="nav-brand" to="/" end aria-label={t('UI_POS_HOME')}>
-        <span className="nav-brand-mark" aria-hidden="true">{t('UI_P')}</span>
+        <img className="nav-brand-mark" src={`${import.meta.env.BASE_URL}icons/app-icon.svg`} width="32" height="32" alt="" />
         {t('WEB_NAME')}
       </NavLink>
       <button ref={menuButton} type="button" className="nav-mobile-toggle" aria-expanded={mobileOpen}

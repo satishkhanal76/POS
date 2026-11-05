@@ -1,6 +1,6 @@
 
 :root {
-  --bg-primary: #262626;
+  --bg-primary: var(--app-brand-dark-bg, #262626);
   --font-primary: "Signika Negative", sans-serif;
 
   --color-slate100: #f1f5f9;
@@ -19,7 +19,7 @@
   --size-3xl: 3.5rem;     /* 56px */
   --size-4xl: 4.5rem;     /* 72px */
 
-  --accent: hsl(30, 87%, 45%);
+  --accent: var(--app-brand-accent, #d97706);
   --secondary-accent: hsl(270, 85%, 60%);
 
   --rose-600: #e11d48;
@@ -113,7 +113,7 @@ body {
 }
 
 body.light-theme {
-  --bg-primary: hsl(210, 40%, 96%);
+  --bg-primary: var(--app-brand-light-bg, #f1f5f9);
 
   --color-slate100: #161619;
   --color-slate200: #2c2c31;

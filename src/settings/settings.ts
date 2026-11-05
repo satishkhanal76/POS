@@ -1,3 +1,4 @@
+import { SETTINGS_STORAGE_KEY } from './storage';
 import { getLocaleText, LocaleKey, Translate } from '../contexts/Locale';
 import defaults from '../data/ClientGlobal.json';
 
@@ -21,7 +22,7 @@ export const settingsSchema: SettingField[] = [
   { key: 'darkMode', type: 'boolean', label: 'UI_DARK_MODE', description: 'UI_USE_A_DARKER_APPEARANCE_THROUGHOUT_THE_APP', group: 'Appearance' },
 ];
 export const defaultSettings: Settings = defaults;
-export const STORAGE_KEY = 'pos.clientGlobal';
+export const STORAGE_KEY = SETTINGS_STORAGE_KEY;
 export const UPDATE_EVENT = 'clientGlobal:updated';
 export type SettingsDraft = Record<keyof Settings, string | boolean>;
 export const toDraft = (settings: Settings): SettingsDraft => Object.fromEntries(

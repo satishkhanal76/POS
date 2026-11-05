@@ -46,7 +46,7 @@ Alternatively, use an existing Google Chrome installation:
 PLAYWRIGHT_CHANNEL=chrome npm run test:browser
 ```
 
-On Linux, Playwright may also need system packages; use `npx playwright install --with-deps chromium` when setting up a Linux test machine. Browser tests start and stop their own Vite server on an available loopback port. No existing development server is required.
+On Linux, Playwright may also need system packages; use `npx playwright install --with-deps chromium` when setting up a Linux test machine. Browser tests build the app first and start/stop their own Vite development and production-preview servers on available loopback ports. `npm run test:browser:run` reuses an existing build. No existing development server is required.
 
 ## What Is Covered
 
@@ -65,6 +65,8 @@ On Linux, Playwright may also need system packages; use `npx playwright install 
 | `localization-audit.test.ts` | Built-in placeholder compatibility and preventing literal JSX copy |
 | `demo-data.test.ts` | Complete fresh-demo fixtures, historical pricing, linked summaries, relative dates, atomic reset failure |
 | `workspaces.test.ts` | First-visit choice, demo seeding/restart/clear, real-data isolation |
+| `pwa.test.ts` | Manifest paths/identity, icon dimensions, maskable opacity, launch-image media/dimensions, startup markup |
+| `browser/pwa.test.ts` | Production install assets, offline launch, controlled updates, slow/failed bundle startup |
 | `browser/app.test.ts` | Pagination/back links, phone/tablet overflow, menu/dialogs, editing, discounts, locale/template uploads, backup download/restore |
 
 Pagination tests deliberately fail if history listing calls `getAll` or hydrates full transaction models. They also record the transaction IDs read for a page. Backup tests inject a write failure after clearing starts, proving the whole operation rolls back.

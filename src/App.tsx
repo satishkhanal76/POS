@@ -1,3 +1,4 @@
+import AppStatus from "./components/App/AppStatus";
 import PriceHistoryPage from "./components/pages/PriceHistoryPage";
 import DemoWelcome from "./components/Workspace/DemoWelcome";
 import DemoBanner from "./components/Workspace/DemoBanner";
@@ -18,6 +19,7 @@ function App() {
   return (
     <div className="container App">
       <NavBar />
+      <AppStatus />
       <DemoBanner />
       <DemoWelcome />
       <Routes>

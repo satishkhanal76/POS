@@ -2,14 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    __INSTALL_METADATA__
+    <style>__STARTUP_STYLES__</style>
+    <script>__STARTUP_THEME__</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Google tag (gtag.js) -->
     <script defer src="https://satishkhanal.com/analytics.js"></script>
-    <title>POS</title>
+    <title>__APP_TITLE__</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">__STARTUP_MARKUP__</div>
+    <script>__STARTUP_RECOVERY__</script>
+    <script type="module" src="/src/pwa/startup.ts"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

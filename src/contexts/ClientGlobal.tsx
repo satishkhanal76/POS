@@ -1,3 +1,4 @@
+import { appBranding } from "../config/appBranding";
 import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { defaultSettings, loadSettings, Settings, STORAGE_KEY, UPDATE_EVENT } from "../settings/settings";
 
@@ -21,6 +22,9 @@ export function ClientGlobalProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.body.classList.toggle("light-theme", !settings.darkMode);
     document.documentElement.style.colorScheme = settings.darkMode ? "dark" : "light";
+    document.documentElement.dataset.appTheme = settings.darkMode ? "dark" : "light";
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', settings.darkMode ? appBranding.darkBackground : appBranding.background);
+    document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')?.setAttribute('content', settings.darkMode ? 'black' : 'default');
   }, [settings.darkMode]);
   return <ClientGlobalContext.Provider value={settings}>{children}</ClientGlobalContext.Provider>;
 }

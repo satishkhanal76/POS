@@ -232,3 +232,36 @@ test('fresh demo populates catalog, customer summaries, sale history, and price 
   await go('transaction?id=demo-sale-1');
   await page.locator('.transaction-details').getByText('$11.25', { exact: true }).waitFor();
 });
+
+test('install settings use the browser install prompt and theme metadata follows saved appearance', async () => {
+  await go('settings');
+  await page.evaluate(() => {
+    window.dispatchEvent(Object.assign(new Event('beforeinstallprompt'), {
+      prompt() { return Promise.resolve(); }, userChoice: Promise.resolve({ outcome: 'dismissed' }),
+    }));
+  });
+  await page.getByRole('button', { name: english.PWA_INSTALL_ACTION, exact: true }).click();
+  await page.getByText(english.PWA_INSTALL_DISMISSED, { exact: true }).waitFor();
+  await page.getByRole('switch').check();
+  await page.getByRole('button', { name: english.UI_SAVE_CHANGES_2, exact: true }).click();
+  await page.waitForFunction(() => document.querySelector('meta[name="theme-color"]')?.getAttribute('content') === '#262626');
+});
+
+test('development installs expose a real manifest and correctly scoped Apple icon URLs', async () => {
+  await go('settings');
+  const manifestHref = await page.locator('link[rel="manifest"]').getAttribute('href');
+  assert.equal(new URL(manifestHref!, base).href, `${base}manifest.webmanifest`);
+  const manifestResponse = await context.request.get(`${base}manifest.webmanifest`);
+  assert.ok(manifestResponse.headers()['content-type'].includes('application/manifest+json'));
+  assert.equal(manifestResponse.headers()['cache-control'], 'no-store');
+  assert.equal((await manifestResponse.json()).name, english.PWA_APP_NAME);
+  for (const selector of ['link[rel="apple-touch-icon"]', 'link[rel="icon"][type="image/png"]', 'link[rel="apple-touch-startup-image"]']) {
+    const href = await page.locator(selector).first().getAttribute('href');
+    const url = new URL(href!, base);
+    const expected = new URL(base);
+    assert.equal(url.pathname.startsWith(`${expected.pathname}${expected.pathname.slice(1)}`) && expected.pathname !== '/', false, `No doubled base path: ${url.pathname}`);
+    const response = await context.request.get(url.href);
+    assert.equal(response.ok(), true);
+    assert.ok(response.headers()['content-type'].startsWith('image/png'), `Image URL must return PNG rather than an HTML fallback: ${url.href}`);
+  }
+});

@@ -1,3 +1,4 @@
+import InstallationSettings from "../Settings/InstallationSettings";
 import LocaleSettings from "../Settings/LocaleSettings";
 import { useLocaleText } from '../../contexts/Locale';
 import PageHeader from "../Layout/PageHeader";
@@ -87,6 +88,7 @@ export default function SettingsPage() {
           <p role="status" aria-live="polite">{status || (dirty ? t('UI_YOU_HAVE_UNSAVED_CHANGES') : t('UI_ALL_CHANGES_SAVED'))}</p>
         </footer>
       </form>
+      <InstallationSettings />
       <LocaleSettings />
       <BackupSettings />
       <DemoSettings />

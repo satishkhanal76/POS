@@ -1,4 +1,4 @@
-import { ReactNode, createContext, useCallback, useContext, useSyncExternalStore } from 'react';
+import { ReactNode, createContext, useCallback, useContext, useEffect, useSyncExternalStore } from 'react';
 import { getLocaleState, subscribeLocale, LocaleMessages, Translate, rt } from '../localization/locale';
 
 // Preserve the existing import API for feature components and controllers.
@@ -12,6 +12,7 @@ export function useLocalePreferences() {
 }
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const state = useLocalePreferences();
+  useEffect(() => { document.title = state.messages.PWA_APP_NAME; document.documentElement.lang = state.selection === "nepali" ? "ne" : "en"; }, [state.messages, state.selection]);
   return <LocaleContext.Provider value={state.messages}>{children}</LocaleContext.Provider>;
 }
 export function useLocaleText(): Translate {

@@ -58,6 +58,7 @@ See the technical documentation for a detailed explanation:
 
 - [Architecture](docs/architecture.md)
 - [Database Architecture](docs/database.md)
+- [Installed App Branding and Startup](docs/pwa.md)
 
 ## Client-Side Application
 
