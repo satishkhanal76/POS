@@ -203,29 +203,6 @@ const POS = () => {
     }));
   };
 
-  const handleLoadPrevTransaction = async () => {
-    const prevTransaction = await transactionController.getLatestTransaction(
-      transaction
-    );
-    if (!prevTransaction) {
-      alert(text.OUT_OF_TRANSACTIONS);
-      return;
-    }
-
-    updateURL(prevTransaction);
-    setTransactionState((t) => ({
-      ...t,
-      transaction: prevTransaction,
-      activeTransactionItem: prevTransaction.getLast(),
-    }));
-  };
-
-  const updateURL = (transaction: ITransaction) => {
-    const url = new URL(window.location.toString() + "transaction");
-    url.searchParams.set("id", transaction.getId());
-    history.pushState({}, "", url);
-  };
-
   const selectCustomer = async () => {
     setTransactionState((t) => ({
       ...t,

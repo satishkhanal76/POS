@@ -12,7 +12,7 @@ interface TransactionViewProps {
   onClick: (
     transactionItem: IProductTransactionItem | IDiscountTransactionItem
   ) => void;
-  activeItem: IProductTransactionItem | IDiscountTransactionItem;
+  activeItem: IProductTransactionItem | IDiscountTransactionItem | null;
 }
 
 const TransactionView = ({

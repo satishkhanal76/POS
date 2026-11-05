@@ -15,7 +15,7 @@ interface TransactionsItemsContainerProps {
     transactionItem: IProductTransactionItem | IDiscountTransactionItem
   ) => void;
   total: number;
-  activeItem: IProductTransactionItem | IDiscountTransactionItem;
+  activeItem: IProductTransactionItem | IDiscountTransactionItem | null;
 }
 
 const TransactionsItemsContainer = ({

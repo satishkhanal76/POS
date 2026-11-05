@@ -3,7 +3,7 @@ import { useDatabase } from "../../contexts/DatabaseContext";
 import TransactionController from "../../controllers/TransactionController";
 import Price from "../Items/Price";
 
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useLocale } from "../../contexts/Locale";
 import { ITransaction } from "../../models/Transaction";
 import CustomTableView, { CustomTableColumn } from "../utils/CustomTableView";
@@ -15,6 +15,7 @@ interface TransactionsViewProps {
 const TransactionsView: React.FC<TransactionsViewProps> = ({ transactionsOverride }) => {
   const text = useLocale();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { transactionsOS } = useDatabase();
 
@@ -45,7 +46,7 @@ const TransactionsView: React.FC<TransactionsViewProps> = ({ transactionsOverrid
 
   return (
     <CustomTableView label="Transactions" emptyTitle="No transactions yet" emptyDescription="Posted sales will appear here. Create a sale from the POS page to get started." data={transactions} columns={columns} rowKey={(transaction) => transaction.getId()}
-      onRowClick={transaction => navigate(`/transaction?id=${transaction.getId()}`)}
+      onRowClick={transaction => navigate(`/transaction?id=${encodeURIComponent(transaction.getId())}`, { state: { returnTo: location.pathname + location.search } })}
     />
   );
 };

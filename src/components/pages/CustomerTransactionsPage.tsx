@@ -42,7 +42,9 @@ const CustomerTransactionsPage = () => {
           CUSTOMER_NAME: customer?.getName()
         })}</h2>
       </div>
-      <TransactionsView transactionsOverride={customerTransactions?.map(t => t.getTransaction())}/>
+      {customerTransactions
+        ? <TransactionsView transactionsOverride={customerTransactions.map(t => t.getTransaction())} />
+        : <p role="status">Loading customer transactions…</p>}
     </>
   )
 }
