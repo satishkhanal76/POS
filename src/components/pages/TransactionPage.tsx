@@ -47,7 +47,7 @@ export default function TransactionPage() {
   const current = result?.id === id ? result : null;
   return (
     <main className="transaction-page">
-      <Link className="transaction-back-link" to={returnTo}>← {customerHistory ? t('UI_BACK_TO_CUSTOMER_TRANSACTIONS_2') : t('UI_BACK_TO_TRANSACTIONS')}</Link>
+      <Link className="transaction-back-link" to={returnTo} state={location.state?.returnState}>← {customerHistory ? t('UI_BACK_TO_CUSTOMER_TRANSACTIONS_2') : t('UI_BACK_TO_TRANSACTIONS')}</Link>
       <PageHeader title={t('UI_TRANSACTION_DETAILS_2')} description={t('UI_A_SAVED_SALE_FROM_YOUR_TRANSACTION_HISTORY')} />
       {!current && <p role="status">{t('UI_LOADING_TRANSACTION')}</p>}
       {current?.error && <p role="alert">{current.error}</p>}

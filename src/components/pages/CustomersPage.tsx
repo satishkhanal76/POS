@@ -13,6 +13,7 @@ import CustomersView from "../Customer/CustomersView";
 
 const CustomersPage = () => {
   const t = useLocaleText();
+  const [error, setError] = useState("");
 
   const [editing, setEditing] = useState<ICustomer | null>(null);
   const [isAddModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -33,11 +34,12 @@ const CustomersPage = () => {
     };
   
     const handleDelete = async (customer: ICustomer) => {
-      const deletedCustomer = await customerController.deleteCustomer(customer);
-  
-      setCustomers(
-        customers.filter((c) => c.getId() !== deletedCustomer.getId())
-      );
+      setError('');
+      try {
+        const deletedCustomer = await customerController.deleteCustomer(customer);
+        setCustomers(current => current.filter(entry => entry.getId() !== deletedCustomer.getId()));
+      } catch (failure) { setError(failure instanceof Error ? failure.message : t('CUSTOMER_DELETE_FAILED')); }
+
     };
   
     useEffect(() => {
@@ -80,6 +82,7 @@ const CustomersPage = () => {
             setEditing(null);
           }} />}
           <PageHeader title={text.CUSTOMERS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label={t('CUSTOMER_FORM_TITLE')} title={t('CUSTOMER_FORM_TITLE')}><MdAdd aria-hidden="true" /></button>} />
+          {error && <p role="alert">{error}</p>}
           <CustomersView onEdit={setEditing} handleDelete={handleDelete} customers={customers} />
         </>;
 };

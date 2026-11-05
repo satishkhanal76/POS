@@ -1,3 +1,6 @@
+import { getLocaleText } from "../localization/locale";
+import { PageOptions } from "../database/Pagination";
+import CustomerTransactionSummariesOS from "../database/CustomerTransactionSummariesOS";
 import Controller, { IController } from "./Controller";
 import CustomersTransactionsOS, {
   CustomerTransactionsSchema,
@@ -30,8 +33,14 @@ export default class CustomersTransactionsController
   >
   implements ICustomersTransactionsController
 {
-  constructor(customersTransactionsOS: CustomersTransactionsOS) {
+  constructor(customersTransactionsOS: CustomersTransactionsOS, private readonly summaries?: CustomerTransactionSummariesOS) {
     super(customersTransactionsOS);
+  }
+
+  public async getPage(customerId: string, options: PageOptions) { return this.objectStore.getPage(customerId, options); }
+  public async getSummaryPage(options: PageOptions) {
+    if (!this.summaries) throw new Error(getLocaleText('PAGINATION_SUMMARIES_MISSING'));
+    return this.summaries.getPage(options);
   }
 
   public async getAllItems() {

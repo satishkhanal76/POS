@@ -35,6 +35,23 @@ export default class CustomerOS
     } as CustomerSchema;
   }
 
+  public async deleteOne(id: string): Promise<Customer> {
+    const customer = await this.getOne(id);
+    const db = await this.db.getDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction([this.objectStoreName, 'CUSTOMERS_TRANSACTIONS'], 'readwrite');
+      let message = getLocaleText('CUSTOMER_DELETE_FAILED');
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(new Error(message));
+      const count = transaction.objectStore('CUSTOMERS_TRANSACTIONS').index('customerId').count(id);
+      count.onsuccess = () => {
+        if (count.result) { message = getLocaleText('CUSTOMER_HAS_TRANSACTIONS'); transaction.abort(); return; }
+        transaction.objectStore(this.objectStoreName).delete(id);
+      };
+    });
+    return customer;
+  }
+
   /** Update only an existing record, retaining its ID and transaction links. */
   public async updateOne(customer: Customer): Promise<Customer> {
     const db = await this.db.getDatabase();

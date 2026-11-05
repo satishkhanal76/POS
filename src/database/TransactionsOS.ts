@@ -1,3 +1,6 @@
+import { getLocaleText } from "../localization/locale";
+import { PageOptions, readIndexPage, requestValue } from "./Pagination";
+import { TransactionListEntry } from "../models/TransactionListEntry";
 import Transaction, { ITransaction } from "../models/Transaction";
 import { IDB } from "./Database";
 import ObjectStore, {
@@ -16,6 +19,7 @@ export interface TransactionsSchema {
 
 export interface ITransactionsOS
   extends IObjectStore<TransactionsSchema, Transaction> {
+  getListEntries: (ids: string[]) => Promise<TransactionListEntry[]>;
   getAllTransactionsByTimestamp: () => Promise<ITransaction[]>;
 
   getLatestTransaction: (
@@ -88,6 +92,28 @@ export default class TransactionsOS
     return transaction;
   }
 
+  public async getPage(options: PageOptions) {
+    const db = await this.db.getDatabase();
+    const result = await readIndexPage<TransactionsSchema>(db.transaction(this.objectStoreName).objectStore(this.objectStoreName).index('timestamp'), options);
+    return { ...result, rows: await this.getListEntries(result.rows.map(row => row.id)) };
+  }
+
+  /** Load headers and indexed line counts only for the selected transaction IDs. */
+  public async getListEntries(ids: string[]): Promise<TransactionListEntry[]> {
+    if (!ids.length) return [];
+    const db = await this.db.getDatabase();
+    const transaction = db.transaction(['TRANSACTIONS', 'TRANSACTION_PRODUCTS', 'TRANSACTION_DISCOUNTS']);
+    const reads = ids.map(id => Promise.all([
+      requestValue(transaction.objectStore('TRANSACTIONS').get(id)) as Promise<TransactionsSchema | undefined>,
+      requestValue(transaction.objectStore('TRANSACTION_PRODUCTS').index('transactionId').count(id)),
+      requestValue(transaction.objectStore('TRANSACTION_DISCOUNTS').index('transactionId').count(id)),
+    ]).then(([sale, products, discounts]) => {
+      if (!sale) throw new Error(getLocaleText('PAGINATION_TRANSACTION_MISSING'));
+      return { ...sale, itemCount: products + discounts };
+    }));
+    return Promise.all(reads);
+  }
+
   public async getAllTransactionsByTimestamp() {
     return await this.getAllByIndexName("timestamp");
   }
@@ -128,8 +154,7 @@ export default class TransactionsOS
     const transactionProductItems = transaction.getAllTransactionProductItems();
     const transactionDiscountItems =
       transaction.getAllTransactionDiscountItems();
-    this.transactionItemsOS.addMany(transactionProductItems);
-    this.transactionDiscountsOS.addMany(transactionDiscountItems);
+    await Promise.all([this.transactionItemsOS.addMany(transactionProductItems), this.transactionDiscountsOS.addMany(transactionDiscountItems)]);
 
     return await this.addOne(transaction);
   }

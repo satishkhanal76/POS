@@ -1,3 +1,4 @@
+import { PageOptions } from "../database/Pagination";
 import TransactionsOS, { TransactionsSchema } from "../database/TransactionsOS";
 import Transaction, { ITransaction } from "../models/Transaction";
 import Controller, { IController } from "./Controller";
@@ -37,6 +38,8 @@ export default class TransactionController
     super(transactionsOS);
     this.#transaction = this.getNewTransaction();
   }
+
+  public async getPage(options: PageOptions) { return this.objectStore.getPage(options); }
 
   public async getAllTransactionsByTimestamp(): Promise<ITransaction[]> {
     return await this.objectStore.getAllTransactionsByTimestamp();

@@ -1,56 +1,38 @@
-import { useLocaleText } from '../../contexts/Locale';
-import React, { useEffect, useState } from "react";
-import { useDatabase } from "../../contexts/DatabaseContext";
-import TransactionController from "../../controllers/TransactionController";
-import Price from "../Items/Price";
+import { useCallback, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocale, useLocaleText } from '../../contexts/Locale';
+import { useDatabase } from '../../contexts/DatabaseContext';
+import TransactionController from '../../controllers/TransactionController';
+import CustomersTransactionsController from '../../controllers/CustomersTransactionsController';
+import { TransactionListEntry } from '../../models/TransactionListEntry';
+import { PageOptions } from '../../database/Pagination';
+import usePagedQuery from '../../hooks/usePagedQuery';
+import Price from '../Items/Price';
+import CustomTableView, { CustomTableColumn } from '../utils/CustomTableView';
+import PaginationControls from '../utils/PaginationControls';
 
-import { useLocation, useNavigate } from "react-router-dom";
-import { useLocale } from "../../contexts/Locale";
-import { ITransaction } from "../../models/Transaction";
-import CustomTableView, { CustomTableColumn } from "../utils/CustomTableView";
-
-interface TransactionsViewProps {
-  transactionsOverride?: ITransaction[];
-}
-
-const TransactionsView: React.FC<TransactionsViewProps> = ({ transactionsOverride }) => {
+export default function TransactionsView({ customerId }: { customerId?: string }) {
   const t = useLocaleText();
   const text = useLocale();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const { transactionsOS } = useDatabase();
-
-  const transactionController = new TransactionController(transactionsOS);
-
-  const [transactions, setTransactions] = useState<ITransaction[]>([]);
-
-  useEffect(() => {
-    if (!transactionsOverride) {
-      const loadAllTransactions = async () => {
-        const allTransactions =
-          await transactionController.getAllTransactionsByTimestamp();
-
-        setTransactions(allTransactions);
-      };
-
-      loadAllTransactions();
-    } else {
-      setTransactions(transactionsOverride);
-    }
-  }, [transactionsOverride]);
-
-  const columns: CustomTableColumn<ITransaction>[] = [
-    {key: "name", header: text.TRANSACTION_TABLE_HEADER_TIME, render: (transaction) => <>{new Date(transaction.getTimestamp()).toLocaleString()}</>},
-    {key: "num-of-items", header: text.TRANSACTION_TABLE_HEADER_NUM_OF_ITEMS, variant: "numeric", render: (transaction) => <>{transaction.getAllTransactionItems().length}</>},
-    {key: "total", header: text.TRANSACTION_TABLE_HEADER_TOTAL, variant: "numeric", render: (transaction) => <>{<Price price={transaction.getTotal()} />}</>},
-  ] 
-
-  return (
-    <CustomTableView label={t('TRANSACTIONS_TITLE')} emptyTitle={t('UI_NO_TRANSACTIONS_YET')} emptyDescription={t('UI_POSTED_SALES_WILL_APPEAR_HERE_CREATE_A_SALE_FROM')} data={transactions} columns={columns} rowKey={(transaction) => transaction.getId()}
-      onRowClick={transaction => navigate(`/transaction?id=${encodeURIComponent(transaction.getId())}`, { state: { returnTo: location.pathname + location.search } })}
-    />
-  );
-};
-
-export default TransactionsView;
+  const { transactionsOS, cutomersTransactionsOS } = useDatabase();
+  const controller = useMemo(() => new TransactionController(transactionsOS), [transactionsOS]);
+  const customerController = useMemo(() => new CustomersTransactionsController(cutomersTransactionsOS), [cutomersTransactionsOS]);
+  const query = useCallback((options: PageOptions) => customerId
+    ? customerController.getPage(customerId, options)
+    : controller.getPage(options), [customerId, customerController, controller]);
+  const pagination = usePagedQuery(query);
+  const columns: CustomTableColumn<TransactionListEntry>[] = [
+    { key: 'time', header: text.TRANSACTION_TABLE_HEADER_TIME, render: row => new Date(row.timestamp).toLocaleString() },
+    { key: 'items', header: text.TRANSACTION_TABLE_HEADER_NUM_OF_ITEMS, variant: 'numeric', render: row => row.itemCount },
+    { key: 'total', header: text.TRANSACTION_TABLE_HEADER_TOTAL, variant: 'numeric', render: row => <Price price={row.total} /> },
+  ];
+  return <>
+    <PaginationControls page={pagination.page} pageSize={pagination.pageSize} sort={pagination.sort} total={pagination.result?.total ?? 0} busy={pagination.loading} onChange={pagination.change} />
+    {pagination.error ? <p role="alert">{t('PAGINATION_ERROR')}</p> : pagination.loading ? <p role="status">{t('PAGINATION_LOADING')}</p> :
+      <CustomTableView label={t('TRANSACTIONS_TITLE')} emptyTitle={t('UI_NO_TRANSACTIONS_YET')} emptyDescription={t('UI_POSTED_SALES_WILL_APPEAR_HERE_CREATE_A_SALE_FROM')}
+        data={pagination.result?.rows ?? []} columns={columns} rowKey={row => row.id}
+        onRowClick={row => navigate(`/transaction?id=${encodeURIComponent(row.id)}`, { state: { returnTo: location.pathname + location.search, returnState: location.state } })} />}
+  </>;
+}

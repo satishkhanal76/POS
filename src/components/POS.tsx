@@ -233,7 +233,7 @@ const POS = () => {
       transaction,
     });
 
-    cutomersTransactionsOS.addOne(customerTransaction);
+    await cutomersTransactionsOS.addOne(customerTransaction);
 
     alert(
       rt(text.TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS, {

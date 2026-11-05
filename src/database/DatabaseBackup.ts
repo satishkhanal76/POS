@@ -13,6 +13,7 @@ export interface DatabaseBackup {
 
 /** Stored field definitions, rather than reconstructed model data. */
 const tableFields: Record<string, Record<string, 'string' | 'number'>> = {
+  CUSTOMER_TRANSACTION_SUMMARIES: { id: 'string', timestamp: 'number', count: 'number', total: 'number' },
   ITEM_PRICE_CHANGES: { id: 'string', itemId: 'string', amount: 'number', timestamp: 'number' },
   PRODUCTS: { id: 'string', name: 'string', amount: 'number' },
   CUSTOMER: { id: 'string', name: 'string', phoneNumber: 'string' },
@@ -23,6 +24,7 @@ const tableFields: Record<string, Record<string, 'string' | 'number'>> = {
   CUSTOMERS_TRANSACTIONS: { id: 'string', timestamp: 'number', customerId: 'string', transactionId: 'string' },
 };
 const references = [
+  ['CUSTOMER_TRANSACTION_SUMMARIES', 'id', 'CUSTOMER'],
   ['ITEM_PRICE_CHANGES', 'itemId', 'PRODUCTS'],
   ['TRANSACTION_PRODUCTS', 'transactionId', 'TRANSACTIONS'],
   ['TRANSACTION_PRODUCTS', 'productId', 'PRODUCTS'],
@@ -34,14 +36,15 @@ const references = [
 const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 
 export function validateBackup(value: unknown): DatabaseBackup {
-  if (!isObject(value) || value.format !== 'pos-database-backup' || value.formatVersion !== 1 || (value.databaseVersion !== 1 && value.databaseVersion !== 2)
+  if (!isObject(value) || value.format !== 'pos-database-backup' || value.formatVersion !== 1 || (value.databaseVersion !== 1 && value.databaseVersion !== 2 && value.databaseVersion !== 3)
     || typeof value.sourceDatabase !== 'string' || typeof value.createdAt !== 'string' || !Number.isFinite(Date.parse(value.createdAt)) || !isObject(value.tables)) {
     throw new Error(getLocaleText('UI_THIS_IS_NOT_A_SUPPORTED_POS_DATABASE_BACKUP'));
   }
-  if (value.databaseVersion === 1) {
-    value = { ...value, databaseVersion: 2, tables: { ...value.tables, ITEM_PRICE_CHANGES: [] } };
-  }
-  const tables = (value as Record<string, unknown>).tables as Record<string, unknown>;
+  const legacy = value.databaseVersion !== 3;
+  const tables: Record<string, unknown> = { ...value.tables };
+  if (value.databaseVersion === 1) tables.ITEM_PRICE_CHANGES = [];
+  if (legacy) tables.CUSTOMER_TRANSACTION_SUMMARIES = [];
+  value = { ...value, databaseVersion: 3, tables };
   if (Object.keys(tables).length !== Object.keys(tableFields).length) throw new Error(getLocaleText('UI_BACKUP_MUST_CONTAIN_EVERY_DATABASE_TABLE'));
   const ids: Record<string, Set<string>> = {};
   for (const [name, fields] of Object.entries(tableFields)) {
@@ -58,7 +61,7 @@ export function validateBackup(value: unknown): DatabaseBackup {
       const id = row.id as string;
       if (!id || ids[name].has(id)) throw new Error(getLocaleText('UI_MISSING_OR_DUPLICATE_ID_IN_VALUE', { value0: name }));
       ids[name].add(id);
-      if ('timestamp' in fields && name !== 'ITEM_PRICE_CHANGES') {
+      if ('timestamp' in fields && name !== 'ITEM_PRICE_CHANGES' && name !== 'CUSTOMER_TRANSACTION_SUMMARIES') {
         const timestamp = row.timestamp as number;
         if (timestamps.has(timestamp)) throw new Error(getLocaleText('UI_DUPLICATE_TIMESTAMP_IN_VALUE', { value0: name }));
         timestamps.add(timestamp);
@@ -77,6 +80,26 @@ export function validateBackup(value: unknown): DatabaseBackup {
     for (const row of tables[table] as BackupRow[]) {
       if (!ids[target].has(row[field] as string)) throw new Error(getLocaleText('UI_BROKEN_RELATIONSHIP_VALUE_VALUE', { value0: table, value1: field }));
     }
+  }
+  // Summary rows are derived from canonical links and saved totals, never trusted blindly.
+  const sales = new Map((tables.TRANSACTIONS as BackupRow[]).map(row => [row.id, Number(row.total)]));
+  const summaries = new Map<string, BackupRow>();
+  for (const link of tables.CUSTOMERS_TRANSACTIONS as BackupRow[]) {
+    const id = String(link.customerId);
+    const summary = summaries.get(id) || { id, timestamp: 0, count: 0, total: 0 };
+    summary.count = Number(summary.count) + 1;
+    summary.total = Number(summary.total) + sales.get(link.transactionId)!;
+    summary.timestamp = Math.max(Number(summary.timestamp), Number(link.timestamp));
+    summaries.set(id, summary);
+  }
+  const expected = Array.from(summaries.values());
+  if (legacy) tables.CUSTOMER_TRANSACTION_SUMMARIES = expected;
+  else {
+    const actual = tables.CUSTOMER_TRANSACTION_SUMMARIES as BackupRow[];
+    if (actual.length !== expected.length || actual.some(row => {
+      const match = summaries.get(String(row.id));
+      return !match || row.count !== match.count || row.timestamp !== match.timestamp || Math.abs(Number(row.total) - Number(match.total)) > 0.0000001;
+    })) throw new Error(getLocaleText('PAGINATION_SUMMARY_INVALID'));
   }
   return value as unknown as DatabaseBackup;
 }

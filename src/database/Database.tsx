@@ -31,6 +31,8 @@ export interface IObjectStoreDB {
    */
   onObjectStoreCreation?: (objectStore: IDBObjectStore, db: IDB) => void;
 
+  onDatabaseUpgrade?: (database: IDBDatabase, transaction: IDBTransaction, oldVersion: number) => void;
+
   onDatabaseConnection?: (db: IDB) => void;
 
   onDatabaseError?: (db: IDB) => void;
@@ -38,7 +40,7 @@ export interface IObjectStoreDB {
 
 export default class DB implements IDB {
   private static DB_NAME = "POS";
-  private static DB_VERSION = 2;
+  private static DB_VERSION = 3;
 
   private objectStoresMap: Map<string, IObjectStoreDB>;
 
@@ -58,9 +60,12 @@ export default class DB implements IDB {
         this.onSuccess(dbRequest.result);
         resolve(dbRequest.result);
       });
-      dbRequest.addEventListener("upgradeneeded", () => {
+      dbRequest.addEventListener("upgradeneeded", (event) => {
         // Add new stores in-place; existing stores and records are preserved.
         this.onUpgradeNeeded(dbRequest.result);
+        for (const store of this.objectStoresMap.values()) {
+          store.onDatabaseUpgrade?.(dbRequest.result, dbRequest.transaction!, event.oldVersion);
+        }
       });
       dbRequest.addEventListener("blocked", () => {
         console.warn("Close other POS tabs to finish updating the database.");

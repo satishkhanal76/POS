@@ -1,3 +1,5 @@
+import { PageOptions, readIndexPage } from "./Pagination";
+import { CustomerSummarySchema } from "../models/CustomerTransactionSummary";
 import CustomerTransaction, {
   ICustomerTransaction,
 } from "../models/CustomerTransaction";
@@ -48,6 +50,41 @@ export default class CustomersTransactionsOS
     objectStore.createIndex("transactionId", "transactionId", {
       unique: false,
     });
+  }
+
+  public onDatabaseUpgrade(_db: IDBDatabase, transaction: IDBTransaction) {
+    const store = transaction.objectStore(this.objectStoreName);
+    if (!store.indexNames.contains('customerTimestamp')) store.createIndex('customerTimestamp', ['customerId', 'timestamp']);
+  }
+
+  public async getPage(customerId: string, options: PageOptions) {
+    const db = await this.db.getDatabase();
+    const index = db.transaction(this.objectStoreName).objectStore(this.objectStoreName).index('customerTimestamp');
+    const result = await readIndexPage<CustomerTransactionsSchema>(index, options, IDBKeyRange.bound([customerId, 0], [customerId, Number.MAX_SAFE_INTEGER]));
+    return { ...result, rows: await this.transactionsOS.getListEntries(result.rows.map(link => link.transactionId)) };
+  }
+
+  /** A customer link and its summary commit atomically, keeping paged totals exact. */
+  public async addOne(model: CustomerTransaction): Promise<CustomerTransaction> {
+    const db = await this.db.getDatabase();
+    const link = this.getObjectAsSchema(model);
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction([this.objectStoreName, 'CUSTOMER_TRANSACTION_SUMMARIES', 'TRANSACTIONS'], 'readwrite');
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(transaction.error);
+      transaction.objectStore(this.objectStoreName).add(link);
+      const summaries = transaction.objectStore('CUSTOMER_TRANSACTION_SUMMARIES');
+      const sale = transaction.objectStore('TRANSACTIONS').get(link.transactionId);
+      sale.onsuccess = () => {
+        if (!sale.result) { transaction.abort(); return; }
+        const previous = summaries.get(link.customerId);
+        previous.onsuccess = () => {
+          const summary: CustomerSummarySchema = previous.result || { id: link.customerId, count: 0, total: 0, timestamp: 0 };
+          summaries.put({ id: summary.id, count: summary.count + 1, total: summary.total + sale.result.total, timestamp: Math.max(summary.timestamp, link.timestamp) });
+        };
+      };
+    });
+    return model;
   }
 
   public getObjectAsSchema(object: ICustomerTransaction) {
