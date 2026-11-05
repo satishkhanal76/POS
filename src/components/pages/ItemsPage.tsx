@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import ItemEditForm from "../Items/ItemEditForm";
 import PageHeader from "../Layout/PageHeader";
 import React, { useEffect, useMemo, useState } from 'react'
@@ -12,6 +13,7 @@ import { MdAdd } from 'react-icons/md'
 
 
 const ItemsPage = () => {
+  const t = useLocaleText();
   const { itemOS } = useDatabase();
   const itemController = new ItemsController(itemOS);
 
@@ -33,7 +35,7 @@ const ItemsPage = () => {
     try {
       const deletedItem = await itemController.deleteItem(item);
       setItems(current => current.filter(entry => entry.getId() !== deletedItem?.getId()));
-    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Unable to delete item.'); }
+    } catch (failure) { setError(failure instanceof Error ? failure.message : t('UI_UNABLE_TO_DELETE_ITEM')); }
 
   }
 
@@ -53,7 +55,7 @@ const ItemsPage = () => {
       }}/>}
 
       {editing && <ItemEditForm item={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); updateItems(); }} />}
-      <PageHeader title={text.ITEMS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label="Add an item" title="Add an item"><MdAdd aria-hidden="true" /></button>} />
+      <PageHeader title={text.ITEMS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label={t('ITEM_FORM_TITLE')} title={t('ITEM_FORM_TITLE')}><MdAdd aria-hidden="true" /></button>} />
       {error && <p role="alert">{error}</p>}
       <ItemsView onEdit={setEditing} handleDelete={handleDelete} items={items}></ItemsView>
     </>

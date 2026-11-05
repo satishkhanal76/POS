@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import Customer, { ICustomer } from "../models/Customer";
 import { IDB, IObjectStoreDB } from "./Database";
 import ObjectStore, { IObjectStore } from "./ObjectStore";
@@ -40,13 +41,13 @@ export default class CustomerOS
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(this.objectStoreName, 'readwrite');
       const store = transaction.objectStore(this.objectStoreName);
-      let message = 'Customer could not be saved.';
+      let message = getLocaleText('UI_CUSTOMER_COULD_NOT_BE_SAVED');
       transaction.oncomplete = () => resolve(customer);
       transaction.onabort = () => reject(new Error(message));
       const request = store.get(customer.getId());
       request.onsuccess = () => {
         if (!request.result) {
-          message = 'This customer no longer exists. Reload the customer list.';
+          message = getLocaleText('UI_THIS_CUSTOMER_NO_LONGER_EXISTS_RELOAD_THE_CUSTOMER_LIST');
           transaction.abort();
           return;
         }

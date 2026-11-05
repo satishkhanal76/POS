@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import CustomerOS, {
   CustomerSchema,
   ICustomerOS,
@@ -36,7 +37,7 @@ export default class CustomerController
   }
 
   public async updateCustomer(id: string, { name, phoneNumber }: ICustomerFormData): Promise<Customer> {
-    if (!name.trim()) throw new Error('Enter a customer name.');
+    if (!name.trim()) throw new Error(getLocaleText('UI_ENTER_A_CUSTOMER_NAME'));
     return this.objectStore.updateOne(new Customer({ id, name: name.trim(), phoneNumber: phoneNumber.trim() }));
   }
 

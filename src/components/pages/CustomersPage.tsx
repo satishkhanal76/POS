@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import CustomerEditForm from "../Customer/CustomerEditForm";
 import PageHeader from "../Layout/PageHeader";
 import React, { useEffect, useState } from "react";
@@ -11,6 +12,7 @@ import { MdAdd } from "react-icons/md";
 import CustomersView from "../Customer/CustomersView";
 
 const CustomersPage = () => {
+  const t = useLocaleText();
 
   const [editing, setEditing] = useState<ICustomer | null>(null);
   const [isAddModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -77,7 +79,7 @@ const CustomersPage = () => {
             setCustomers(current => current.map(customer => customer.getId() === updated.getId() ? updated : customer));
             setEditing(null);
           }} />}
-          <PageHeader title={text.CUSTOMERS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label="Add a customer" title="Add a customer"><MdAdd aria-hidden="true" /></button>} />
+          <PageHeader title={text.CUSTOMERS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label={t('CUSTOMER_FORM_TITLE')} title={t('CUSTOMER_FORM_TITLE')}><MdAdd aria-hidden="true" /></button>} />
           <CustomersView onEdit={setEditing} handleDelete={handleDelete} customers={customers} />
         </>;
 };

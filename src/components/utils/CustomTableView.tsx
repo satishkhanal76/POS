@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import { ReactNode } from 'react';
 import './CustomTableView.css';
 
@@ -21,26 +22,30 @@ export interface CustomTableProps<T> {
 
 /** Shared table presentation; columns and domain operations belong to each view. */
 export default function CustomTableView<T>({
-  data, columns, rowKey, onRowClick, label = 'Records',
-  emptyTitle = 'No records yet', emptyDescription = 'Records will appear here when you add them.',
+  data, columns, rowKey, onRowClick, label: providedLabel,
+  emptyTitle: providedEmptyTitle, emptyDescription: providedEmptyDescription,
 }: CustomTableProps<T>) {
+  const t = useLocaleText();
+  const label = providedLabel ?? t("UI_RECORDS_2");
+  const emptyTitle = providedEmptyTitle ?? t("UI_NO_RECORDS_YET");
+  const emptyDescription = providedEmptyDescription ?? t("UI_RECORDS_WILL_APPEAR_HERE_WHEN_YOU_ADD_THEM");
   const isInteractiveTarget = (target: EventTarget | null) => target instanceof Element
     && !!target.closest('a, button, input, select, textarea, [role="button"]');
 
   return (
     <div className="table-card">
-      <div className="table-scroll" role="region" aria-label={`${label} table`} tabIndex={0}>
+      <div className="table-scroll" role="region" aria-label={t('UI_VALUE_TABLE', { value0: label })} tabIndex={0}>
         <table className="custom-table" aria-label={label}>
           <thead><tr>{columns.map(column => (
             <th key={column.key} scope="col" data-align={column.align || (column.variant === 'numeric' || column.variant === 'actions' ? 'right' : 'left')}>
-              {column.header || (column.variant === 'actions' ? 'Actions' : '')}
+              {column.header || (column.variant === 'actions' ? t('UI_ACTIONS') : '')}
             </th>
           ))}</tr></thead>
           <tbody>
             {data.map(row => (
               <tr key={rowKey(row)} className={onRowClick ? 'table-row-clickable' : undefined}
                 tabIndex={onRowClick ? 0 : undefined}
-                aria-label={onRowClick ? `Open ${label.toLowerCase()} record ${rowKey(row)}` : undefined}
+                aria-label={onRowClick ? t('UI_OPEN_VALUE_RECORD_VALUE', { value0: label.toLowerCase(), value1: rowKey(row) }) : undefined}
                 onClick={event => { if (!isInteractiveTarget(event.target)) onRowClick?.(row); }}
                 onKeyDown={event => {
                   if (event.target === event.currentTarget && onRowClick && (event.key === 'Enter' || event.key === ' ')) {
@@ -60,7 +65,7 @@ export default function CustomTableView<T>({
           </tbody>
         </table>
       </div>
-      <footer className="table-footer"><span>{data.length} {data.length === 1 ? 'record' : 'records'}</span>{onRowClick && data.length > 0 && <span>Select a row to view details</span>}</footer>
+      <footer className="table-footer"><span>{t(data.length === 1 ? 'TABLE_RECORD_COUNT_ONE' : 'TABLE_RECORD_COUNT_OTHER', { count: data.length })}</span>{onRowClick && data.length > 0 && <span>{t('UI_SELECT_A_ROW_TO_VIEW_DETAILS')}</span>}</footer>
     </div>
   );
 }

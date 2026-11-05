@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 //Database Interface
 export interface IDB {
   /**
@@ -52,7 +53,7 @@ export default class DB implements IDB {
   public async connectDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
       const dbRequest = window.indexedDB.open(this.name, DB.DB_VERSION);
-      console.log("Conneting to database.");
+      console.log("Connecting to database.");
       dbRequest.addEventListener("success", () => {
         this.onSuccess(dbRequest.result);
         resolve(dbRequest.result);
@@ -67,7 +68,7 @@ export default class DB implements IDB {
 
       dbRequest.addEventListener("error", (eve) => {
         this.onError(eve);
-        reject(dbRequest.error || new Error("Database connection failed!"));
+        reject(dbRequest.error || new Error(getLocaleText('UI_DATABASE_CONNECTION_FAILED')));
       });
     });
   }
@@ -108,7 +109,7 @@ export default class DB implements IDB {
    */
   private onUpgradeNeeded(database: IDBDatabase) {
     console.info(
-      "Creating Object Stores in the database. Any IDB.addObjectStore() after this point will throw an error."
+      "Creating database object stores."
     );
 
     //create all object store
@@ -135,7 +136,7 @@ export default class DB implements IDB {
   public addObjectStore(objectStore: IObjectStoreDB) {
     if (this.db)
       throw new Error(
-        "Database is already created before adding all object stores. (getDatase() was called before adding this object store.)"
+        getLocaleText('UI_DATABASE_IS_ALREADY_CREATED_BEFORE_ADDING_ALL_OBJECT_STORES')
       );
 
     this.objectStoresMap.set(objectStore.getObjectStoreName(), objectStore);

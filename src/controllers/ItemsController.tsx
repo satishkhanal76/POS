@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import ProductOS, { ProductSchema } from "../database/ProductOS";
 import { v4 as uuidv4 } from "uuid";
 import Controller, { IController } from "./Controller";
@@ -50,8 +51,8 @@ export default class ItemsController
   public async getAllItems() { return this.getAll(); }
 
   public async updateItem(id: string, name: string, price: number): Promise<void> {
-    if (!name.trim()) throw new Error('Enter an item name.');
-    if (!Number.isFinite(price) || price < 0) throw new Error('Enter a valid price of zero or more.');
+    if (!name.trim()) throw new Error(getLocaleText('UI_ENTER_AN_ITEM_NAME'));
+    if (!Number.isFinite(price) || price < 0) throw new Error(getLocaleText('UI_ENTER_A_VALID_PRICE_OF_ZERO_OR_MORE'));
     await this.objectStore.updateDetails(id, name.trim(), price);
   }
 

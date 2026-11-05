@@ -1,3 +1,4 @@
+import { useLocaleText } from '../contexts/Locale';
 import PageHeader from "./Layout/PageHeader";
 import "../styles/POS.css";
 import Price from "./Items/Price";
@@ -41,6 +42,7 @@ export interface ITransactionState {
 }
 
 const POS = () => {
+  const t = useLocaleText();
   const text = useLocale();
 
   const { transactionsOS, customerOS, cutomersTransactionsOS, discountOS, itemOS } =
@@ -350,10 +352,10 @@ const POS = () => {
         handleAddItem={handleAddCustomer}
       />
       <main className="pos-workspace">
-        <PageHeader title="Point of Sale" eyebrow="Sales Workspace" description="Add items, review the order, and complete your transaction."
-          actions={<span className={`pos-status${transaction?.isPosted() ? ' is-posted' : ''}`}>{transaction?.isPosted() ? 'Posted transaction' : transaction ? 'In progress' : 'Ready for a new sale'}</span>} />
+        <PageHeader title={t('UI_POINT_OF_SALE')} eyebrow={t('UI_SALES_WORKSPACE')} description={t('UI_ADD_ITEMS_REVIEW_THE_ORDER_AND_COMPLETE_YOUR_TRANSACTION')}
+          actions={<span className={`pos-status${transaction?.isPosted() ? ' is-posted' : ''}`}>{transaction?.isPosted() ? t('UI_POSTED_TRANSACTION') : transaction ? t('UI_IN_PROGRESS') : t('UI_READY_FOR_A_NEW_SALE')}</span>} />
         <div className="pos-layout">
-          <section className="pos-order" aria-label="Current order">
+          <section className="pos-order" aria-label={t('UI_CURRENT_ORDER')}>
             {transaction && transactionState.activeTransactionItem ? (
               <Transaction
                 transaction={transaction}
@@ -365,26 +367,26 @@ const POS = () => {
               />
             ) : (
               <div className="pos-empty-order">
-                <header><h2>Current order</h2><span>No items yet</span></header>
+                <header><h2>{t('UI_CURRENT_ORDER')}</h2><span>{t('UI_NO_ITEMS_YET')}</span></header>
                 <div className="pos-empty-state">
                   <span className="pos-empty-icon"><MdOutlineShoppingBag aria-hidden="true" /></span>
-                  <h3>Start your next sale</h3>
-                  <p>Choose an item to build an order. You can adjust quantities and add discounts as you go.</p>
-                  <button type="button" className="pos-start-button" onClick={handleAddBtnClick}>Add your first item</button>
+                  <h3>{t('UI_START_YOUR_NEXT_SALE')}</h3>
+                  <p>{t('UI_CHOOSE_AN_ITEM_TO_BUILD_AN_ORDER_YOU_CAN')}</p>
+                  <button type="button" className="pos-start-button" onClick={handleAddBtnClick}>{t('UI_ADD_YOUR_FIRST_ITEM')}</button>
                 </div>
                 <footer className="transaction-details"><span>{text.TOTAL}</span><Price price={0} /></footer>
               </div>
             )}
           </section>
           <aside className="pos-actions-panel" aria-labelledby="pos-actions-title">
-            <h2 id="pos-actions-title">Order actions</h2>
-            <p>{transaction?.isPosted() ? 'This sale has been posted. Start a new transaction to continue.' : 'Select an order item to change its quantity or remove it.'}</p>
+            <h2 id="pos-actions-title">{t('UI_ORDER_ACTIONS')}</h2>
+            <p>{transaction?.isPosted() ? t('UI_THIS_SALE_HAS_BEEN_POSTED_START_A_NEW_TRANSACTION') : t('UI_SELECT_AN_ORDER_ITEM_TO_CHANGE_ITS_QUANTITY_OR')}</p>
             <TransactionButtons
               buttonsClassName="pos-action"
               buttonsClassNameWhenActive="pos-action"
               buttonsProps={buttonsProps}
             />
-            <div className="pos-actions-note">{transaction?.isPosted() ? 'Posted sales are available in History.' : 'Post saves the sale. Add to customer saves it against a customer.'}</div>
+            <div className="pos-actions-note">{transaction?.isPosted() ? t('UI_POSTED_SALES_ARE_AVAILABLE_IN_HISTORY') : t('UI_POST_SAVES_THE_SALE_ADD_TO_CUSTOMER_SAVES_IT')}</div>
           </aside>
         </div>
       </main>

@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import { useMemo, useState } from "react";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import SearchableModal, { ISearchableItem } from "../Modals/SearchableModal";
@@ -15,6 +16,7 @@ const CustomerSelectionModal = ({
   onClose,
   isModalOpen = false,
 }: ItemSelectionModalProps) => {
+  const t = useLocaleText();
   const { customerOS } = useDatabase();
   const [customers, setCustomers] = useState<ICustomer[]>([]);
   const customerController = new CustomerController(customerOS);
@@ -41,7 +43,7 @@ const CustomerSelectionModal = ({
   if (isModalOpen)
     return (
       <SearchableModal
-        title="Select a customer"
+        title={t('UI_SELECT_A_CUSTOMER')}
         onClose={onClose}
         items={searchableItemProps}
         handleAdd={(searchableItem: ISearchableItem) =>

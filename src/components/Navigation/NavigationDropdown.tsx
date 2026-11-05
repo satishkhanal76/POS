@@ -1,3 +1,4 @@
+import { Translate } from "../../contexts/Locale";
 import { MdOutlineInventory2, MdOutlinePeople, MdOutlineReceiptLong, MdCheck, MdOutlinePriceChange } from 'react-icons/md';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { NavigationGroup } from '../../data/navigation';
 
 interface NavigationDropdownProps {
   group: NavigationGroup;
-  translate: (key: string, fallback: string) => string;
+  translate: Translate;
 }
 
 /** A disclosure containing ordinary links, so Tab and Enter work natively. */
@@ -42,7 +43,7 @@ export default function NavigationDropdown({ group, translate }: NavigationDropd
       }}>
       <button ref={trigger} type="button" className={`nav-control${active ? ' is-active' : ''}`}
         aria-expanded={open} aria-controls={`nav-${group.id}`} onClick={() => setOpen(value => !value)}>
-        {translate(group.localeKey, group.label)}
+        {translate(group.localeKey)}
         <svg className="nav-chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
           <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" />
         </svg>
@@ -53,7 +54,7 @@ export default function NavigationDropdown({ group, translate }: NavigationDropd
           return (
           <li key={link.path}><NavLink to={link.path} onClick={() => setOpen(false)}>
             <Icon className="nav-menu-icon" aria-hidden="true" />
-            <span className="nav-menu-label">{translate(link.localeKey, link.label)}</span>
+            <span className="nav-menu-label">{translate(link.localeKey)}</span>
             <MdCheck className="nav-menu-check" aria-hidden="true" />
           </NavLink></li>
           );

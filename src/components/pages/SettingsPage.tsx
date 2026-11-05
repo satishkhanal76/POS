@@ -1,3 +1,5 @@
+import LocaleSettings from "../Settings/LocaleSettings";
+import { useLocaleText } from '../../contexts/Locale';
 import PageHeader from "../Layout/PageHeader";
 import BackupSettings from "../Settings/BackupSettings";
 import DemoSettings from "../Workspace/DemoSettings";
@@ -7,12 +9,13 @@ import { defaultSettings, fieldError, saveSettings, settingsSchema, SettingsDraf
 import './SettingsPage.css';
 
 export default function SettingsPage() {
+  const t = useLocaleText();
   const settings = useClientGlobal();
   const [draft, setDraft] = useState(() => toDraft(settings));
   const [status, setStatus] = useState('');
   const savedDraft = toDraft(settings);
   const dirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
-  const invalid = settingsSchema.some(field => fieldError(field, draft[field.key]));
+  const invalid = settingsSchema.some(field => fieldError(field, draft[field.key], t));
 
   // Preserve edits if another tab changes settings; Discard loads the latest values.
   useEffect(() => {
@@ -28,38 +31,38 @@ export default function SettingsPage() {
     setStatus('');
   };
   const decimals = Number(displayDraft.numOfDecimalPlaces);
-  const preview = fieldError(settingsSchema.find(field => field.key === 'numOfDecimalPlaces')!, displayDraft.numOfDecimalPlaces)
-    ? 'Enter valid decimal places to preview.'
+  const preview = fieldError(settingsSchema.find(field => field.key === 'numOfDecimalPlaces')!, displayDraft.numOfDecimalPlaces, t)
+    ? t('UI_ENTER_VALID_DECIMAL_PLACES_TO_PREVIEW')
     : `${displayDraft.currencyCharacter}${(1234.5).toFixed(decimals)}`;
 
   return (
     <main className="settings-page">
-      <PageHeader title="Settings" eyebrow="Make It Yours" description="Set up your workspace. Changes are saved on this browser and device." />
+      <PageHeader title={t('NAVBAR_SETTINGS')} eyebrow={t('UI_MAKE_IT_YOURS')} description={t('UI_SET_UP_YOUR_WORKSPACE_CHANGES_ARE_SAVED_ON_THIS')} />
       <form noValidate onSubmit={event => {
         event.preventDefault();
         try {
           const next = saveSettings(displayDraft);
           setDraft(toDraft(next));
-          setStatus('Settings saved.');
+          setStatus(t('UI_SETTINGS_SAVED'));
         } catch (error) {
-          setStatus(error instanceof Error && error.message.includes(':') ? error.message : 'Unable to save settings. Check browser storage and try again.');
+          setStatus(error instanceof Error && error.message.includes(':') ? error.message : t('UI_UNABLE_TO_SAVE_SETTINGS_CHECK_BROWSER_STORAGE_AND_TRY'));
         }
       }}>
         {(['Prices', 'Appearance'] as const).map(group => (
           <section className="settings-section" key={group} aria-labelledby={`group-${group}`}>
-            <h2 id={`group-${group}`}>{group}</h2>
+            <h2 id={`group-${group}`}>{t(group === "Prices" ? "UI_PRICES" : "UI_APPEARANCE")}</h2>
             {settingsSchema.filter(field => field.group === group).map(field => {
               const id = `setting-${field.key}`;
-              const error = fieldError(field, displayDraft[field.key]);
+              const error = fieldError(field, displayDraft[field.key], t);
               return (
                 <div className="settings-field" key={field.key}>
-                  <div><label htmlFor={id}>{field.label}</label><p id={`${id}-help`}>{field.description}</p></div>
+                  <div><label htmlFor={id}>{t(field.label)}</label><p id={`${id}-help`}>{t(field.description)}</p></div>
                   <div className="settings-control">
                     {field.type === 'boolean' ? (
                       <label className="settings-toggle">
                         <input id={id} type="checkbox" role="switch" checked={Boolean(displayDraft[field.key])} onChange={event => update(field.key, event.target.checked)} aria-describedby={`${id}-help`} />
                         <span aria-hidden="true" className="settings-toggle-track" />
-                        <span>{displayDraft[field.key] ? 'On' : 'Off'}</span>
+                        <span>{displayDraft[field.key] ? t('UI_ON') : t('UI_OFF')}</span>
                       </label>
                     ) : (
                       <input id={id} type={field.type === 'number' ? 'number' : 'text'} value={String(displayDraft[field.key])}
@@ -72,18 +75,19 @@ export default function SettingsPage() {
                 </div>
               );
             })}
-            {group === 'Prices' && <div className="settings-preview"><span>Price preview</span><output>{preview}</output><small>Display formatting only; transaction amounts stay the same.</small></div>}
+            {group === 'Prices' && <div className="settings-preview"><span>{t('UI_PRICE_PREVIEW')}</span><output>{preview}</output><small>{t('UI_DISPLAY_FORMATTING_ONLY_TRANSACTION_AMOUNTS_STAY_THE_SAME')}</small></div>}
           </section>
         ))}
         <footer className="settings-actions">
           <div className="settings-action-buttons">
-            <button className="settings-save" type="submit" disabled={!dirty || !!invalid}>Save changes</button>
-            <button type="button" disabled={!dirty} onClick={() => { setDraft(savedDraft); setStatus('Changes discarded.'); }}>Discard</button>
-            <button type="button" onClick={() => { setDraft(toDraft(defaultSettings)); setStatus('Defaults loaded. Save changes to apply.'); }}>Restore defaults</button>
+            <button className="settings-save" type="submit" disabled={!dirty || !!invalid}>{t('UI_SAVE_CHANGES_2')}</button>
+            <button type="button" disabled={!dirty} onClick={() => { setDraft(savedDraft); setStatus(t('UI_CHANGES_DISCARDED')); }}>{t('UI_DISCARD')}</button>
+            <button type="button" onClick={() => { setDraft(toDraft(defaultSettings)); setStatus(t('UI_DEFAULTS_LOADED_SAVE_CHANGES_TO_APPLY')); }}>{t('UI_RESTORE_DEFAULTS')}</button>
           </div>
-          <p role="status" aria-live="polite">{status || (dirty ? 'You have unsaved changes.' : 'All changes saved.')}</p>
+          <p role="status" aria-live="polite">{status || (dirty ? t('UI_YOU_HAVE_UNSAVED_CHANGES') : t('UI_ALL_CHANGES_SAVED'))}</p>
         </footer>
       </form>
+      <LocaleSettings />
       <BackupSettings />
       <DemoSettings />
     </main>

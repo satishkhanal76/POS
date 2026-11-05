@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import { IDB, IObjectStoreDB } from "./Database";
 
 export enum ObjectRequestErrorsTypes {
@@ -78,7 +79,7 @@ export default class ObjectStore<G, I>
       );
       return await this.addMany(models);
     } catch (err) {
-      throw new Error("Item can't be parsed and/or added!");
+      throw new Error(getLocaleText('UI_ITEM_IMPORT_FAILED'));
     }
   }
 
@@ -132,7 +133,7 @@ export default class ObjectStore<G, I>
 
         const error: ObjectRequestError = {
           type: ObjectRequestErrorsTypes.EMPTY_RESPONSE,
-          defaultMessage: `Record with the id of ${id} on ${this.objectStoreName} was not found!`,
+          defaultMessage: getLocaleText('UI_RECORD_WITH_THE_ID_OF_VALUE_ON_VALUE_WAS', { value0: id, value1: this.objectStoreName }),
         };
         reject(error);
         return;
@@ -233,7 +234,7 @@ export default class ObjectStore<G, I>
 
   public getObjectAsSchema(object: I) {
     console.trace(object);
-    throw new Error("Not Implemented!");
+    throw new Error(getLocaleText('UI_NOT_IMPLEMENTED'));
     return {} as G;
   }
 
@@ -267,7 +268,7 @@ export default class ObjectStore<G, I>
   public async getSchemaAsObject(schema: G): Promise<I> {
     return new Promise((resolve, reject) => {
       reject("Unemplemented");
-      throw new Error("Unimplemented");
+      throw new Error(getLocaleText('UI_UNIMPLEMENTED'));
     });
   }
   public async getAllAsJSONString(): Promise<string> {

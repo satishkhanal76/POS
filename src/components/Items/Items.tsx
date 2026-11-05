@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import ProductItem, { IProductItem } from "../../models/ProductItem";
 import ItemsController, {
@@ -11,6 +12,7 @@ import "./Items.css";
 import FullScreenModal from "../Modals/FullScreenModal";
 
 const Items = () => {
+  const t = useLocaleText();
   const text = useLocale();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<IProductItem[]>([]);
@@ -106,16 +108,14 @@ const Items = () => {
       </FullScreenModal>
 
       <div className="backup-file-container">
-        <button onClick={handleDownloadClick}>Download All Items</button>
+        <button onClick={handleDownloadClick}>{t('UI_DOWNLOAD_ALL_ITEMS')}</button>
         <input
           type="file"
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={handleLoadItemsClick}
         />
-        <button onClick={() => fileInputRef.current?.click()}>
-          Load Items from File
-        </button>
+        <button onClick={() => fileInputRef.current?.click()}>{t('UI_LOAD_ITEMS_FROM_FILE')}</button>
       </div>
 
       <ItemsView handleDelete={handleDelete} items={items}></ItemsView>

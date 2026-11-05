@@ -1,24 +1,23 @@
+import { useLocaleText } from '../contexts/Locale';
 import { NavLink } from 'react-router-dom';
-import { useLocale } from '../contexts/Locale';
 import { navigationGroups } from '../data/navigation';
 import NavigationDropdown from './Navigation/NavigationDropdown';
 import './NavBar.css';
 
 export default function NavBar() {
-  const text = useLocale();
-  const translate = (key: string, fallback: string): string => text[key] || fallback;
+  const t = useLocaleText();
 
   return (
-    <nav className="top-nav" aria-label="Main navigation">
-      <NavLink className="nav-brand" to="/" end aria-label="POS home">
-        <span className="nav-brand-mark" aria-hidden="true">P</span>
-        {text.WEB_NAME || 'POS'}
+    <nav className="top-nav" aria-label={t('UI_MAIN_NAVIGATION')}>
+      <NavLink className="nav-brand" to="/" end aria-label={t('UI_POS_HOME')}>
+        <span className="nav-brand-mark" aria-hidden="true">{t('UI_P')}</span>
+        {t('WEB_NAME')}
       </NavLink>
       <div className="nav-links">
-        <NavLink className="nav-control" to="/" end>{translate('NAVBAR_ITEM_HOME', 'POS')}</NavLink>
-        {navigationGroups.map(group => <NavigationDropdown key={group.id} group={group} translate={translate} />)}
+        <NavLink className="nav-control" to="/" end>{t('NAVBAR_ITEM_HOME')}</NavLink>
+        {navigationGroups.map(group => <NavigationDropdown key={group.id} group={group} translate={t} />)}
         <NavLink className="nav-control nav-settings" to="/settings">
-          {translate('NAVBAR_SETTINGS', 'Settings')}
+          {t('NAVBAR_SETTINGS')}
         </NavLink>
       </div>
     </nav>

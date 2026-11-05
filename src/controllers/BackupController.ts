@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import { IDB } from '../database/Database';
 import DatabaseBackupStore, { DatabaseBackup, validateBackup } from '../database/DatabaseBackup';
 
@@ -20,7 +21,7 @@ export default class BackupController {
   public async inspect(file: File): Promise<DatabaseBackup> {
     let value: unknown;
     try { value = JSON.parse(await file.text()); }
-    catch { throw new Error('Choose a valid JSON backup file.'); }
+    catch { throw new Error(getLocaleText('UI_CHOOSE_A_VALID_JSON_BACKUP_FILE')); }
     return validateBackup(value);
   }
 

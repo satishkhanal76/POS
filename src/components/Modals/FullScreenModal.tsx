@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import { ReactNode, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { MdClose } from 'react-icons/md';
@@ -12,6 +13,7 @@ interface FullScreenModalProps {
 
 /** Shared dialog shell for forms and selection lists. */
 export default function FullScreenModal({ title, onClose, children }: FullScreenModalProps) {
+  const t = useLocaleText();
   const { FULL_SCREEN_MODAL_TITLE } = useLocale();
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -40,7 +42,7 @@ export default function FullScreenModal({ title, onClose, children }: FullScreen
       }}>
       <header className="pos-modal-header">
         <h2 id={titleId}>{title || FULL_SCREEN_MODAL_TITLE}</h2>
-        <button type="button" className="pos-modal-close" onClick={onClose} aria-label="Close dialog"><MdClose aria-hidden="true" /></button>
+        <button type="button" className="pos-modal-close" onClick={onClose} aria-label={t('UI_CLOSE_DIALOG')}><MdClose aria-hidden="true" /></button>
       </header>
       <div className="pos-modal-content">{children}</div>
     </dialog>, document.body

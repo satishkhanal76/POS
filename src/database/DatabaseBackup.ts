@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import { IDB } from './Database';
 
 export type BackupRow = Record<string, string | number>;
@@ -35,46 +36,46 @@ const isObject = (value: unknown): value is Record<string, unknown> => !!value &
 export function validateBackup(value: unknown): DatabaseBackup {
   if (!isObject(value) || value.format !== 'pos-database-backup' || value.formatVersion !== 1 || (value.databaseVersion !== 1 && value.databaseVersion !== 2)
     || typeof value.sourceDatabase !== 'string' || typeof value.createdAt !== 'string' || !Number.isFinite(Date.parse(value.createdAt)) || !isObject(value.tables)) {
-    throw new Error('This is not a supported POS database backup.');
+    throw new Error(getLocaleText('UI_THIS_IS_NOT_A_SUPPORTED_POS_DATABASE_BACKUP'));
   }
   if (value.databaseVersion === 1) {
     value = { ...value, databaseVersion: 2, tables: { ...value.tables, ITEM_PRICE_CHANGES: [] } };
   }
   const tables = (value as Record<string, unknown>).tables as Record<string, unknown>;
-  if (Object.keys(tables).length !== Object.keys(tableFields).length) throw new Error('Backup must contain every database table.');
+  if (Object.keys(tables).length !== Object.keys(tableFields).length) throw new Error(getLocaleText('UI_BACKUP_MUST_CONTAIN_EVERY_DATABASE_TABLE'));
   const ids: Record<string, Set<string>> = {};
   for (const [name, fields] of Object.entries(tableFields)) {
     const rows = tables[name];
-    if (!Array.isArray(rows)) throw new Error(`Missing table: ${name}.`);
+    if (!Array.isArray(rows)) throw new Error(getLocaleText('UI_MISSING_TABLE_VALUE', { value0: name }));
     ids[name] = new Set();
     const timestamps = new Set<number>();
     const priceKeys = new Set<string>();
     for (const row of rows) {
-      if (!isObject(row)) throw new Error(`Invalid record in ${name}.`);
+      if (!isObject(row)) throw new Error(getLocaleText('UI_INVALID_RECORD_IN_VALUE', { value0: name }));
       for (const [field, type] of Object.entries(fields)) {
-        if (typeof row[field] !== type || (type === 'number' && !Number.isFinite(row[field]))) throw new Error(`Invalid ${name}.${field}.`);
+        if (typeof row[field] !== type || (type === 'number' && !Number.isFinite(row[field]))) throw new Error(getLocaleText('UI_INVALID_VALUE_VALUE', { value0: name, value1: field }));
       }
       const id = row.id as string;
-      if (!id || ids[name].has(id)) throw new Error(`Missing or duplicate ID in ${name}.`);
+      if (!id || ids[name].has(id)) throw new Error(getLocaleText('UI_MISSING_OR_DUPLICATE_ID_IN_VALUE', { value0: name }));
       ids[name].add(id);
       if ('timestamp' in fields && name !== 'ITEM_PRICE_CHANGES') {
         const timestamp = row.timestamp as number;
-        if (timestamps.has(timestamp)) throw new Error(`Duplicate timestamp in ${name}.`);
+        if (timestamps.has(timestamp)) throw new Error(getLocaleText('UI_DUPLICATE_TIMESTAMP_IN_VALUE', { value0: name }));
         timestamps.add(timestamp);
       }
       if (name === 'ITEM_PRICE_CHANGES') {
         const key = JSON.stringify([row.itemId, row.timestamp]);
-        if (priceKeys.has(key)) throw new Error('Duplicate item price timestamp.');
+        if (priceKeys.has(key)) throw new Error(getLocaleText('UI_DUPLICATE_ITEM_PRICE_TIMESTAMP'));
         priceKeys.add(key);
       }
-      if (name === 'ITEM_PRICE_CHANGES' && ((row.amount as number) < 0 || (row.timestamp as number) < 0)) throw new Error('Invalid price history.');
-      if (name === 'DISCOUNTS' && row.discountType !== 0 && row.discountType !== 1) throw new Error('Invalid discount type.');
-      if ('quantity' in fields && (row.quantity as number) <= 0) throw new Error(`Invalid quantity in ${name}.`);
+      if (name === 'ITEM_PRICE_CHANGES' && ((row.amount as number) < 0 || (row.timestamp as number) < 0)) throw new Error(getLocaleText('UI_INVALID_PRICE_HISTORY'));
+      if (name === 'DISCOUNTS' && row.discountType !== 0 && row.discountType !== 1) throw new Error(getLocaleText('UI_INVALID_DISCOUNT_TYPE'));
+      if ('quantity' in fields && (row.quantity as number) <= 0) throw new Error(getLocaleText('UI_INVALID_QUANTITY_IN_VALUE', { value0: name }));
     }
   }
   for (const [table, field, target] of references) {
     for (const row of tables[table] as BackupRow[]) {
-      if (!ids[target].has(row[field] as string)) throw new Error(`Broken relationship: ${table}.${field}.`);
+      if (!ids[target].has(row[field] as string)) throw new Error(getLocaleText('UI_BROKEN_RELATIONSHIP_VALUE_VALUE', { value0: table, value1: field }));
     }
   }
   return value as unknown as DatabaseBackup;
@@ -95,7 +96,7 @@ export default class DatabaseBackupStore {
         request.onsuccess = () => { tables[name] = request.result; };
       }
       transaction.oncomplete = () => resolve({ format: 'pos-database-backup', formatVersion: 1, databaseVersion: db.version, sourceDatabase: db.name, createdAt: new Date().toISOString(), tables });
-      transaction.onabort = () => reject(new Error('Unable to read the database backup.'));
+      transaction.onabort = () => reject(new Error(getLocaleText('UI_UNABLE_TO_READ_THE_DATABASE_BACKUP')));
     });
   }
 
@@ -104,12 +105,12 @@ export default class DatabaseBackupStore {
     const db = await this.database.getDatabase();
     const names = Array.from(db.objectStoreNames);
     if (db.version !== backup.databaseVersion || names.length !== Object.keys(backup.tables).length || names.some(name => !Object.prototype.hasOwnProperty.call(backup.tables, name))) {
-      throw new Error('Backup schema does not match this database.');
+      throw new Error(getLocaleText('UI_BACKUP_SCHEMA_DOES_NOT_MATCH_THIS_DATABASE'));
     }
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction(names, 'readwrite');
       transaction.oncomplete = () => resolve();
-      transaction.onabort = () => reject(new Error('Restore failed. The original database has been kept.'));
+      transaction.onabort = () => reject(new Error(getLocaleText('UI_RESTORE_FAILED_THE_ORIGINAL_DATABASE_HAS_BEEN_KEPT')));
       try {
         for (const name of names) {
           const store = transaction.objectStore(name);

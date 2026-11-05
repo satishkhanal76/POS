@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import ItemPriceChangesOS from "./ItemPriceChangesOS";
 import { v4 as uuidv4 } from "uuid";
 import ProductItem from "../models/ProductItem";
@@ -54,12 +55,12 @@ export default class ProductOS
     const db = await this.db.getDatabase();
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction(['PRODUCTS', 'TRANSACTION_PRODUCTS', 'ITEM_PRICE_CHANGES'], 'readwrite');
-      let message = 'Item could not be deleted.';
+      let message = getLocaleText('UI_ITEM_COULD_NOT_BE_DELETED');
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(new Error(message));
       const used = transaction.objectStore('TRANSACTION_PRODUCTS').index('productId').count(id);
       used.onsuccess = () => {
-        if (used.result) { message = 'This item is used in saved transactions and cannot be deleted. You can edit its name or price.'; transaction.abort(); return; }
+        if (used.result) { message = getLocaleText('UI_THIS_ITEM_IS_USED_IN_SAVED_TRANSACTIONS_AND_CANNOT'); transaction.abort(); return; }
         transaction.objectStore('PRODUCTS').delete(id);
         const cursor = transaction.objectStore('ITEM_PRICE_CHANGES').index('itemTimestamp')
           .openCursor(IDBKeyRange.bound([id, 0], [id, Number.MAX_SAFE_INTEGER]));
@@ -71,13 +72,13 @@ export default class ProductOS
 
   /** Keep the original price intact; name edits and new price events commit together. */
   public async updateDetails(id: string, name: string, amount: number): Promise<void> {
-    if (!this.priceChanges) throw new Error('Price history is unavailable.');
+    if (!this.priceChanges) throw new Error(getLocaleText('UI_PRICE_HISTORY_IS_UNAVAILABLE'));
     const db = await this.db.getDatabase();
     const historyName = this.priceChanges.getObjectStoreName();
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction([this.objectStoreName, historyName], 'readwrite');
       transaction.oncomplete = () => resolve();
-      transaction.onabort = () => reject(new Error('Item could not be saved.'));
+      transaction.onabort = () => reject(new Error(getLocaleText('UI_ITEM_COULD_NOT_BE_SAVED')));
       const products = transaction.objectStore(this.objectStoreName);
       const history = transaction.objectStore(historyName);
       const productRequest = products.get(id);

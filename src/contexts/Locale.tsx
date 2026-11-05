@@ -1,47 +1,20 @@
-import { ReactNode, createContext, useContext } from "react";
-import LocaleJSON from "../data/Text_EN.json";
+import { ReactNode, createContext, useCallback, useContext, useSyncExternalStore } from 'react';
+import { getLocaleState, subscribeLocale, LocaleMessages, Translate, rt } from '../localization/locale';
 
-interface ILocaleContext {
-  WEB_NAME: string;
+// Preserve the existing import API for feature components and controllers.
+export { getLocaleText, rt } from '../localization/locale';
+export type { LocaleKey, LocaleMessages, Translate } from '../localization/locale';
+export const LocaleContext = createContext<LocaleMessages>(getLocaleState().messages);
+
+export function useLocale() { return useContext(LocaleContext); }
+export function useLocalePreferences() {
+  return useSyncExternalStore(subscribeLocale, getLocaleState, getLocaleState);
 }
-
-const values = LocaleJSON as { [key: string]: any };
-
-export const LocaleContext = createContext(values);
-
-interface ILocaleProvider {
-  children: ReactNode;
+export function LocaleProvider({ children }: { children: ReactNode }) {
+  const state = useLocalePreferences();
+  return <LocaleContext.Provider value={state.messages}>{children}</LocaleContext.Provider>;
 }
-
-export function useLocale() {
-  return useContext(LocaleContext);
-}
-
-export function LocaleProvider({ children }: ILocaleProvider) {
-  // values.currencyCharacter = "₹";
-  return (
-    <LocaleContext.Provider value={values}>{children}</LocaleContext.Provider>
-  );
-}
-
-interface ITextReplacemetObject extends Object {
-  [key: string]: any;
-}
-export function rt(text: string, object: ITextReplacemetObject) {
-  const regex = /\${(.*?)}/g;
-
-  const replacedString = text.replace(regex, (match, key) => {
-    // Extract the key inside ${...}
-    const replacementKey = key.trim();
-
-    // Check if the replacement key exists in the replacements object
-    if (object.hasOwnProperty(replacementKey)) {
-      // Return the replacement value corresponding to the key
-      return object[replacementKey];
-    } else {
-      // If the key doesn't exist in replacements, return the original match
-      return match;
-    }
-  });
-  return replacedString;
+export function useLocaleText(): Translate {
+  const messages = useLocale();
+  return useCallback((key, parameters = {}) => rt(messages[key], parameters), [messages]);
 }

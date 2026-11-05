@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import TransactionItem from "./TransactionItem";
 import { useLocale } from "../../contexts/Locale";
 import Price from "../Items/Price";
@@ -26,10 +27,11 @@ const TransactionsItemsContainer = ({
   activeItem,
   total,
 }: TransactionsItemsContainerProps) => {
+  const t = useLocaleText();
   const { TOTAL } = useLocale();
   return (
     <div>
-      <div className="transaction-columns" aria-hidden="true"><span>Qty</span><span>Item</span><span>Amount</span></div>
+      <div className="transaction-columns" aria-hidden="true"><span>{t('UI_QTY')}</span><span>{t('UI_ITEM')}</span><span>{t('UI_AMOUNT')}</span></div>
       <div className="transaction-items-container">
         {productItems.map((transactionItem, i) => (
           <TransactionItem

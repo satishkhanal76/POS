@@ -1,14 +1,13 @@
+import { LocaleKey } from "../contexts/Locale";
 /** Navigation content lives here; dropdown behavior stays in the UI component. */
 export interface NavigationLink {
   path: string;
-  label: string;
-  localeKey: string;
+  localeKey: LocaleKey;
 }
 
 export interface NavigationGroup {
   id: string;
-  label: string;
-  localeKey: string;
+  localeKey: LocaleKey;
   links: NavigationLink[];
   /** Detail pages that should also highlight this group. */
   relatedPaths?: string[];
@@ -16,18 +15,18 @@ export interface NavigationGroup {
 
 export const navigationGroups: NavigationGroup[] = [
   {
-    id: 'manage', label: 'Manage', localeKey: 'NAVBAR_MANAGE',
+    id: 'manage', localeKey: 'NAVBAR_MANAGE',
     links: [
-      { path: '/items', label: 'Items', localeKey: 'NAVBAR_ITEM_2' },
-      { path: '/customers', label: 'Customers', localeKey: 'NAVBAR_ITEM_1' },
+      { path: '/items', localeKey: 'NAVBAR_ITEM_2' },
+      { path: '/customers', localeKey: 'NAVBAR_ITEM_1' },
     ],
   },
   {
-    id: 'history', label: 'History', localeKey: 'NAVBAR_HISTORY',
+    id: 'history', localeKey: 'NAVBAR_HISTORY',
     links: [
-      { path: '/price-history', label: 'Price History', localeKey: 'NAVBAR_PRICE_HISTORY' },
-      { path: '/transactions', label: 'Transactions', localeKey: 'NAVBAR_ITEM_3' },
-      { path: '/customers-transactions', label: 'Customer transactions', localeKey: 'NAVBAR_ITEM_4' },
+      { path: '/price-history', localeKey: 'NAVBAR_PRICE_HISTORY' },
+      { path: '/transactions', localeKey: 'NAVBAR_ITEM_3' },
+      { path: '/customers-transactions', localeKey: 'NAVBAR_ITEM_4' },
     ],
     relatedPaths: ['/transaction', '/customer-transactions'],
   },

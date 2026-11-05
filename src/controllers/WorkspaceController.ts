@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import { createDatabaseStores } from '../database/DatabaseStores';
 import { demoCustomers, demoProducts } from '../data/demoData';
 import Customer from '../models/Customer';
@@ -40,7 +41,7 @@ class WorkspaceController {
       await new Promise<void>((resolve, reject) => {
         const transaction = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
         transaction.oncomplete = () => resolve();
-        transaction.onabort = () => reject(transaction.error || new Error('Demo reset failed.'));
+        transaction.onabort = () => reject(transaction.error || new Error(getLocaleText('UI_DEMO_RESET_FAILED')));
         for (const name of Array.from(db.objectStoreNames)) transaction.objectStore(name).clear();
         if (seed) {
           const products = transaction.objectStore(stores.itemOS.getObjectStoreName());

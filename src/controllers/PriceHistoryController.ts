@@ -1,3 +1,4 @@
+import { getLocaleText } from '../contexts/Locale';
 import ProductOS from '../database/ProductOS';
 import ItemPriceChangesOS from '../database/ItemPriceChangesOS';
 
@@ -22,7 +23,7 @@ export default class PriceHistoryController {
     const history = oldestFirst.map(change => {
       const entry: PriceHistoryEntry = {
         ...change,
-        itemName: names.get(change.itemId) || 'Unavailable item',
+        itemName: names.get(change.itemId) || getLocaleText('UI_UNAVAILABLE_ITEM'),
         previousAmount: prices.get(change.itemId) ?? change.amount,
       };
       prices.set(change.itemId, change.amount);

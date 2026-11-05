@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import { Link } from "react-router-dom";
 import "./TransactionPage.css";
 import PageHeader from "../Layout/PageHeader";
@@ -10,6 +11,7 @@ import { ICustomerTransaction } from '../../models/CustomerTransaction';
 import { ICustomer } from '../../models/Customer';
 
 const CustomerTransactionsPage = () => {
+  const t = useLocaleText();
 
   const text = useLocale();
 
@@ -40,11 +42,11 @@ const CustomerTransactionsPage = () => {
 
   return (
     <main className="transaction-page">
-      <Link className="transaction-back-link" to="/customers-transactions">← Back to Customer Transactions</Link>
-      <PageHeader title={customer ? rt(text.CUSTOMER_TRANSACTIONS_TITLE, { CUSTOMER_NAME: customer.getName() }) : "Customer Transactions"} />
+      <Link className="transaction-back-link" to="/customers-transactions">{t('UI_BACK_TO_CUSTOMER_TRANSACTIONS')}</Link>
+      <PageHeader title={customer ? rt(text.CUSTOMER_TRANSACTIONS_TITLE, { CUSTOMER_NAME: customer.getName() }) : t('CUSTOMERS_TRANSACTIONS_TITLE')} />
       {customerTransactions
         ? <TransactionsView transactionsOverride={customerTransactions.map(t => t.getTransaction())} />
-        : <p role="status">Loading customer transactions…</p>}
+        : <p role="status">{t('UI_LOADING_CUSTOMER_TRANSACTIONS')}</p>}
     </main>
   )
 }

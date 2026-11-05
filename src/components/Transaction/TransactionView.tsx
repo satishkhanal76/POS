@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import { IDiscountTransactionItem } from "../../models/DiscountTransactionItem";
 import { IProductTransactionItem } from "../../models/ProductTransactionItem";
 import { ITransaction } from "../../models/Transaction";
@@ -21,12 +22,13 @@ const TransactionView = ({
   onClick,
   activeItem,
 }: TransactionViewProps) => {
+  const t = useLocaleText();
 
   return (
     <div className="transaction-container">
       <header className="transaction-title">
-        <div><h2>{transaction.isPosted() ? 'Transaction details' : 'Current order'}</h2><time dateTime={new Date(transaction.getTimestamp()).toISOString()}>{new Date(transaction.getTimestamp()).toLocaleString()}</time></div>
-        <span className="transaction-item-count">{transaction.getAllTransactionProductItems().length} items</span>
+        <div><h2>{transaction.isPosted() ? t('UI_TRANSACTION_DETAILS') : t('UI_CURRENT_ORDER')}</h2><time dateTime={new Date(transaction.getTimestamp()).toISOString()}>{new Date(transaction.getTimestamp()).toLocaleString()}</time></div>
+        <span className="transaction-item-count">{t(transaction.getAllTransactionProductItems().length === 1 ? 'TRANSACTION_ITEM_COUNT_ONE' : 'TRANSACTION_ITEM_COUNT_OTHER', { count: transaction.getAllTransactionProductItems().length })}</span>
       </header>
       <TransactionsItemsContainer
         productItems={transaction.getAllTransactionProductItems()}

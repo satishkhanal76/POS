@@ -1,8 +1,10 @@
+import { useLocaleText } from '../../contexts/Locale';
 import { useEffect, useRef, useState } from 'react';
 import { workspaceController } from '../../controllers/WorkspaceController';
 import './Workspace.css';
 
 export default function DemoWelcome() {
+  const t = useLocaleText();
   const dialog = useRef<HTMLDialogElement>(null);
   const [offered, setOffered] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -22,22 +24,22 @@ export default function DemoWelcome() {
       workspaceController.dismissWelcome();
       dialog.current?.close();
       setOffered(false);
-    } catch { setError('Allow browser storage to remember your choice.'); }
+    } catch { setError(t('UI_ALLOW_BROWSER_STORAGE_TO_REMEMBER_YOUR_CHOICE')); }
   };
   return (
     <dialog ref={dialog} className="demo-welcome" aria-labelledby="demo-title" aria-describedby="demo-description"
       onCancel={event => { event.preventDefault(); if (!busy) dismiss(); }}>
-      <span className="settings-eyebrow">WELCOME TO POS</span>
-      <h2 id="demo-title">Take it for a spin</h2>
-      <p id="demo-description">Try a sample café with six items and three customers. Build transactions and explore the app right away.</p>
-      <p>Demo activity stays in a separate workspace. You can restart or clear it in Settings, and switch back to your real workspace anytime.</p>
+      <span className="settings-eyebrow">{t('UI_WELCOME_TO_POS')}</span>
+      <h2 id="demo-title">{t('UI_TAKE_IT_FOR_A_SPIN')}</h2>
+      <p id="demo-description">{t('UI_TRY_A_SAMPLE_CAF_WITH_SIX_ITEMS_AND_THREE')}</p>
+      <p>{t('UI_DEMO_ACTIVITY_STAYS_IN_A_SEPARATE_WORKSPACE_YOU_CAN')}</p>
       <div className="workspace-buttons">
         <button autoFocus type="button" disabled={busy} onClick={async () => {
           setBusy(true); setError('');
           try { await workspaceController.startDemo(); }
-          catch { setError('Could not start the demo. Check browser storage and try again.'); setBusy(false); }
-        }}>{busy ? 'Preparing demo…' : 'Try sample data'}</button>
-        <button type="button" disabled={busy} onClick={dismiss}>Start with my own data</button>
+          catch { setError(t('UI_COULD_NOT_START_THE_DEMO_CHECK_BROWSER_STORAGE_AND')); setBusy(false); }
+        }}>{busy ? t('UI_PREPARING_DEMO') : t('UI_TRY_SAMPLE_DATA')}</button>
+        <button type="button" disabled={busy} onClick={dismiss}>{t('UI_START_WITH_MY_OWN_DATA')}</button>
       </div>
       {error && <p role="alert">{error}</p>}
     </dialog>

@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import React, { useEffect, useState } from "react";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import TransactionController from "../../controllers/TransactionController";
@@ -13,6 +14,7 @@ interface TransactionsViewProps {
 }
 
 const TransactionsView: React.FC<TransactionsViewProps> = ({ transactionsOverride }) => {
+  const t = useLocaleText();
   const text = useLocale();
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,7 +47,7 @@ const TransactionsView: React.FC<TransactionsViewProps> = ({ transactionsOverrid
   ] 
 
   return (
-    <CustomTableView label="Transactions" emptyTitle="No transactions yet" emptyDescription="Posted sales will appear here. Create a sale from the POS page to get started." data={transactions} columns={columns} rowKey={(transaction) => transaction.getId()}
+    <CustomTableView label={t('TRANSACTIONS_TITLE')} emptyTitle={t('UI_NO_TRANSACTIONS_YET')} emptyDescription={t('UI_POSTED_SALES_WILL_APPEAR_HERE_CREATE_A_SALE_FROM')} data={transactions} columns={columns} rowKey={(transaction) => transaction.getId()}
       onRowClick={transaction => navigate(`/transaction?id=${encodeURIComponent(transaction.getId())}`, { state: { returnTo: location.pathname + location.search } })}
     />
   );

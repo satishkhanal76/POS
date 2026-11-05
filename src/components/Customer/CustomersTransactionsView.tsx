@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import React, { useEffect, useState } from "react";
 import { useDatabase } from "../../contexts/DatabaseContext";
 
@@ -10,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 
 
 const CustomersTransactionsView = () => {
+  const t = useLocaleText();
   const navigate = useNavigate();
   const text = useLocale();
   const { cutomersTransactionsOS } = useDatabase();
@@ -35,7 +37,7 @@ const CustomersTransactionsView = () => {
     ];
     
   return (
-    <CustomTableView label="Customer transactions" emptyTitle="No customer sales yet" emptyDescription="Sales saved against a customer will appear here." onRowClick={customerTransaction => navigate(`/customer-transactions?id=${customerTransaction.getCustomer().getId()}`)} data={customersTransactions} columns={columns} rowKey={customerTransaction => customerTransaction.getCustomer().getId()} />
+    <CustomTableView label={t('UI_CUSTOMER_TRANSACTIONS')} emptyTitle={t('UI_NO_CUSTOMER_SALES_YET')} emptyDescription={t('UI_SALES_SAVED_AGAINST_A_CUSTOMER_WILL_APPEAR_HERE')} onRowClick={customerTransaction => navigate(`/customer-transactions?id=${customerTransaction.getCustomer().getId()}`)} data={customersTransactions} columns={columns} rowKey={customerTransaction => customerTransaction.getCustomer().getId()} />
   );
 };
 
