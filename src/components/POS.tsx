@@ -1,3 +1,6 @@
+import "../styles/POS.css";
+import Price from "./Items/Price";
+import { MdOutlineShoppingBag } from "react-icons/md";
 import { useEffect, useState } from "react";
 
 import { v4 as uuidv4 } from "uuid";
@@ -295,6 +298,7 @@ const POS = () => {
   const buttonsProps: IButtonProps[] = [
     {
       children: text.BUTTON_ADD,
+      className: "pos-action pos-action-add",
       disabled: transaction?.isPosted() ? true : false,
       onClick: handleAddBtnClick,
     },
@@ -316,11 +320,13 @@ const POS = () => {
     },
     {
       children: text.BUTTON_POST_TRANSACTION,
+      className: "pos-action pos-action-primary",
       disabled:
         transaction?.isPosted() || !transaction?.hasItems() ? true : false,
       onClick: handlePostTransaction,
     },
     {
+      className: "pos-action pos-action-danger",
       children: transaction?.isPosted()
         ? text.BUTTON_CREATE_NEW_TRANSACTION
         : text.BUTTON_VOID_TRANSACTION,
@@ -363,25 +369,47 @@ const POS = () => {
         isModalOpen={transactionState.isCustomerModalOpen}
         handleAddItem={handleAddCustomer}
       />
-      <TransactionButtons
-        buttonsClassName="btn inactive"
-        buttonsClassNameWhenActive="btn active"
-        buttonsProps={buttonsProps}
-      />
-      {!transaction && <h2>{text.INACTIVE_TRANSACTION_TITLE}</h2>}
-      {transaction && transactionState.activeTransactionItem && (
-        <Transaction
-          transaction={transaction}
-          activeTransactionItem={transactionState.activeTransactionItem || null}
-          onClick={(transactionItem) => {
-            setTransactionState((t) => ({
-              ...t,
-              activeTransactionItem: transactionItem,
-            }));
-          }}
-          handleChangeQuantity={handleChangeQuantity}
-        />
-      )}
+      <main className="pos-workspace">
+        <header className="pos-heading">
+          <div><span className="pos-eyebrow">SALES WORKSPACE</span><h1>Point of sale</h1><p>Add items, review the order, and complete your transaction.</p></div>
+          <span className={`pos-status${transaction?.isPosted() ? ' is-posted' : ''}`}>{transaction?.isPosted() ? 'Posted transaction' : transaction ? 'In progress' : 'Ready for a new sale'}</span>
+        </header>
+        <div className="pos-layout">
+          <section className="pos-order" aria-label="Current order">
+            {transaction && transactionState.activeTransactionItem ? (
+              <Transaction
+                transaction={transaction}
+                activeTransactionItem={transactionState.activeTransactionItem}
+                onClick={(transactionItem) => {
+                  setTransactionState((t) => ({ ...t, activeTransactionItem: transactionItem }));
+                }}
+                handleChangeQuantity={handleChangeQuantity}
+              />
+            ) : (
+              <div className="pos-empty-order">
+                <header><h2>Current order</h2><span>No items yet</span></header>
+                <div className="pos-empty-state">
+                  <span className="pos-empty-icon"><MdOutlineShoppingBag aria-hidden="true" /></span>
+                  <h3>Start your next sale</h3>
+                  <p>Choose an item to build an order. You can adjust quantities and add discounts as you go.</p>
+                  <button type="button" className="pos-start-button" onClick={handleAddBtnClick}>Add your first item</button>
+                </div>
+                <footer className="transaction-details"><span>{text.TOTAL}</span><Price price={0} /></footer>
+              </div>
+            )}
+          </section>
+          <aside className="pos-actions-panel" aria-labelledby="pos-actions-title">
+            <h2 id="pos-actions-title">Order actions</h2>
+            <p>{transaction?.isPosted() ? 'This sale has been posted. Start a new transaction to continue.' : 'Select an order item to change its quantity or remove it.'}</p>
+            <TransactionButtons
+              buttonsClassName="pos-action"
+              buttonsClassNameWhenActive="pos-action"
+              buttonsProps={buttonsProps}
+            />
+            <div className="pos-actions-note">{transaction?.isPosted() ? 'Posted sales are available in History.' : 'Post saves the sale. Add to customer saves it against a customer.'}</div>
+          </aside>
+        </div>
+      </main>
     </>
   );
 };

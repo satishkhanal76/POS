@@ -1,4 +1,3 @@
-import React from "react";
 import TransactionItem from "./TransactionItem";
 import { useLocale } from "../../contexts/Locale";
 import Price from "../Items/Price";
@@ -30,6 +29,7 @@ const TransactionsItemsContainer = ({
   const { TOTAL } = useLocale();
   return (
     <div>
+      <div className="transaction-columns" aria-hidden="true"><span>Qty</span><span>Item</span><span>Amount</span></div>
       <div className="transaction-items-container">
         {productItems.map((transactionItem, i) => (
           <TransactionItem

@@ -21,6 +21,12 @@ const TransactionItem = ({
         isDiscountItem && "deduction"
       }`}
       {...otherProps}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isActiveTransactionItem}
+      onKeyDown={event => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.currentTarget.click(); }
+      }}
     >
       <span className="quantity">{transactionItem.getQuantity()}</span>
       <span className="name">{transactionItem.getItem().getName()}</span>
