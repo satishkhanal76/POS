@@ -55,6 +55,7 @@ export default class TransactionDiscountsOS
   public async getSchemaAsObject(schema: TransactionDiscountSchema) {
     return new DiscountTransactionItem({
       ...schema,
+      isQuantityChangable: false,
       item: await this.discountOS.getOne(schema.discountId),
     });
   }

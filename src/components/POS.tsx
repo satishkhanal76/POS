@@ -1,3 +1,4 @@
+import DiscountForm from "./Discount/DiscountForm";
 import { useLocaleText } from '../contexts/Locale';
 import PageHeader from "./Layout/PageHeader";
 import "../styles/POS.css";
@@ -23,10 +24,6 @@ import Transaction from "./Transaction/Transaction";
 import { ITransaction } from "../models/Transaction";
 import { IProductTransactionItem } from "../models/ProductTransactionItem";
 import { IDiscountTransactionItem } from "../models/DiscountTransactionItem";
-import DiscountItem, {
-  DiscountItemParams,
-  DiscountItemType,
-} from "../models/DiscountItem";
 import ProductItem from "../models/ProductItem";
 
 export interface ITransactionState {
@@ -44,8 +41,9 @@ export interface ITransactionState {
 const POS = () => {
   const t = useLocaleText();
   const text = useLocale();
+  const [isDiscountModalOpen, setDiscountModalOpen] = useState(false);
 
-  const { transactionsOS, customerOS, cutomersTransactionsOS, discountOS, itemOS } =
+  const { transactionsOS, customerOS, cutomersTransactionsOS, itemOS } =
     useDatabase();
 
 
@@ -215,34 +213,9 @@ const POS = () => {
     }));
   };
 
-  const handleDiscount = async () => {
-    if (!transaction) return;
-    let integerValidator: IntegerValidator;
-    do {
-      integerValidator = new IntegerValidator(
-        prompt(text.DISCOUNT_PROMPT_MESSAGE),
-        {
-          minValue: 1,
-        }
-      );
-      if (integerValidator.isValueNull()) return;
-    } while (!integerValidator.isValueValid());
-
-    const discount = new DiscountItem({
-      id: uuidv4(),
-      name: `Owner Discount`,
-      amount: integerValidator.getSerializedValue(),
-      discountType: DiscountItemType.PERCENTAGE,
-    } as DiscountItemParams);
-
-    discountOS.addOne(discount);
-
-    const discountTransactionItem = transaction.addDiscountItem(discount);
-
-    setTransactionState((t) => ({
-      ...t,
-      activeTransactionItem: discountTransactionItem,
-    }));
+  const handleDiscount = () => {
+    if (!transaction || transaction.isPosted() || !transaction.hasItems()) return;
+    setDiscountModalOpen(true);
   };
 
   const handleAddCustomer = async (customer: ICustomer | null) => {
@@ -324,13 +297,19 @@ const POS = () => {
     },
     {
       children: text.BUTTON_DISCOUNT,
-      disabled: !transaction ? true : false,
+      disabled: !transaction?.hasItems() || transaction.isPosted(),
       onClick: handleDiscount,
     },
   ];
 
   return (
     <>
+      {isDiscountModalOpen && transaction && <DiscountForm transaction={transaction}
+        onClose={() => setDiscountModalOpen(false)}
+        onApplied={item => {
+          setTransactionState(current => ({ ...current, activeTransactionItem: item }));
+          setDiscountModalOpen(false);
+        }} />}
       <ItemSelectionModal
         onClose={() => {
           setTransactionState((t) => ({

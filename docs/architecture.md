@@ -364,3 +364,9 @@ LocaleProvider subscribes through useSyncExternalStore and supplies the active m
 At widths up to 800px, NavBar renders a Menu disclosure instead of squeezing desktop links into a second row. Its groups expand inline, links close the menu after navigation, and Escape returns focus to the menu button. Desktop dropdown presentation remains unchanged. Menu labels live in Text_EN.json.
 
 Shared layout rules in `styles/responsive.css` set fluid page gutters, stacked Settings controls and action buttons, compact POS spacing, and touch-sized controls. Below 600px, CustomTableView displays each record as a labeled card using the same column definitions and row actions; explicit table roles and visually hidden column headers preserve table semantics. Desktop tables remain tabular. Dialogs retain internal scrolling and a visible close header on small screens. The viewport permits browser zoom.
+
+## Discount Selection
+
+The POS Discount action opens DiscountForm, using the shared dialog and localized labels. Users choose Flat Amount or Percentage, enter a decimal value, and preview the currency deduction. DiscountValidator calculates and validates the amount: values must be finite and positive, percentages cannot exceed 100, and the deduction cannot exceed the remaining order total at application time. Percentages apply to the product subtotal, matching the existing Transaction calculation; they do not compound on previous discounts.
+
+DiscountController revalidates the active, unposted transaction, constructs the existing DiscountItem with its selected DiscountItemType, waits for DiscountOS persistence, and adds the discount line only after the write succeeds. Flat and percentage types continue using the existing schema and transaction reconstruction. Discount quantities stay fixed at one when restored. The POS action is disabled for empty and posted orders. No database migration is required.
