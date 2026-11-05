@@ -62,7 +62,7 @@ export default class TransactionsOS
     const transaction = new Transaction(schema.id, schema.timestamp);
     try {
       transactionProductItems =
-        await this.transactionItemsOS.getAllByTransactionId(schema.id);
+        await this.transactionItemsOS.getAllByTransactionId(schema.id, schema.timestamp);
       transactionDiscountItems =
         await this.transactionDiscountsOS.getAllByTransactionId(schema.id);
 

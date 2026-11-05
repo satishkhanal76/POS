@@ -1,3 +1,4 @@
+import PriceHistoryPage from "./components/pages/PriceHistoryPage";
 import DemoWelcome from "./components/Workspace/DemoWelcome";
 import DemoBanner from "./components/Workspace/DemoBanner";
 import { Route, Routes } from "react-router-dom";
@@ -28,6 +29,7 @@ function App() {
           Component={() => <CustomersTransactionsPage />}
         ></Route>
         <Route path="/transaction" Component={() => <TransactionPage />} />
+        <Route path="/price-history" Component={PriceHistoryPage} />
         <Route path="/transactions" Component={() => <TransactionsPage />} />
         <Route path="/customer-transactions" Component={() => <CustomerTransactionsPage />} />
         <Route path="/settings" Component={() => <SettingsPage />} />

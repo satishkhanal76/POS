@@ -43,7 +43,7 @@ export interface ITransactionState {
 const POS = () => {
   const text = useLocale();
 
-  const { transactionsOS, customerOS, cutomersTransactionsOS, discountOS } =
+  const { transactionsOS, customerOS, cutomersTransactionsOS, discountOS, itemOS } =
     useDatabase();
 
 
@@ -154,14 +154,15 @@ const POS = () => {
     setTransactionState((t) => ({ ...t }));
   };
 
-  const handleCreateNewTransaction = (item?: ProductItem) => {
+  const handleCreateNewTransaction = async (item?: ProductItem) => {
     const t = transactionController.getNewTransaction();
     let transactionItem:
       | IProductTransactionItem
       | IDiscountTransactionItem
-      | null;
+      | null = null;
     if (item) {
-      transactionItem = t.addProductItem(item);
+      const pricedItem = await itemOS.getAtTimestamp(item.getId(), t.getTimestamp());
+      transactionItem = t.addProductItem(pricedItem);
     }
     setTransactionState((p) => ({
       ...p,
@@ -171,12 +172,13 @@ const POS = () => {
     }));
   };
 
-  const handleAddItem = (item: ProductItem | null) => {
+  const handleAddItem = async (item: ProductItem | null) => {
     if (!item) return;
 
     if (!transaction) return handleCreateNewTransaction(item);
 
-    const transactionItem = transaction.addProductItem(item);
+    const pricedItem = await itemOS.getAtTimestamp(item.getId(), transaction.getTimestamp());
+    const transactionItem = transaction.addProductItem(pricedItem);
 
     setTransactionState((t) => ({
       ...t,

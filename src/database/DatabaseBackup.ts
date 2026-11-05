@@ -12,6 +12,7 @@ export interface DatabaseBackup {
 
 /** Stored field definitions, rather than reconstructed model data. */
 const tableFields: Record<string, Record<string, 'string' | 'number'>> = {
+  ITEM_PRICE_CHANGES: { id: 'string', itemId: 'string', amount: 'number', timestamp: 'number' },
   PRODUCTS: { id: 'string', name: 'string', amount: 'number' },
   CUSTOMER: { id: 'string', name: 'string', phoneNumber: 'string' },
   DISCOUNTS: { id: 'string', name: 'string', amount: 'number', discountType: 'number' },
@@ -21,6 +22,7 @@ const tableFields: Record<string, Record<string, 'string' | 'number'>> = {
   CUSTOMERS_TRANSACTIONS: { id: 'string', timestamp: 'number', customerId: 'string', transactionId: 'string' },
 };
 const references = [
+  ['ITEM_PRICE_CHANGES', 'itemId', 'PRODUCTS'],
   ['TRANSACTION_PRODUCTS', 'transactionId', 'TRANSACTIONS'],
   ['TRANSACTION_PRODUCTS', 'productId', 'PRODUCTS'],
   ['TRANSACTION_DISCOUNTS', 'transactionId', 'TRANSACTIONS'],
@@ -31,11 +33,14 @@ const references = [
 const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 
 export function validateBackup(value: unknown): DatabaseBackup {
-  if (!isObject(value) || value.format !== 'pos-database-backup' || value.formatVersion !== 1 || value.databaseVersion !== 1
+  if (!isObject(value) || value.format !== 'pos-database-backup' || value.formatVersion !== 1 || (value.databaseVersion !== 1 && value.databaseVersion !== 2)
     || typeof value.sourceDatabase !== 'string' || typeof value.createdAt !== 'string' || !Number.isFinite(Date.parse(value.createdAt)) || !isObject(value.tables)) {
     throw new Error('This is not a supported POS database backup.');
   }
-  const tables = value.tables;
+  if (value.databaseVersion === 1) {
+    value = { ...value, databaseVersion: 2, tables: { ...value.tables, ITEM_PRICE_CHANGES: [] } };
+  }
+  const tables = (value as Record<string, unknown>).tables as Record<string, unknown>;
   if (Object.keys(tables).length !== Object.keys(tableFields).length) throw new Error('Backup must contain every database table.');
   const ids: Record<string, Set<string>> = {};
   for (const [name, fields] of Object.entries(tableFields)) {
@@ -43,6 +48,7 @@ export function validateBackup(value: unknown): DatabaseBackup {
     if (!Array.isArray(rows)) throw new Error(`Missing table: ${name}.`);
     ids[name] = new Set();
     const timestamps = new Set<number>();
+    const priceKeys = new Set<string>();
     for (const row of rows) {
       if (!isObject(row)) throw new Error(`Invalid record in ${name}.`);
       for (const [field, type] of Object.entries(fields)) {
@@ -51,11 +57,17 @@ export function validateBackup(value: unknown): DatabaseBackup {
       const id = row.id as string;
       if (!id || ids[name].has(id)) throw new Error(`Missing or duplicate ID in ${name}.`);
       ids[name].add(id);
-      if ('timestamp' in fields) {
+      if ('timestamp' in fields && name !== 'ITEM_PRICE_CHANGES') {
         const timestamp = row.timestamp as number;
         if (timestamps.has(timestamp)) throw new Error(`Duplicate timestamp in ${name}.`);
         timestamps.add(timestamp);
       }
+      if (name === 'ITEM_PRICE_CHANGES') {
+        const key = JSON.stringify([row.itemId, row.timestamp]);
+        if (priceKeys.has(key)) throw new Error('Duplicate item price timestamp.');
+        priceKeys.add(key);
+      }
+      if (name === 'ITEM_PRICE_CHANGES' && ((row.amount as number) < 0 || (row.timestamp as number) < 0)) throw new Error('Invalid price history.');
       if (name === 'DISCOUNTS' && row.discountType !== 0 && row.discountType !== 1) throw new Error('Invalid discount type.');
       if ('quantity' in fields && (row.quantity as number) <= 0) throw new Error(`Invalid quantity in ${name}.`);
     }

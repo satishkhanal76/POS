@@ -1,3 +1,4 @@
+import CustomerEditForm from "../Customer/CustomerEditForm";
 import PageHeader from "../Layout/PageHeader";
 import React, { useEffect, useState } from "react";
 import FullScreenModal from "../Modals/FullScreenModal";
@@ -11,6 +12,7 @@ import CustomersView from "../Customer/CustomersView";
 
 const CustomersPage = () => {
 
+  const [editing, setEditing] = useState<ICustomer | null>(null);
   const [isAddModalOpen, setIsModalOpen] = useState<boolean>(false);
     
   
@@ -71,8 +73,12 @@ const CustomersPage = () => {
               onFormSubmit={handleFormSubmit}
             ></CustomForm>
           </FullScreenModal>}
+          {editing && <CustomerEditForm customer={editing} onClose={() => setEditing(null)} onSaved={updated => {
+            setCustomers(current => current.map(customer => customer.getId() === updated.getId() ? updated : customer));
+            setEditing(null);
+          }} />}
           <PageHeader title={text.CUSTOMERS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label="Add a customer" title="Add a customer"><MdAdd aria-hidden="true" /></button>} />
-          <CustomersView handleDelete={handleDelete} customers={customers} />
+          <CustomersView onEdit={setEditing} handleDelete={handleDelete} customers={customers} />
         </>;
 };
 

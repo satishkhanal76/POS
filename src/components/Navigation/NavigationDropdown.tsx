@@ -1,4 +1,4 @@
-import { MdOutlineInventory2, MdOutlinePeople, MdOutlineReceiptLong, MdCheck } from 'react-icons/md';
+import { MdOutlineInventory2, MdOutlinePeople, MdOutlineReceiptLong, MdCheck, MdOutlinePriceChange } from 'react-icons/md';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { NavigationGroup } from '../../data/navigation';
@@ -49,7 +49,7 @@ export default function NavigationDropdown({ group, translate }: NavigationDropd
       </button>
       <ul className="nav-dropdown-links" id={`nav-${group.id}`} hidden={!open}>
         {group.links.map(link => {
-          const Icon = link.path === "/items" ? MdOutlineInventory2 : link.path === "/customers" || link.path === "/customers-transactions" ? MdOutlinePeople : MdOutlineReceiptLong;
+          const Icon = link.path === "/price-history" ? MdOutlinePriceChange : link.path === "/items" ? MdOutlineInventory2 : link.path === "/customers" || link.path === "/customers-transactions" ? MdOutlinePeople : MdOutlineReceiptLong;
           return (
           <li key={link.path}><NavLink to={link.path} onClick={() => setOpen(false)}>
             <Icon className="nav-menu-icon" aria-hidden="true" />

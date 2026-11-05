@@ -25,6 +25,7 @@ export const navigationGroups: NavigationGroup[] = [
   {
     id: 'history', label: 'History', localeKey: 'NAVBAR_HISTORY',
     links: [
+      { path: '/price-history', label: 'Price History', localeKey: 'NAVBAR_PRICE_HISTORY' },
       { path: '/transactions', label: 'Transactions', localeKey: 'NAVBAR_ITEM_3' },
       { path: '/customers-transactions', label: 'Customer transactions', localeKey: 'NAVBAR_ITEM_4' },
     ],

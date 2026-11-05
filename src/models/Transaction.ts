@@ -17,9 +17,7 @@ export interface ITransaction {
   getId: () => string;
   getTotal: () => number;
 
-  getAllTransactionItems: () =>
-    | IProductTransactionItem[]
-    | IDiscountTransactionItem[];
+  getAllTransactionItems: () => (IProductTransactionItem | IDiscountTransactionItem)[];
 
   /**
    * Finds and returns the transaction item that matches the id provided.
@@ -296,9 +294,8 @@ export default class Transaction implements ITransaction {
     );
   }
 
-  public getLast(): ITransactionItem<ProductItem | DiscountItem> {
-    return this.transactionProductItems[
-      this.transactionProductItems.length - 1
-    ];
+  public getLast(): ProductTransactionItem | DiscountTransactionItem | null {
+    return this.transactionProductItems[this.transactionProductItems.length - 1]
+      || this.transactionDiscountItems[this.transactionDiscountItems.length - 1] || null;
   }
 }

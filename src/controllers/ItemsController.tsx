@@ -47,13 +47,12 @@ export default class ItemsController
     return this.addOne(item);
   }
 
-  public async getAllItems() {
-    if (this.items.size <= 0) {
-      const items = await this.getAll();
-      
-      items.forEach(item => this.items.add(item));
-    }
-    return [...this.items];
+  public async getAllItems() { return this.getAll(); }
+
+  public async updateItem(id: string, name: string, price: number): Promise<void> {
+    if (!name.trim()) throw new Error('Enter an item name.');
+    if (!Number.isFinite(price) || price < 0) throw new Error('Enter a valid price of zero or more.');
+    await this.objectStore.updateDetails(id, name.trim(), price);
   }
 
   public async deleteItem(item: IProductItem) {

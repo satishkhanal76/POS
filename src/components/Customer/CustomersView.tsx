@@ -5,16 +5,17 @@ import CustomTableView, { CustomTableColumn } from "../utils/CustomTableView";
 
 interface ICustomersViewProps {
   customers: ICustomer[];
+  onEdit: (customer: ICustomer) => void;
   handleDelete: (customer: ICustomer) => void;
 }
 
-const CustomersView = ({customers, handleDelete}: ICustomersViewProps) => {
+const CustomersView = ({customers, handleDelete, onEdit}: ICustomersViewProps) => {
   const text = useLocale();
 
   const columns: CustomTableColumn<ICustomer>[] = [
     {key: "name", header: text.CUSTOMER_TABLE_HEADER_NAME, render: (customer) => <>{customer.getName()}</>},
     {key: "phone-number", header: text.CUSTOMER_TABLE_HEADER_PHONE, render: (customer) => <>{customer.getPhoneNumber()}</>},
-    {key: "actions", header: "Actions", variant: "actions", render: (customer) => <button type="button" className="table-delete" aria-label={`Delete ${customer.getName()}`} onClick={() => handleDelete(customer)}>{text.CUSTOMER_TABLE_DELETE_BUTTON}</button>},
+    {key: "actions", header: "Actions", variant: "actions", render: (customer) => <><button type="button" aria-label={`Edit ${customer.getName()}`} onClick={() => onEdit(customer)}>Edit</button><button type="button" className="table-delete" aria-label={`Delete ${customer.getName()}`} onClick={() => handleDelete(customer)}>{text.CUSTOMER_TABLE_DELETE_BUTTON}</button></>},
 
   ];
   return (

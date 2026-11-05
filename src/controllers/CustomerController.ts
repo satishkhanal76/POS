@@ -35,6 +35,11 @@ export default class CustomerController
     return this.addOne(cutomer);
   }
 
+  public async updateCustomer(id: string, { name, phoneNumber }: ICustomerFormData): Promise<Customer> {
+    if (!name.trim()) throw new Error('Enter a customer name.');
+    return this.objectStore.updateOne(new Customer({ id, name: name.trim(), phoneNumber: phoneNumber.trim() }));
+  }
+
   public async getAllCustomers() {
     return await this.getAll();
   }

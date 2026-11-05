@@ -37,7 +37,7 @@ export interface IObjectStoreDB {
 
 export default class DB implements IDB {
   private static DB_NAME = "POS";
-  private static DB_VERSION = 1;
+  private static DB_VERSION = 2;
 
   private objectStoresMap: Map<string, IObjectStoreDB>;
 
@@ -57,50 +57,18 @@ export default class DB implements IDB {
         this.onSuccess(dbRequest.result);
         resolve(dbRequest.result);
       });
-      dbRequest.addEventListener(
-        "upgradeneeded",
-        async (eve: IDBVersionChangeEvent) => {
-          await this.deletePreviousDatabase(eve);
-          this.onUpgradeNeeded(dbRequest.result);
-          const idbRequest: IDBOpenDBRequest = eve.target as IDBOpenDBRequest;
-          const transaction: IDBTransaction =
-            idbRequest.transaction as IDBTransaction;
-          transaction.addEventListener("complete", () => {
-            resolve(dbRequest.result);
-          });
-        }
-      );
+      dbRequest.addEventListener("upgradeneeded", () => {
+        // Add new stores in-place; existing stores and records are preserved.
+        this.onUpgradeNeeded(dbRequest.result);
+      });
+      dbRequest.addEventListener("blocked", () => {
+        console.warn("Close other POS tabs to finish updating the database.");
+      });
 
       dbRequest.addEventListener("error", (eve) => {
         this.onError(eve);
         reject(dbRequest.error || new Error("Database connection failed!"));
       });
-    });
-  }
-
-  private deletePreviousDatabase(eve: IDBVersionChangeEvent) {
-    return new Promise((resolve, reject) => {
-      const prevVersion = eve.oldVersion,
-        newVersion = eve.newVersion;
-      if (newVersion && prevVersion && newVersion > prevVersion) {
-        const deltedatabase: boolean = confirm(
-          `New version of the database is available. 
-          Do you want to upgrade the database? 
-          This will delete all data in the database. Talk to the admin if not sure.`
-        );
-        if (!deltedatabase) {
-          alert(
-            "Database was not deleted. Talk to the admin to correctly update the database."
-          );
-          resolve("User Denied");
-          return;
-        }
-        const databaseDeletionReq = window.indexedDB.deleteDatabase(this.name);
-        databaseDeletionReq.onsuccess = (eve) => {
-          resolve("success");
-        };
-      }
-      resolve("success");
     });
   }
 
@@ -110,7 +78,11 @@ export default class DB implements IDB {
    * @param database the database
    */
   private onSuccess(database: IDBDatabase) {
-    console.log("Success");
+    database.onversionchange = () => {
+      database.close();
+      this.db = undefined;
+      this.connection = undefined;
+    };
     for (const entry of this.objectStoresMap.entries()) {
       const objectStoreDB: IObjectStoreDB = entry[1];
 
@@ -142,6 +114,7 @@ export default class DB implements IDB {
     //create all object store
     for (const entry of this.objectStoresMap.entries()) {
       const objectStoreDB: IObjectStoreDB = entry[1];
+      if (database.objectStoreNames.contains(objectStoreDB.getObjectStoreName())) continue;
       const objectStore = database.createObjectStore(
         objectStoreDB.getObjectStoreName(),
         objectStoreDB.getObjectSoreParams()

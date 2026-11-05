@@ -57,5 +57,6 @@
   "CUSTOMER_TRANSACTIONS_TITLE": "${CUSTOMER_NAME}'s Transactions",
   "NAVBAR_MANAGE": "Manage",
   "NAVBAR_HISTORY": "History",
-  "NAVBAR_SETTINGS": "Settings"
+  "NAVBAR_SETTINGS": "Settings",
+  "NAVBAR_PRICE_HISTORY": "Price History"
 }

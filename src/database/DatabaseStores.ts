@@ -1,3 +1,4 @@
+import ItemPriceChangesOS from "./ItemPriceChangesOS";
 import DB, { IDB } from "./Database";
 import ProductOS from "./ProductOS";
 import CustomerOS from "./CustomerOS";
@@ -10,6 +11,7 @@ import TransactionDiscountsOS from "./TransactionDiscountsOS";
 export interface IDataBaseContext {
   database: IDB;
   itemOS: ProductOS;
+  itemPriceChangesOS: ItemPriceChangesOS;
   discountOS: DiscountOS;
   customerOS: CustomerOS;
   transactionItemsOS: TransactionProductsOS;
@@ -19,7 +21,8 @@ export interface IDataBaseContext {
 }
 export function createDatabaseStores(name = "POS"): IDataBaseContext {
   const database: IDB = new DB(name);
-  const itemOS = new ProductOS(database);
+  const itemPriceChangesOS = new ItemPriceChangesOS(database);
+  const itemOS = new ProductOS(database, itemPriceChangesOS);
   const discountOS = new DiscountOS(database);
   const customerOS = new CustomerOS(database);
   const transactionItemsOS = new TransactionProductsOS(database, itemOS);
@@ -38,6 +41,7 @@ export function createDatabaseStores(name = "POS"): IDataBaseContext {
   return {
     database,
     itemOS,
+    itemPriceChangesOS,
     discountOS,
     customerOS,
     transactionItemsOS,
