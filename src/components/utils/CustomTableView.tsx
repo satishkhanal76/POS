@@ -35,15 +35,15 @@ export default function CustomTableView<T>({
   return (
     <div className="table-card">
       <div className="table-scroll" role="region" aria-label={t('UI_VALUE_TABLE', { value0: label })} tabIndex={0}>
-        <table className="custom-table" aria-label={label}>
-          <thead><tr>{columns.map(column => (
-            <th key={column.key} scope="col" data-align={column.align || (column.variant === 'numeric' || column.variant === 'actions' ? 'right' : 'left')}>
+        <table role="table" className="custom-table" aria-label={label}>
+          <thead role="rowgroup"><tr role="row">{columns.map(column => (
+            <th role="columnheader" key={column.key} scope="col" data-align={column.align || (column.variant === 'numeric' || column.variant === 'actions' ? 'right' : 'left')}>
               {column.header || (column.variant === 'actions' ? t('UI_ACTIONS') : '')}
             </th>
           ))}</tr></thead>
-          <tbody>
+          <tbody role="rowgroup">
             {data.map(row => (
-              <tr key={rowKey(row)} className={onRowClick ? 'table-row-clickable' : undefined}
+              <tr role="row" key={rowKey(row)} className={onRowClick ? 'table-row-clickable' : undefined}
                 tabIndex={onRowClick ? 0 : undefined}
                 aria-label={onRowClick ? t('UI_OPEN_VALUE_RECORD_VALUE', { value0: label.toLowerCase(), value1: rowKey(row) }) : undefined}
                 onClick={event => { if (!isInteractiveTarget(event.target)) onRowClick?.(row); }}
@@ -53,13 +53,13 @@ export default function CustomTableView<T>({
                   }
                 }}>
                 {columns.map(column => (
-                  <td key={column.key} data-align={column.align || (column.variant === 'numeric' || column.variant === 'actions' ? 'right' : 'left')} data-variant={column.variant || 'default'}>
-                    {column.render(row)}
+                  <td role="cell" data-label={column.header} key={column.key} data-align={column.align || (column.variant === 'numeric' || column.variant === 'actions' ? 'right' : 'left')} data-variant={column.variant || 'default'}>
+                    <span className="table-cell-value">{column.render(row)}</span>
                   </td>
                 ))}
               </tr>
             ))}
-            {!data.length && <tr><td colSpan={columns.length} className="table-empty">
+            {!data.length && <tr role="row"><td role="cell" colSpan={columns.length} className="table-empty">
               <div className="table-empty-icon" aria-hidden="true">≡</div><h3>{emptyTitle}</h3><p>{emptyDescription}</p>
             </td></tr>}
           </tbody>

@@ -24,3 +24,25 @@
 .table-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; padding: .85rem 1.25rem; border-top: 1px solid var(--color-slate600); color: var(--color-slate400); font-size: .75rem; }
 @media (max-width: 600px) { .table-card { border-radius: 12px; } .custom-table { min-width: 460px; font-size: .9rem; } .custom-table th, .custom-table td { padding: .85rem 1rem; } .table-footer { padding: .85rem 1rem; } }
 .custom-table td[data-variant=actions] button + button { margin-left: .5rem; }
+
+/* Small screens present each record as a labeled card, with no sideways scrolling. */
+@media (max-width: 600px) {
+  .custom-table { min-width: 0; display: block; }
+  .custom-table thead { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+  .custom-table tbody { display: block; padding: .5rem; }
+  .custom-table tbody tr { display: block; border: 1px solid var(--color-slate600); border-radius: 10px; margin-bottom: .75rem; overflow: hidden; }
+  .custom-table tbody tr:last-child { margin-bottom: 0; }
+  .custom-table tbody td { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); align-items: center; gap: .75rem; width: 100%; padding: .8rem; text-align: right; white-space: normal; }
+  .custom-table tbody td::before { content: attr(data-label); color: var(--color-slate400); font-size: var(--text-small); font-weight: 500; text-align: left; }
+  .custom-table tbody td:first-child { background: color-mix(in srgb, var(--color-slate600) 12%, var(--bg-primary)); font-weight: 600; }
+  .custom-table tbody td:last-child { border-bottom: 0; }
+  .custom-table tbody td[data-variant=actions] { width: 100%; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
+  .custom-table td[data-variant=actions]::before { flex: 1; margin-right: auto; }
+  .custom-table td[data-variant=actions] button + button { margin-left: 0; }
+  .custom-table td button { min-height: 44px; font-size: var(--text-small); }
+  .custom-table tbody td.table-empty { display: block; padding: 2rem 1rem; text-align: center; background: transparent; }
+  .custom-table td.table-empty::before { content: none; }
+}
+
+.table-cell-value { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .custom-table td[data-variant=actions] .table-cell-value { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; } }

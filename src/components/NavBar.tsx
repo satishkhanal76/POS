@@ -1,19 +1,36 @@
+import { useEffect, useRef, useState } from 'react';
+import { MdMenu, MdClose } from 'react-icons/md';
 import { useLocaleText } from '../contexts/Locale';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { navigationGroups } from '../data/navigation';
 import NavigationDropdown from './Navigation/NavigationDropdown';
 import './NavBar.css';
 
 export default function NavBar() {
   const t = useLocaleText();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const location = useLocation();
+  useEffect(() => { setMobileOpen(false); }, [location]);
 
   return (
-    <nav className="top-nav" aria-label={t('UI_MAIN_NAVIGATION')}>
+    <nav className="top-nav" aria-label={t('UI_MAIN_NAVIGATION')} data-mobile-open={mobileOpen}
+      onKeyDown={event => {
+        if (event.key === 'Escape' && mobileOpen && !event.defaultPrevented) {
+          setMobileOpen(false); menuButton.current?.focus();
+        }
+      }}>
       <NavLink className="nav-brand" to="/" end aria-label={t('UI_POS_HOME')}>
         <span className="nav-brand-mark" aria-hidden="true">{t('UI_P')}</span>
         {t('WEB_NAME')}
       </NavLink>
-      <div className="nav-links">
+      <button ref={menuButton} type="button" className="nav-mobile-toggle" aria-expanded={mobileOpen}
+        aria-controls="main-navigation-links" aria-label={t(mobileOpen ? 'NAVBAR_CLOSE_MENU' : 'NAVBAR_OPEN_MENU')}
+        onClick={() => setMobileOpen(open => !open)}>
+        {mobileOpen ? <MdClose aria-hidden="true" /> : <MdMenu aria-hidden="true" />}
+        <span>{t('NAVBAR_MENU')}</span>
+      </button>
+      <div className="nav-links" id="main-navigation-links">
         <NavLink className="nav-control" to="/" end>{t('NAVBAR_ITEM_HOME')}</NavLink>
         {navigationGroups.map(group => <NavigationDropdown key={group.id} group={group} translate={t} />)}
         <NavLink className="nav-control nav-settings" to="/settings">

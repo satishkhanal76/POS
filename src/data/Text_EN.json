@@ -291,5 +291,8 @@
   "LOCALE_UPLOADING": "Reading locale file…",
   "LOCALE_TEMPLATE_FAILED": "The locale template could not be downloaded. Please try again.",
   "LOCALE_NO_PLACEHOLDERS": "none",
-  "LOCALE_NEPALI": "Nepali (नेपाली)"
+  "LOCALE_NEPALI": "Nepali (नेपाली)",
+  "NAVBAR_MENU": "Menu",
+  "NAVBAR_OPEN_MENU": "Open navigation menu",
+  "NAVBAR_CLOSE_MENU": "Close navigation menu"
 }
