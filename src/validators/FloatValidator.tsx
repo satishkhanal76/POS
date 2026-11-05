@@ -6,14 +6,14 @@ export interface FloatValidatorOptions extends IntegerValidatorOptions {
 
 export default class FloatValidator extends IntegerValidator {
   protected declare options: FloatValidatorOptions;
-  constructor(value: any, options?: FloatValidatorOptions) {
+  constructor(value: unknown, options?: FloatValidatorOptions) {
     super(value, options);
     this.options = {
       numOfDecimalPlaces: 2,
       ...this.options,
     };
 
-    this.value = Number.parseFloat(value.toString());
+    this.value = Number.parseFloat(String(value));
     this.validate();
   }
 

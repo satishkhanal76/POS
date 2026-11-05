@@ -330,5 +330,7 @@
   "TABLE_CUSTOMER_TRANSACTION_SUMMARIES": "Customer Summaries",
   "PAGINATION_SUMMARY_INVALID": "Customer summary data does not match the transactions in this backup.",
   "CUSTOMER_DELETE_FAILED": "Customer could not be deleted.",
-  "CUSTOMER_HAS_TRANSACTIONS": "This customer has saved transactions and cannot be deleted. You can edit their details."
+  "CUSTOMER_HAS_TRANSACTIONS": "This customer has saved transactions and cannot be deleted. You can edit their details.",
+  "DEMO_SWITCH": "Switch to Demo",
+  "DEMO_SWITCH_DESCRIPTION": "Switch to Demo opens your saved practice data. Start Fresh Demo replaces it with new sample data."
 }

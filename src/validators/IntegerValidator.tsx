@@ -20,8 +20,8 @@ export default class IntegerValidator {
 
   private isValid: boolean;
 
-  constructor(value: any, options?: IntegerValidatorOptions) {
-    this.value = Number.parseInt(value?.toString());
+  constructor(value: unknown, options?: IntegerValidatorOptions) {
+    this.value = Number.parseInt(String(value));
     value === null ? (this.isNull = true) : (this.isNull = false);
 
     this.options = {
@@ -34,47 +34,29 @@ export default class IntegerValidator {
   }
 
   protected validate() {
+    // FloatValidator validates again after parsing the full decimal value.
+    this.isValid = true;
     if (!this.isANumber()) {
       this.isValid = false;
     }
     this.checkForRange();
 
-    if (!this.isValid === this.options.useDefaultOnInvalid) {
-      this.value = this.options.defaultValue || 0;
+    if (!this.isValid && this.options.useDefaultOnInvalid) {
+      this.value = this.options.defaultValue ?? 0;
     }
   }
 
   private checkForRange() {
-    let checkForRange = false;
-    if (
-      this.options.minValue !== -Infinity ||
-      this.options.maxValue !== Infinity
-    ) {
-      checkForRange = true;
-    }
-    if (!checkForRange) return;
-    let min = this.options.minValue || -Infinity,
-      max = this.options.maxValue || Infinity;
-    if (
-      this.options.checkInclusive &&
-      !IntegerValidator.isValueInRange(this.value, min, max)
-    ) {
-      this.isValid = false;
-    }
-    if (
-      !this.options.checkInclusive &&
-      !IntegerValidator.isValueInRange(this.value, min + 1, max - 1)
-    ) {
-      this.isValid = false;
-    }
-  }
-
-  private static isValueInRange(value: number, min: number, max: number) {
-    return min <= value && value <= max;
+    const min = this.options.minValue ?? -Infinity;
+    const max = this.options.maxValue ?? Infinity;
+    const inRange = this.options.checkInclusive
+      ? min <= this.value && this.value <= max
+      : min < this.value && this.value < max;
+    if (!inRange) this.isValid = false;
   }
 
   private isANumber() {
-    return !isNaN(this.value);
+    return Number.isFinite(this.value);
   }
 
   public getSerializedValue() {

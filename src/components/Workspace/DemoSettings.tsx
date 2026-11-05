@@ -19,7 +19,9 @@ export default function DemoSettings() {
       <h2 id="demo-settings-title">{t('UI_DEMO_WORKSPACE')}</h2>
       <p>{demo ? t('UI_YOU_ARE_USING_SAMPLE_DATA_ALL_ITEMS_CUSTOMERS_AND') : t('UI_TRY_POS_WITH_SAMPLE_ITEMS_AND_CUSTOMERS_IN_A')}</p>
       <p>{t('UI_YOUR_REAL_WORKSPACE_IS_KEPT_SEPARATELY_SWITCHING_WORKSPACES_RELOADS')}</p>
+      {!demo && <p>{t("DEMO_SWITCH_DESCRIPTION")}</p>}
       <div className="workspace-buttons">
+        {!demo && <button type="button" disabled={busy} onClick={() => void run(() => workspaceController.useDemoWorkspace())}>{t("DEMO_SWITCH")}</button>}
         <button type="button" disabled={busy} onClick={() => {
           if (window.confirm(t('UI_RESTART_THE_DEMO_WITH_SAMPLE_ITEMS_AND_CUSTOMERS_THIS'))) void run(() => workspaceController.startDemo());
         }}>{demo ? t('UI_RESTART_DEMO') : t('UI_START_FRESH_DEMO')}</button>

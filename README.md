@@ -20,6 +20,16 @@ POS is designed as a fully client-side application: products, customers, transac
 - Installable Progressive Web App
 - Responsive browser-based interface
 
+## Tests
+
+```sh
+npm test
+```
+
+Run the local validation checks with `npm run check`. Browser interaction and mobile-layout tests are available through `npm run test:browser` after installing Playwright's Chromium (`npx playwright install chromium`).
+
+See [Testing](docs/testing.md) for setup, watch mode, coverage, single-test commands, and test organization. Tests use isolated databases and do not touch your browser's real data.
+
 ## Architecture
 
 The application separates the user interface, application logic, domain models, and persistence layer rather than coupling React components directly to IndexedDB.

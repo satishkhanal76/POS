@@ -55,8 +55,13 @@ class WorkspaceController {
 
   public async startDemo(): Promise<void> {
     await this.resetDemo(true);
-    sessionStorage.setItem(MODE_KEY, 'demo');
+    this.useDemoWorkspace();
+  }
+
+  /** Resume the saved demo as-is; only explicit restart/clear actions modify its data. */
+  public useDemoWorkspace(): void {
     this.dismissWelcome();
+    sessionStorage.setItem(MODE_KEY, 'demo');
     window.location.reload();
   }
 
