@@ -1,3 +1,4 @@
+import UnlinkCustomerButton from '../Transaction/UnlinkCustomerButton';
 import BackLink from '../Layout/BackLink';
 import { useNavigate } from 'react-router-dom';
 import DeletedVisibility from '../utils/DeletedVisibility';
@@ -101,6 +102,10 @@ export default function TransactionPage() {
             ? <><Link to={`/customer-transactions?id=${encodeURIComponent(current.customer.getId())}${current.customer.deletedAt ? '&deleted=1' : ''}`}>{current.customer.getName()}</Link>{current.customer.deletedAt && <span className="deleted-badge">{t('DELETED_BADGE')}</span>}</>
             : t('TRANSACTION_NO_CUSTOMER')}
         </p></div>
+        {current.customer && <UnlinkCustomerButton transactionId={current.transaction.getId()} customer={current.customer} onUnlinked={() => {
+          const transactionId = current.transaction?.getId();
+          setResult(previous => previous && previous.id === transactionId ? { ...previous, customer: null } : previous);
+        }} />}
         {!current.customer && !current.transaction.deletedAt && <button type="button" disabled={linking} onClick={() => setCustomerModalOpen(true)}>
           {t(linking ? 'TRANSACTION_LINKING' : 'TRANSACTION_LINK_ACTION')}
         </button>}

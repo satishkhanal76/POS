@@ -1,3 +1,4 @@
+import { DELETION_UPDATED } from '../deletion/state';
 import TransactionHistoryStore from './TransactionHistoryStore';
 import Transaction from "../models/Transaction";
 import { v4 as uuidv4 } from "uuid";
@@ -18,6 +19,7 @@ export interface CustomerTransactionsSchema {
   id: string;
   customerId: string;
   transactionId: string;
+  deletedAt?: number;
 }
 
 export interface ICustomersTransactionsOS
@@ -70,8 +72,52 @@ export default class CustomersTransactionsOS
   public async getLinkedCustomer(transactionId: string) {
     const db = await this.db.getDatabase();
     const store = db.transaction(this.objectStoreName).objectStore(this.objectStoreName);
-    const link = await requestValue(store.index('transactionId').get(transactionId)) as CustomerTransactionsSchema | undefined;
+    const links = await requestValue(store.index('transactionId').getAll(transactionId)) as CustomerTransactionsSchema[];
+    const link = links.find(row => !row.deletedAt);
     return link ? this.customerOS.getOne(link.customerId, true) : null;
+  }
+
+  /** Archive the current assignment and rebuild its customer's active summary together. */
+  public async unlinkTransaction(transactionId: string, expectedCustomerId: string): Promise<void> {
+    const db = await this.db.getDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction([this.objectStoreName, 'TRANSACTIONS', 'CUSTOMER_TRANSACTION_SUMMARIES'], 'readwrite');
+      let message = getLocaleText('UNLINK_FAILED');
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(new Error(message));
+      const links = transaction.objectStore(this.objectStoreName);
+      const current = links.index('transactionId').getAll(transactionId);
+      current.onsuccess = () => {
+        const active = (current.result as CustomerTransactionsSchema[]).filter(link => !link.deletedAt);
+        if (!active.length || active.some(link => link.customerId !== expectedCustomerId)) { message = getLocaleText('UNLINK_CHANGED'); transaction.abort(); return; }
+        const sale = transaction.objectStore('TRANSACTIONS').get(transactionId);
+        sale.onsuccess = () => {
+          if (!sale.result) { message = getLocaleText('PAGINATION_TRANSACTION_MISSING'); transaction.abort(); return; }
+          const deletedAt = Date.now();
+          for (const link of active) links.put({ ...link, deletedAt });
+          const remaining = links.index('customerId').getAll(expectedCustomerId);
+          remaining.onsuccess = () => {
+            const summary: CustomerSummarySchema = { id: expectedCustomerId, count: 0, total: 0, timestamp: 0 };
+            const summaries = transaction.objectStore('CUSTOMER_TRANSACTION_SUMMARIES');
+            const candidates = (remaining.result as CustomerTransactionsSchema[]).filter(link => !link.deletedAt);
+            let pending = candidates.length;
+            const save = () => { if (summary.count) summaries.put(summary); else summaries.delete(expectedCustomerId); };
+            if (!pending) { save(); return; }
+            for (const link of candidates) {
+              const header = transaction.objectStore('TRANSACTIONS').get(link.transactionId);
+              header.onsuccess = () => {
+                if (header.result && !header.result.deletedAt) {
+                  summary.count++; summary.total += header.result.total;
+                  summary.timestamp = Math.max(summary.timestamp, link.timestamp);
+                }
+                if (!--pending) save();
+              };
+            }
+          };
+        };
+      };
+    });
+    window.dispatchEvent(new Event(DELETION_UPDATED));
   }
 
   /** Payment header, customer link and balance are saved in a single commit. */
@@ -97,9 +143,9 @@ export default class CustomersTransactionsOS
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(new Error(message));
       const links = transaction.objectStore(this.objectStoreName);
-      const existing = links.index('transactionId').count(link.transactionId);
+      const existing = links.index('transactionId').getAll(link.transactionId);
       existing.onsuccess = () => {
-        if (existing.result) { message = getLocaleText('TRANSACTION_ALREADY_LINKED'); transaction.abort(); return; }
+        if ((existing.result as CustomerTransactionsSchema[]).some(row => !row.deletedAt)) { message = getLocaleText('TRANSACTION_ALREADY_LINKED'); transaction.abort(); return; }
         const customer = transaction.objectStore('CUSTOMER').get(link.customerId);
         customer.onsuccess = () => {
           if (!customer.result || customer.result.deletedAt) { message = getLocaleText('PAGINATION_CUSTOMER_MISSING'); transaction.abort(); return; }

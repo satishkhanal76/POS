@@ -24,7 +24,7 @@ export default class DeletionStore {
         const transactions = new Set<string>();
         if (table === 'TRANSACTIONS') transactions.add(id);
         if (hard && table === 'PRODUCTS') for (const line of tables.TRANSACTION_PRODUCTS) if (line.productId === id) transactions.add(String(line.transactionId));
-        if (hard && table === 'CUSTOMER') for (const link of tables.CUSTOMERS_TRANSACTIONS) if (link.customerId === id) transactions.add(String(link.transactionId));
+        if (hard && table === 'CUSTOMER') for (const link of tables.CUSTOMERS_TRANSACTIONS) if (link.customerId === id && !link.deletedAt) transactions.add(String(link.transactionId));
         for (const sale of tables.TRANSACTIONS) {
           if (!transactions.has(sale.id)) continue;
           if (sale.stockDeducted === 1 && sale.stockReversed !== 1) {
@@ -48,6 +48,7 @@ export default class DeletionStore {
           remove('TRANSACTIONS', row => transactions.has(row.id));
           for (const name of ['TRANSACTION_PRODUCTS', 'TRANSACTION_DISCOUNTS', 'CUSTOMERS_TRANSACTIONS']) remove(name, row => transactions.has(String(row.transactionId)));
           remove(table, row => row.id === id);
+          if (table === 'CUSTOMER') remove('CUSTOMERS_TRANSACTIONS', row => row.customerId === id);
           if (table === 'PRODUCTS') { remove('ITEM_PRICE_CHANGES', row => row.itemId === id); remove('STOCK', row => row.id === id); }
         }
         const sales = new Map(tables.TRANSACTIONS.filter(row => !row.deletedAt).map(row => [row.id, row]));

@@ -19,7 +19,7 @@ export default class DashboardController {
       buckets.set(key, { key, timestamp: cursor.getTime(), sales: 0, salesCount: 0, payments: 0 });
       if (monthly) cursor.setMonth(cursor.getMonth() + 1); else cursor.setDate(cursor.getDate() + 1);
     }
-    let salesCount = 0, sales = 0, paymentCount = 0, payments = 0, linkedSales = 0, unlinkedSales = 0, units = 0;
+    let salesCount = 0, sales = 0, paymentCount = 0, payments = 0, linkedSales = 0, linkedPayments = 0, unlinkedSales = 0, units = 0;
     const customers = new Set<string>();
     const handled = new Map<string, { id: string; name: string; phoneNumber: string; deletedAt?: number; sales: number; salesCount: number; payments: number; paymentCount: number }>();
     const items = new Map<string, { id: string; name: string; quantity: number; gross: number; deletedAt?: number; salesCount: number }>();
@@ -32,7 +32,7 @@ export default class DashboardController {
         handled.set(row.id, row);
       }
       const bucket = buckets.get(keyFor(new Date(entry.timestamp)))!;
-      if (entry.kind === 'payment') { paymentCount++; payments -= entry.total; bucket.payments -= entry.total; }
+      if (entry.kind === 'payment') { paymentCount++; payments -= entry.total; bucket.payments -= entry.total; if (entry.customerIds.length) linkedPayments -= entry.total; }
       else {
         salesCount++; sales += entry.total; units += entry.units;
         const counted = new Set<string>();
@@ -47,7 +47,7 @@ export default class DashboardController {
       }
     }
     return { salesCount, sales, paymentCount, payments, customers: customers.size, units, unlinkedSales,
-      averageSale: salesCount ? sales / salesCount : 0, balanceMovement: linkedSales - payments,
+      averageSale: salesCount ? sales / salesCount : 0, balanceMovement: linkedSales - linkedPayments,
       handledCustomers: [...handled.values()].sort((a, b) => b.sales - a.sales || a.name.localeCompare(b.name)),
       topItems: [...items.values()], monthly, buckets: [...buckets.values()] };
   }

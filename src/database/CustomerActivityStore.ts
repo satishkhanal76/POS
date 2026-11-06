@@ -27,6 +27,7 @@ export default class CustomerActivityStore {
         if (includeDeleted) {
           totals.clear(); const headers = new Map(sales.map(row => [row.id, row]));
           for (const link of links) {
+            if (link.deletedAt) continue;
             const sale = headers.get(link.transactionId); if (!sale) continue;
             const row = totals.get(link.customerId) ?? { id: link.customerId, total: 0, count: 0, timestamp: 0 };
             row.total += sale.total; row.count++; row.timestamp = Math.max(row.timestamp, link.timestamp); totals.set(row.id, row);

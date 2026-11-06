@@ -44,6 +44,10 @@ export default class CustomersTransactionsController
     return this.objectStore.getLinkedCustomer(transactionId);
   }
 
+  public async unlinkTransaction(transactionId: string, customerId: string) {
+    return this.objectStore.unlinkTransaction(transactionId, customerId);
+  }
+
   /** Link an already posted sale without posting or changing its historical amounts. */
   public async linkTransaction(transaction: ITransaction, customer: ICustomer) {
     if (!transaction.isPosted()) throw new Error(getLocaleText('TRANSACTION_LINK_REQUIRES_POSTED'));

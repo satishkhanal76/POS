@@ -535,5 +535,13 @@
   "DELETE_DONE": "Record deleted.",
   "DELETE_FAILED": "The deletion could not be completed. No partial deletion was saved.",
   "DELETE_STALE": "The record is missing or has changed. Refresh before trying again.",
-  "DELETE_INVALID_METADATA": "The backup has invalid deletion or stock-tracking metadata."
+  "DELETE_INVALID_METADATA": "The backup has invalid deletion or stock-tracking metadata.",
+  "UNLINK_ACTION": "Unlink Customer",
+  "UNLINK_TITLE": "Unlink This Transaction?",
+  "UNLINK_DESCRIPTION": "Remove this transaction from ${customer}’s account? Their transaction count, balance and latest activity will be recalculated. The transaction stays saved in history and stock is unchanged. You can link it to a customer again later.",
+  "UNLINK_PAYMENT_NOTE": "Unlinking a sale reduces the customer’s balance due. Unlinking a payment removes that credit and may increase what they owe. Deleted transactions already excluded from balances stay excluded.",
+  "UNLINK_CONFIRM": "Yes, Unlink Customer",
+  "UNLINK_SUCCESS": "Transaction unlinked from ${customer}.",
+  "UNLINK_FAILED": "The customer could not be unlinked. No partial changes were saved.",
+  "UNLINK_CHANGED": "This transaction’s customer link has changed. Refresh the page before trying again."
 }

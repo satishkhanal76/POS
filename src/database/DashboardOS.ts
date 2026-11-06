@@ -24,7 +24,7 @@ export default class DashboardOS {
         entries.push(entry);
         const links = transaction.objectStore('CUSTOMERS_TRANSACTIONS').index('transactionId').getAll(entry.id);
         links.onsuccess = () => {
-          entry.customerIds = [...new Set((links.result as CustomerTransactionsSchema[]).map(link => link.customerId))];
+          entry.customerIds = [...new Set((links.result as CustomerTransactionsSchema[]).filter(link => !link.deletedAt).map(link => link.customerId))];
           for (const id of entry.customerIds) {
             const customer = transaction.objectStore('CUSTOMER').get(id);
             customer.onsuccess = () => { if (customer.result && (includeDeleted || !customer.result.deletedAt)) entry.customers.push({ deletedAt: customer.result.deletedAt, id, name: customer.result.name, phoneNumber: customer.result.phoneNumber }); };

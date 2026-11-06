@@ -39,7 +39,7 @@ export default class TransactionHistoryStore {
         if (kind && (header.kind ?? 'sale') !== kind) { cursor.continue(); return; }
         if (!customerId) { accept(); return; }
         const links = transaction.objectStore('CUSTOMERS_TRANSACTIONS').index('transactionId').getAll(header.id);
-        links.onsuccess = () => (links.result as CustomerTransactionsSchema[]).some(link => link.customerId === customerId) ? accept() : cursor.continue();
+        links.onsuccess = () => (links.result as CustomerTransactionsSchema[]).some(link => !link.deletedAt && link.customerId === customerId) ? accept() : cursor.continue();
       };
     });
   }
