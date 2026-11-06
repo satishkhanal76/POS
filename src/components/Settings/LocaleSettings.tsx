@@ -1,4 +1,3 @@
-import Select from '../Forms/Select';
 import { useRef, useState } from 'react';
 import { getLocaleText, LocaleKey, useLocalePreferences, useLocaleText } from '../../contexts/Locale';
 import LocaleController from '../../controllers/LocaleController';
@@ -37,24 +36,6 @@ export default function LocaleSettings() {
       <p role="status">{busy ? t('LOCALE_UPLOADING') : notice ? t(notice) : ''}</p>
       {error && <p role="alert">{error}</p>}
     </section>
-    <section className="settings-section" aria-labelledby="locale-selection-title">
-      <h2 id="locale-selection-title">{t('LOCALE_SELECTION_TITLE')}</h2>
-      <p>{t('LOCALE_SELECTION_DESCRIPTION')}</p>
-      <div className="locale-selection-control">
-        <label htmlFor="locale-selection">{t('LOCALE_SELECT_LABEL')}</label>
-        <Select id="locale-selection" value={preferences.selection} disabled={busy} onChange={value => {
-          setError(''); setNotice(null);
-          try {
-            controller.select(value === 'nepali' ? 'nepali' : value === 'custom' ? 'custom' : 'english');
-            setNotice('LOCALE_CHANGE_SAVED');
-          } catch (failure) { setError(failure instanceof Error ? failure.message : t('LOCALE_STORAGE_ERROR')); }
-        }}>
-          <option value="english">{t('LOCALE_ENGLISH')}</option>
-          <option value="nepali">{t('LOCALE_NEPALI')}</option>
-          {preferences.custom && <option value="custom">{t('LOCALE_CUSTOM')}</option>}
-        </Select>
-      </div>
-      <p>{t(preferences.custom ? 'LOCALE_CUSTOM_AVAILABLE' : 'LOCALE_CUSTOM_UNAVAILABLE')}</p>
-    </section>
+
   </>;
 }

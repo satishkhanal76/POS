@@ -1,6 +1,8 @@
+import LanguageSettings from '../Settings/LanguageSettings';
+import { LocaleSelection, selectLocale } from '../../localization/locale';
 import InstallationSettings from "../Settings/InstallationSettings";
 import LocaleSettings from "../Settings/LocaleSettings";
-import { useLocaleText } from '../../contexts/Locale';
+import { getLocaleText, useLocalePreferences, useLocaleText } from '../../contexts/Locale';
 import PageHeader from "../Layout/PageHeader";
 import BackupSettings from "../Settings/BackupSettings";
 import DemoSettings from "../Workspace/DemoSettings";
@@ -12,11 +14,14 @@ import './SettingsPage.css';
 export default function SettingsPage() {
   const t = useLocaleText();
   const settings = useClientGlobal();
-  const [draft, setDraft] = useState(() => toDraft(settings));
+  const preferences = useLocalePreferences();
+  const [draft, setDraft] = useState<{ settings: SettingsDraft; language: LocaleSelection } | null>(null);
   const [status, setStatus] = useState('');
   const savedDraft = toDraft(settings);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(savedDraft);
-  const invalid = settingsSchema.some(field => fieldError(field, draft[field.key], t));
+  const displayDraft = draft?.settings ?? savedDraft;
+  const displayLanguage = draft?.language ?? preferences.selection;
+  const dirty = JSON.stringify(displayDraft) !== JSON.stringify(savedDraft) || displayLanguage !== preferences.selection;
+  const invalid = settingsSchema.some(field => fieldError(field, displayDraft[field.key], t)) || (displayLanguage === 'custom' && !preferences.custom);
 
   // Preserve edits if another tab changes settings; Discard loads the latest values.
   useEffect(() => {
@@ -26,9 +31,8 @@ export default function SettingsPage() {
     return () => window.removeEventListener('beforeunload', warn);
   }, [dirty]);
 
-  const displayDraft = dirty ? draft : savedDraft;
   const update = (key: keyof SettingsDraft, value: string | boolean) => {
-    setDraft({ ...displayDraft, [key]: value });
+    setDraft({ settings: { ...displayDraft, [key]: value }, language: displayLanguage });
     setStatus('');
   };
   const decimals = Number(displayDraft.numOfDecimalPlaces);
@@ -42,9 +46,11 @@ export default function SettingsPage() {
       <form noValidate onSubmit={event => {
         event.preventDefault();
         try {
-          const next = saveSettings(displayDraft);
-          setDraft(toDraft(next));
-          setStatus(t('UI_SETTINGS_SAVED'));
+          if (displayLanguage === 'custom' && !preferences.custom) throw new Error(t('LOCALE_NO_CUSTOM'));
+          saveSettings(displayDraft);
+          if (displayLanguage !== preferences.selection) selectLocale(displayLanguage);
+          setDraft(null);
+          setStatus(getLocaleText('UI_SETTINGS_SAVED'));
         } catch (error) {
           setStatus(error instanceof Error && error.message.includes(':') ? error.message : t('UI_UNABLE_TO_SAVE_SETTINGS_CHECK_BROWSER_STORAGE_AND_TRY'));
         }
@@ -79,11 +85,14 @@ export default function SettingsPage() {
             {group === 'Prices' && <div className="settings-preview"><span>{t('UI_PRICE_PREVIEW')}</span><output>{preview}</output><small>{t('UI_DISPLAY_FORMATTING_ONLY_TRANSACTION_AMOUNTS_STAY_THE_SAME')}</small></div>}
           </section>
         ))}
+        <LanguageSettings value={displayLanguage} customAvailable={!!preferences.custom} onChange={language => {
+          setDraft({ settings: displayDraft, language }); setStatus('');
+        }} />
         <footer className="settings-actions">
           <div className="settings-action-buttons">
             <button className="settings-save" type="submit" disabled={!dirty || !!invalid}>{t('UI_SAVE_CHANGES_2')}</button>
-            <button type="button" disabled={!dirty} onClick={() => { setDraft(savedDraft); setStatus(t('UI_CHANGES_DISCARDED')); }}>{t('UI_DISCARD')}</button>
-            <button type="button" onClick={() => { setDraft(toDraft(defaultSettings)); setStatus(t('UI_DEFAULTS_LOADED_SAVE_CHANGES_TO_APPLY')); }}>{t('UI_RESTORE_DEFAULTS')}</button>
+            <button type="button" disabled={!dirty} onClick={() => { setDraft(null); setStatus(t('UI_CHANGES_DISCARDED')); }}>{t('UI_DISCARD')}</button>
+            <button type="button" onClick={() => { setDraft({ settings: toDraft(defaultSettings), language: 'english' }); setStatus(t('UI_DEFAULTS_LOADED_SAVE_CHANGES_TO_APPLY')); }}>{t('UI_RESTORE_DEFAULTS')}</button>
           </div>
           <p role="status" aria-live="polite">{status || (dirty ? t('UI_YOU_HAVE_UNSAVED_CHANGES') : t('UI_ALL_CHANGES_SAVED'))}</p>
         </footer>
