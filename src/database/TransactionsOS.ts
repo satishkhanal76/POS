@@ -1,3 +1,5 @@
+import { loadSettings } from '../settings/settings';
+import { publishStockChange } from '../stock/events';
 import { getLocaleText } from "../localization/locale";
 import { PageOptions, readIndexPage, requestValue } from "./Pagination";
 import { TransactionListEntry } from "../models/TransactionListEntry";
@@ -123,8 +125,8 @@ export default class TransactionsOS
   public async getLatestTransaction(
     currenltyViewingTransaction?: ITransaction | null
   ): Promise<Transaction | null> {
-    return new Promise(async (resolve, reject) => {
-      const os = await this.getReadOnlyObjectStore();
+    const os = await this.getReadOnlyObjectStore();
+    return new Promise<Transaction | null>((resolve, reject) => {
       const timestampIndex = os.index("timestamp");
       const cursorReq = timestampIndex.openCursor(
         currenltyViewingTransaction
@@ -152,13 +154,55 @@ export default class TransactionsOS
     });
   }
 
-  public async postTransaction(transaction: Transaction) {
-    if (transaction.getKind() === "payment") throw new Error(getLocaleText("PAYMENT_CUSTOMER_REQUIRED"));
-    const transactionProductItems = transaction.getAllTransactionProductItems();
-    const transactionDiscountItems =
-      transaction.getAllTransactionDiscountItems();
-    await Promise.all([this.transactionItemsOS.addMany(transactionProductItems), this.transactionDiscountsOS.addMany(transactionDiscountItems)]);
-
-    return await this.addOne(transaction);
+  /** Sale header, line items and stock changes commit together, or all roll back. */
+  public async postTransaction(sale: Transaction) {
+    if (sale.getKind() === 'payment') throw new Error(getLocaleText('PAYMENT_CUSTOMER_REQUIRED'));
+    if (sale.isPosted()) throw new Error(getLocaleText('STOCK_ALREADY_POSTED'));
+    const settings = loadSettings();
+    const products = sale.getAllTransactionProductItems();
+    const discounts = sale.getAllTransactionDiscountItems();
+    const quantities = new Map<string, { quantity: number; name: string }>();
+    for (const line of products) {
+      const id = line.getItem().getId();
+      const quantity = (quantities.get(id)?.quantity ?? 0) + line.getQuantity();
+      if (!Number.isSafeInteger(quantity) || quantity < 1) throw new Error(getLocaleText('QUANTITY_INVALID'));
+      quantities.set(id, { quantity, name: line.getItem().getName() });
+    }
+    const warnings: string[] = [];
+    const db = await this.db.getDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(['TRANSACTIONS', 'TRANSACTION_PRODUCTS', 'TRANSACTION_DISCOUNTS', 'PRODUCTS', 'STOCK'], 'readwrite');
+      let message = getLocaleText('NOTIFICATION_POST_FAILED');
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(new Error(message));
+      try {
+        transaction.objectStore('TRANSACTIONS').add(this.getObjectAsSchema(sale));
+        for (const line of products) transaction.objectStore('TRANSACTION_PRODUCTS').add(this.transactionItemsOS.getObjectAsSchema(line));
+        for (const line of discounts) transaction.objectStore('TRANSACTION_DISCOUNTS').add(this.transactionDiscountsOS.getObjectAsSchema(line));
+        for (const [id, item] of quantities) {
+          const product = transaction.objectStore('PRODUCTS').get(id);
+          product.onsuccess = () => {
+            if (!product.result) { message = getLocaleText('UI_UNAVAILABLE_ITEM'); transaction.abort(); return; }
+            if (!settings.stockManagement) return;
+            const stock = transaction.objectStore('STOCK');
+            const count = stock.get(id);
+            count.onsuccess = () => {
+              const available = count.result?.count ?? 0;
+              if (item.quantity > available) {
+                const warning = getLocaleText('STOCK_SHORTAGE', { item: item.name, available, requested: item.quantity });
+                if (settings.forceStockAdherence) { message = warning; transaction.abort(); return; }
+                warnings.push(warning);
+              }
+              const remaining = available - item.quantity;
+              if (!Number.isSafeInteger(remaining)) { message = getLocaleText('STOCK_INVALID'); transaction.abort(); return; }
+              stock.put({ id, count: remaining });
+            };
+          };
+        }
+      } catch { transaction.abort(); }
+    });
+    sale.setIsPosted(true);
+    if (settings.stockManagement) publishStockChange(warnings);
+    return sale;
   }
 }

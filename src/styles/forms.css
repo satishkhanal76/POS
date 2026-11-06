@@ -22,3 +22,5 @@ body input[type=radio]:checked { border: 6px solid var(--accent); }
 
 body .app-select.input { padding: 0; border: 0; background: transparent; min-height: 0; box-shadow: none; }
 @media(max-width: 768px) { .locale-selection-control .app-select { max-width: none; } }
+
+.stock-selection-count { display: block; color: var(--color-slate400); font-size: .8rem; margin-top: .35rem; font-weight: 400; }

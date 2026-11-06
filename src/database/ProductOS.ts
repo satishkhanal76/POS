@@ -54,7 +54,7 @@ export default class ProductOS
     const item = await this.getOne(id);
     const db = await this.db.getDatabase();
     await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(['PRODUCTS', 'TRANSACTION_PRODUCTS', 'ITEM_PRICE_CHANGES'], 'readwrite');
+      const transaction = db.transaction(['PRODUCTS', 'TRANSACTION_PRODUCTS', 'ITEM_PRICE_CHANGES', 'STOCK'], 'readwrite');
       let message = getLocaleText('UI_ITEM_COULD_NOT_BE_DELETED');
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(new Error(message));
@@ -62,6 +62,7 @@ export default class ProductOS
       used.onsuccess = () => {
         if (used.result) { message = getLocaleText('UI_THIS_ITEM_IS_USED_IN_SAVED_TRANSACTIONS_AND_CANNOT'); transaction.abort(); return; }
         transaction.objectStore('PRODUCTS').delete(id);
+        transaction.objectStore('STOCK').delete(id);
         const cursor = transaction.objectStore('ITEM_PRICE_CHANGES').index('itemTimestamp')
           .openCursor(IDBKeyRange.bound([id, 0], [id, Number.MAX_SAFE_INTEGER]));
         cursor.onsuccess = () => { if (cursor.result) { cursor.result.delete(); cursor.result.continue(); } };

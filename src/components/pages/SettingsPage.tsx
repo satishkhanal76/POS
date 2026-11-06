@@ -56,9 +56,9 @@ export default function SettingsPage() {
           setStatus(error instanceof Error && error.message.includes(':') ? error.message : t('UI_UNABLE_TO_SAVE_SETTINGS_CHECK_BROWSER_STORAGE_AND_TRY'));
         }
       }}>
-        {(['Prices', 'Appearance'] as const).map(group => (
+        {(['Prices', 'Appearance', 'Stock'] as const).map(group => (
           <section className="settings-section" key={group} aria-labelledby={`group-${group}`}>
-            <h2 id={`group-${group}`}>{t(group === "Prices" ? "UI_PRICES" : "UI_APPEARANCE")}</h2>
+            <h2 id={`group-${group}`}>{t(group === "Prices" ? "UI_PRICES" : group === "Stock" ? "STOCK_TITLE" : "UI_APPEARANCE")}</h2>
             {settingsSchema.filter(field => field.group === group).map(field => {
               const id = `setting-${field.key}`;
               const error = fieldError(field, displayDraft[field.key], t);
@@ -68,7 +68,7 @@ export default function SettingsPage() {
                   <div className="settings-control">
                     {field.type === 'boolean' ? (
                       <label className="settings-toggle">
-                        <input id={id} type="checkbox" role="switch" checked={Boolean(displayDraft[field.key])} onChange={event => update(field.key, event.target.checked)} aria-describedby={`${id}-help`} />
+                        <input id={id} type="checkbox" role="switch" disabled={field.key === 'forceStockAdherence' && !displayDraft.stockManagement} checked={Boolean(displayDraft[field.key])} onChange={event => update(field.key, event.target.checked)} aria-describedby={`${id}-help`} />
                         <span aria-hidden="true" className="settings-toggle-track" />
                         <span>{displayDraft[field.key] ? t('UI_ON') : t('UI_OFF')}</span>
                       </label>

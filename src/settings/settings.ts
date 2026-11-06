@@ -8,7 +8,7 @@ type Field<K extends keyof Settings> = {
   type: Settings[K] extends boolean ? 'boolean' : Settings[K] extends number ? 'number' : 'text';
   label: LocaleKey;
   description: LocaleKey;
-  group: 'Prices' | 'Appearance';
+  group: 'Prices' | 'Appearance' | 'Stock';
   min?: number;
   max?: number;
   integer?: boolean;
@@ -17,6 +17,8 @@ type Field<K extends keyof Settings> = {
 export type SettingField = { [K in keyof Settings]: Field<K> }[keyof Settings];
 
 export const settingsSchema: SettingField[] = [
+  { key: 'stockManagement', type: 'boolean', label: 'STOCK_ENABLE', description: 'STOCK_ENABLE_HELP', group: 'Stock' },
+  { key: 'forceStockAdherence', type: 'boolean', label: 'STOCK_FORCE', description: 'STOCK_FORCE_HELP', group: 'Stock' },
   { key: 'currencyCharacter', type: 'text', label: 'UI_CURRENCY_SYMBOL', description: 'UI_USE_A_SYMBOL_OR_CODE_SUCH_AS_CA_OR', group: 'Prices', maxLength: 12 },
   { key: 'numOfDecimalPlaces', type: 'number', label: 'UI_DECIMAL_PLACES', description: 'UI_NUMBER_OF_DIGITS_DISPLAYED_AFTER_THE_DECIMAL_POINT', group: 'Prices', min: 0, max: 6, integer: true },
   { key: 'darkMode', type: 'boolean', label: 'UI_DARK_MODE', description: 'UI_USE_A_DARKER_APPEARANCE_THROUGHOUT_THE_APP', group: 'Appearance' },

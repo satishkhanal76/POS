@@ -427,3 +427,6 @@ The database layer can be viewed as three distinct responsibilities:
 The result is a native IndexedDB implementation that is hidden behind a strongly typed application-level interface.
 
 That abstraction is arguably the most technically significant part of the POS project: instead of depending on a library to make IndexedDB easier to use, the project builds the layer needed to make IndexedDB fit the application's architecture.
+## Stock (Version 4)
+
+STOCK stores one current `{ id: productId, count }` record per product. Missing counts are zero. Manual counts are absolute nonnegative safe integers; advisory stock deductions can leave a negative count. No historical stock ledger is maintained. Master and adherence settings live in browser preferences, separately from database records. Sales update current stock atomically with their saved header and lines only while stock management is enabled. Payment transactions and later customer assignment have no inventory effect.

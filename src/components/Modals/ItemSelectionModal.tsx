@@ -1,5 +1,8 @@
+import { useClientGlobal } from '../../contexts/ClientGlobal';
+import useStockCounts from '../../hooks/useStockCounts';
+import { useLocaleText } from '../../contexts/Locale';
 import Price from "../Items/Price";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import ItemsController from "../../controllers/ItemsController";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import SearchableModal, { ISearchableItem } from "./SearchableModal";
@@ -19,25 +22,30 @@ const ItemSelectionModal = ({
 }: ItemSelectionModalProps) => {
   const { itemOS } = useDatabase();
   const [items, setItems] = useState<ProductItem[]>([]);
-  const itemsController = new ItemsController(itemOS);
+  const { stockManagement } = useClientGlobal();
+  const t = useLocaleText();
+  const { counts, error } = useStockCounts(items.map(item => item.getId()), stockManagement && isModalOpen);
 
   const {ADD_ITEM_MODAL_TITLE} = useLocale();
 
-  useMemo(() => {
+  useEffect(() => {
+    if (!isModalOpen) return;
+    let cancelled = false;
     const loadItems = async () => {
-      const allItems = await itemsController.getAllItems();
-      setItems(allItems);
+      const allItems = await new ItemsController(itemOS).getAllItems();
+      if (!cancelled) setItems(allItems);
     };
 
-    loadItems();
-  }, []);
+    void loadItems();
+    return () => { cancelled = true; };
+  }, [itemOS, isModalOpen]);
 
   const searchableItemProps: ISearchableItem[] = items.map((item) => ({
     id: item.getId(),
     name: item.getName(),
     children: (
       <span className="selection-item">
-        <span className="name">{item.getName()}</span>
+        <span className="name">{item.getName()}{stockManagement && <small className="stock-selection-count">{t('STOCK_IN_STOCK')}: {error ? t('STOCK_UNAVAILABLE') : counts ? (counts[item.getId()] ?? 0) : '…'}</small>}</span>
         <Price price={item.getAmount()} />
       </span>
     ),

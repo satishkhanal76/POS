@@ -13,6 +13,7 @@ export interface DatabaseBackup {
 
 /** Stored field definitions, rather than reconstructed model data. */
 const tableFields: Record<string, Record<string, 'string' | 'number'>> = {
+  STOCK: { id: 'string', count: 'number' },
   CUSTOMER_TRANSACTION_SUMMARIES: { id: 'string', timestamp: 'number', count: 'number', total: 'number' },
   ITEM_PRICE_CHANGES: { id: 'string', itemId: 'string', amount: 'number', timestamp: 'number' },
   PRODUCTS: { id: 'string', name: 'string', amount: 'number' },
@@ -24,6 +25,7 @@ const tableFields: Record<string, Record<string, 'string' | 'number'>> = {
   CUSTOMERS_TRANSACTIONS: { id: 'string', timestamp: 'number', customerId: 'string', transactionId: 'string' },
 };
 const references = [
+  ['STOCK', 'id', 'PRODUCTS'],
   ['CUSTOMER_TRANSACTION_SUMMARIES', 'id', 'CUSTOMER'],
   ['ITEM_PRICE_CHANGES', 'itemId', 'PRODUCTS'],
   ['TRANSACTION_PRODUCTS', 'transactionId', 'TRANSACTIONS'],
@@ -36,15 +38,16 @@ const references = [
 const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 
 export function validateBackup(value: unknown): DatabaseBackup {
-  if (!isObject(value) || value.format !== 'pos-database-backup' || value.formatVersion !== 1 || (value.databaseVersion !== 1 && value.databaseVersion !== 2 && value.databaseVersion !== 3)
+  if (!isObject(value) || value.format !== 'pos-database-backup' || value.formatVersion !== 1 || (value.databaseVersion !== 1 && value.databaseVersion !== 2 && value.databaseVersion !== 3 && value.databaseVersion !== 4)
     || typeof value.sourceDatabase !== 'string' || typeof value.createdAt !== 'string' || !Number.isFinite(Date.parse(value.createdAt)) || !isObject(value.tables)) {
     throw new Error(getLocaleText('UI_THIS_IS_NOT_A_SUPPORTED_POS_DATABASE_BACKUP'));
   }
-  const legacy = value.databaseVersion !== 3;
+  const legacy = (value.databaseVersion as number) < 3;
   const tables: Record<string, unknown> = { ...value.tables };
   if (value.databaseVersion === 1) tables.ITEM_PRICE_CHANGES = [];
   if (legacy) tables.CUSTOMER_TRANSACTION_SUMMARIES = [];
-  value = { ...value, databaseVersion: 3, tables };
+  if ((value.databaseVersion as number) < 4) tables.STOCK = [];
+  value = { ...value, databaseVersion: 4, tables };
   if (Object.keys(tables).length !== Object.keys(tableFields).length) throw new Error(getLocaleText('UI_BACKUP_MUST_CONTAIN_EVERY_DATABASE_TABLE'));
   const ids: Record<string, Set<string>> = {};
   for (const [name, fields] of Object.entries(tableFields)) {
@@ -60,6 +63,7 @@ export function validateBackup(value: unknown): DatabaseBackup {
       }
       if (name === 'TRANSACTIONS' && row.kind !== undefined && row.kind !== 'sale' && row.kind !== 'payment') throw new Error(getLocaleText('PAYMENT_INVALID'));
       if (name === 'TRANSACTIONS' && row.kind === 'payment' && (row.total as number) >= 0) throw new Error(getLocaleText('PAYMENT_INVALID'));
+      if (name === 'STOCK' && !Number.isSafeInteger(row.count)) throw new Error(getLocaleText('STOCK_INVALID'));
       const id = row.id as string;
       if (!id || ids[name].has(id)) throw new Error(getLocaleText('UI_MISSING_OR_DUPLICATE_ID_IN_VALUE', { value0: name }));
       ids[name].add(id);

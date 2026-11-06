@@ -16,8 +16,8 @@ test('older settings inherit new fields without losing valid stored values', () 
   assert.deepEqual(loadSettings(), { ...defaultSettings, currencyCharacter: 'NPR', numOfDecimalPlaces: 3 });
 });
 test('valid drafts save normalized strings, numbers, and booleans', () => {
-  const saved = saveSettings({ currencyCharacter: ' CA$ ', numOfDecimalPlaces: '0', darkMode: true });
-  assert.deepEqual(saved, { currencyCharacter: 'CA$', numOfDecimalPlaces: 0, darkMode: true });
+  const saved = saveSettings({ ...toDraft(defaultSettings), currencyCharacter: ' CA$ ', numOfDecimalPlaces: '0', darkMode: true });
+  assert.deepEqual(saved, { ...defaultSettings, currencyCharacter: 'CA$', numOfDecimalPlaces: 0, darkMode: true });
   assert.deepEqual(loadSettings(), saved);
 });
 test('invalid decimal values cannot reach the price formatter', () => {

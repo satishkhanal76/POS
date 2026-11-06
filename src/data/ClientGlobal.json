@@ -1,5 +1,7 @@
 {
   "currencyCharacter": "$",
   "numOfDecimalPlaces": 2,
-  "darkMode": false
+  "darkMode": false,
+  "stockManagement": false,
+  "forceStockAdherence": false
 }

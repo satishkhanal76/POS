@@ -18,6 +18,7 @@ export default class DemoDataController {
   public build(now = Date.now()): Record<string, object[]> {
     const stores = this.stores;
     const records: Record<string, object[]> = {};
+    records.STOCK = demoProducts.map(product => ({ id: product.id, count: 40 }));
     const products = demoProducts.map(product => new ProductItem(product));
     const customers = demoCustomers.map(customer => new Customer(customer));
     const changes = demoPriceChanges.map(change => new ItemPriceChange({
