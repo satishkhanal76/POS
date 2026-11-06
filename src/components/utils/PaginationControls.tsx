@@ -1,3 +1,4 @@
+import { SortOption } from "./catalogSorts";
 import Select from "../Forms/Select";
 import { ReactNode, useId } from "react";
 import { useLocaleText } from "../../contexts/Locale";
@@ -15,6 +16,8 @@ interface PaginationControlsProps {
   extraSorts?: boolean;
   itemSorts?: boolean;
   filters?: ReactNode;
+  sortOptions?: SortOption[];
+  className?: string;
 }
 export default function PaginationControls({
   page,
@@ -27,13 +30,15 @@ export default function PaginationControls({
   extraSorts = false,
   itemSorts = true,
   filters,
+  sortOptions,
+  className = "",
 }: PaginationControlsProps) {
   const t = useLocaleText();
   const id = useId();
   const effectiveSize = pageSize || Math.max(1, total);
   const pageCount = Math.max(1, Math.ceil(total / effectiveSize));
   return (
-    <div className="pagination-controls">
+    <div className={`pagination-controls ${className}`}>
       <div className="pagination-options">
         {filters}
         {showSort && (
@@ -44,6 +49,7 @@ export default function PaginationControls({
               value={sort}
               onChange={(value) => onChange({ sort: value as PageSort })}
             >
+              {sortOptions ? sortOptions.map(option => <option key={option.value} value={option.value}>{t(option.label)}</option>) : <>
               <option value="newest">{t("PAGINATION_NEWEST")}</option>
               <option value="oldest">{t("PAGINATION_OLDEST")}</option>
               {extraSorts && (
@@ -58,6 +64,7 @@ export default function PaginationControls({
                   )}
                 </>
               )}
+              </>}
             </Select>
           </div>
         )}

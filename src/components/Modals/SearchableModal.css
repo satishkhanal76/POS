@@ -11,6 +11,8 @@
   pointer-events: none;
 }
 .modal-search {
+  /* Shared input styles read this so their padding cannot cover the search icon. */
+  --field-padding: 0.75rem 0.9rem 0.75rem 2.75rem;
   width: 100%;
   min-height: 46px;
   padding: 0.75rem 0.9rem 0.75rem 2.75rem;
@@ -96,3 +98,8 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+.modal-picker-hint { margin: -.25rem 0 .75rem; color: var(--color-slate400); font-size: var(--text-small); line-height: 1.5; }
+.modal-picker-footer { display: flex; justify-content: center; margin-top: 1rem; }
+.modal-picker-footer button, .modal-picker-error button { min-height: 44px; padding: .65rem 1.25rem; border: 1px solid var(--color-slate500); border-radius: 10px; background: var(--bg-primary); color: var(--color-slate100); font: inherit; cursor: pointer; }
+.modal-picker-footer button:disabled { opacity: .5; cursor: wait; }
+.picker-contact-phone { display: block; margin-top: .2rem; color: var(--color-slate400); font-size: var(--text-small); }

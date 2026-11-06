@@ -1,3 +1,4 @@
+import readCatalogRankedPage from "./readCatalogRankedPage";
 import { LISTING_VERSION } from "./metadata";
 import coalesceRead from "./coalesceRead";
 import { PageOptions, PageResult } from "../Pagination";
@@ -7,6 +8,9 @@ type CatalogRow = {
   name: string;
   phoneNumber?: string;
   deletedAt?: number;
+  amount?: number;
+  canSell?: number;
+  canPurchase?: number;
 };
 export function indexedCatalog<T extends CatalogRow>(row: T) {
   const keys = (row.deletedAt ? [1] : [0, 1]).map((state) => [
@@ -17,6 +21,9 @@ export function indexedCatalog<T extends CatalogRow>(row: T) {
     row.name,
     row.deletedAt ?? 0,
     row.phoneNumber ?? "",
+    row.amount ?? 0,
+    row.canSell ?? 1,
+    row.canPurchase ?? 1,
   ]);
   return { ...row, listVersion: LISTING_VERSION, catalogKeys: keys };
 }
@@ -35,6 +42,7 @@ export default function readCatalogPage<T>(
 }
 
 function executeCatalogPage<T>(store: IDBObjectStore, options: PageOptions, search: string): Promise<PageResult<T>> {
+  if (options.sort.startsWith('price-') || options.sort.startsWith('stock-')) return readCatalogRankedPage(store, options, search);
   return new Promise((resolve, reject) => {
     const size = [0, 10, 25, 50, 100].includes(options.pageSize)
       ? options.pageSize
@@ -60,6 +68,7 @@ function executeCatalogPage<T>(store: IDBObjectStore, options: PageOptions, sear
         };
       });
     };
+    const direction = options.sort === "name-desc" ? "prev" : "next";
     if (!needle) {
       const count = index.count(bound);
       count.onerror = () => reject(count.error);
@@ -69,7 +78,7 @@ function executeCatalogPage<T>(store: IDBObjectStore, options: PageOptions, sear
             ? Math.min(requested, Math.max(1, Math.ceil(total / size)))
             : 1;
         const ids: IDBValidKey[] = [];
-        const request = index.openKeyCursor(bound);
+        const request = index.openKeyCursor(bound, direction);
         let skipped = false;
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
@@ -92,7 +101,7 @@ function executeCatalogPage<T>(store: IDBObjectStore, options: PageOptions, sear
       const ids: IDBValidKey[] = [],
         tail: IDBValidKey[] = [];
       let total = 0;
-      const request = index.openKeyCursor(bound);
+      const request = index.openKeyCursor(bound, direction);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
         const cursor = request.result;

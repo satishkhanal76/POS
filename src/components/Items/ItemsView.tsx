@@ -1,15 +1,14 @@
+import itemColumns from "./itemColumns";
 import DeleteRecordButton from "../utils/DeleteRecordButton";
 import { useState } from "react";
 import { useClientGlobal } from "../../contexts/ClientGlobal";
 import useStockCounts from "../../hooks/useStockCounts";
 import StockForm from "./StockForm";
 import { useLocaleText } from "../../contexts/Locale";
-import { useLocale } from "../../contexts/Locale";
-import Price from "./Price";
 import { IProductItem } from "../../models/ProductItem";
 import "./ItemsView.css";
 import { IItem } from "../../models/Item";
-import CustomTableView, { CustomTableColumn } from "../utils/CustomTableView";
+import CustomTableView from "../utils/CustomTableView";
 interface ItemsViewProps {
   items: IProductItem[];
   onDeleted?: () => void;
@@ -19,7 +18,6 @@ interface ItemsViewProps {
 
 const ItemsView = ({ items, onDeleted, onEdit }: ItemsViewProps) => {
   const t = useLocaleText();
-  const text = useLocale();
   const { stockManagement } = useClientGlobal();
   const { counts, error } = useStockCounts(
     items.map((item) => item.getId()),
@@ -27,24 +25,8 @@ const ItemsView = ({ items, onDeleted, onEdit }: ItemsViewProps) => {
   );
   const [stockItem, setStockItem] = useState<IProductItem | null>(null);
 
-  const columns: CustomTableColumn<IProductItem>[] = [
-    {
-      key: "name",
-      header: text.ITEMS_TABLE_HEADER_NAME,
-      render: (item) => <>{item.getName()}</>,
-    },
-    {
-      key: "price",
-      header: text.ITEMS_TABLE_HEADER_PRICE,
-      variant: "numeric",
-      render: (item) =>
-        item.canSell === 0 ? (
-          t("BUY_NO_SELL_PRICE")
-        ) : (
-          <Price price={item.getAmount()} />
-        ),
-    },
-    {
+  const columns = itemColumns(t, stockManagement, counts, error);
+  columns.push({
       key: "actions",
       header: t("UI_ACTIONS"),
       variant: "actions",
@@ -78,21 +60,7 @@ const ItemsView = ({ items, onDeleted, onEdit }: ItemsViewProps) => {
           />
         </>
       ),
-    },
-  ];
-
-  if (stockManagement)
-    columns.splice(2, 0, {
-      key: "stock",
-      header: t("STOCK_IN_STOCK"),
-      variant: "numeric",
-      render: (item) =>
-        error
-          ? t("STOCK_UNAVAILABLE")
-          : counts
-            ? (counts[item.getId()] ?? 0)
-            : "…",
-    });
+  });
   return (
     <>
       {stockManagement && stockItem && (

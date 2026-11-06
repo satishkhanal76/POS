@@ -1,68 +1,25 @@
-import { useLocaleText } from "../../contexts/Locale";
-import { useEffect, useState } from "react";
-import { useDatabase } from "../../contexts/DatabaseContext";
-import SearchableModal, { ISearchableItem } from "../Modals/SearchableModal";
-import CustomerController from "../../controllers/CustomerController";
-import { ICustomer } from "../../models/Customer";
+import { useCallback, useMemo } from 'react';
+import { useLocaleText } from '../../contexts/Locale';
+import { useDatabase } from '../../contexts/DatabaseContext';
+import { useClientGlobal } from '../../contexts/ClientGlobal';
+import PickerController from '../../controllers/PickerController';
+import { PickerOptions } from '../../pickers/types';
+import usePickerQuery from '../../hooks/usePickerQuery';
+import SearchableModal from './SearchableModal';
+import { ICustomer } from '../../models/Customer';
 
-interface ItemSelectionModalProps {
-  handleAddItem: (customer: ICustomer | null) => void;
-  isModalOpen?: boolean;
-  title?: string;
-  onClose: () => void;
+interface Props {
+    handleAddItem: (customer: ICustomer | null) => void;
+    isModalOpen?: boolean;
+    title?: string;
+    purchase?: boolean;
+    onClose: () => void;
 }
-
-const CustomerSelectionModal = ({
-  handleAddItem,
-  onClose,
-  isModalOpen = false,
-  title,
-}: ItemSelectionModalProps) => {
-  const t = useLocaleText();
-  const { customerOS } = useDatabase();
-  const [customers, setCustomers] = useState<ICustomer[]>([]);
-
-  useEffect(() => {
-    if (!isModalOpen) return;
-    let cancelled = false;
-    const loadItems = async () => {
-      const allCustomers = await new CustomerController(
-        customerOS,
-      ).getAllCustomers();
-      if (!cancelled) setCustomers(allCustomers);
-    };
-
-    void loadItems().catch(() => {
-      if (!cancelled) setCustomers([]);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [customerOS, isModalOpen]);
-
-  const searchableItemProps: ISearchableItem[] = customers.map((customer) => ({
-    id: customer.getId(),
-    name: customer.getName(),
-    children: (
-      <>
-        <span className="name">{customer.getName()}</span>
-      </>
-    ),
-  }));
-
-  if (isModalOpen)
-    return (
-      <SearchableModal
-        title={title ?? t("UI_SELECT_A_CUSTOMER")}
-        onClose={onClose}
-        items={searchableItemProps}
-        handleAdd={(searchableItem: ISearchableItem) =>
-          handleAddItem(
-            customers.find((i) => i.getId() === searchableItem.id) || null,
-          )
-        }
-      />
-    );
-};
-
-export default CustomerSelectionModal;
+export default function CustomerSelectionModal({ handleAddItem, onClose, isModalOpen = false, title, purchase = false }: Props) {
+    const t = useLocaleText(), stores = useDatabase(), settings = useClientGlobal();
+    const controller = useMemo(() => new PickerController(stores), [stores]);
+    const load = useCallback((options: PickerOptions) => controller.contacts(options), [controller]);
+    const picker = usePickerQuery(isModalOpen, load, settings.pickerPageSize, settings.pickerRecentFirst, purchase);
+    if (!isModalOpen) return null;
+    return <SearchableModal title={title ?? t('UI_SELECT_A_CUSTOMER')} onClose={onClose} items={picker.rows.map(person => ({ id: person.getId(), name: person.getName(), children: <span className="name">{person.getName()}<small className="picker-contact-phone">{person.getPhoneNumber()}</small></span> }))} query={picker.query} onQueryChange={picker.setQuery} loading={picker.loading} loadingMore={picker.loadingMore} hasMore={picker.hasMore} error={picker.error} onLoadMore={() => void picker.loadMore()} onRetry={picker.retry} recentFirst={settings.pickerRecentFirst} searchLabel={t('SEARCH_CONTACTS')} searchPlaceholderText={t('SEARCH_CONTACTS')} handleAdd={entry => handleAddItem(picker.rows.find(person => person.getId() === entry.id) ?? null)}/>;
+}

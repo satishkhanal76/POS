@@ -1,0 +1,3 @@
+.items-page > .page-header { flex-wrap: wrap; align-items: center; }
+.items-page .page-header-actions { gap: .65rem; flex-wrap: wrap; max-width: 100%; }
+.items-page .page-header-actions .print-report-button { white-space: normal; }

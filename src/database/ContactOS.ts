@@ -45,6 +45,7 @@ export default class ContactOS
   }
 
   public async getCatalogPage(options: PageOptions, search = "") {
+    options = { ...options, sort: options.sort === 'name-desc' ? 'name-desc' : 'name-asc' };
     const database = await this.db.getDatabase();
     await ensureListings(database, ["CUSTOMER"]);
     return coalesceRead(database, JSON.stringify(['catalog-models', 'CUSTOMER', options, search]), async () => {

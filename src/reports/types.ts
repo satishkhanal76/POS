@@ -7,6 +7,7 @@ export interface PrintableSection {
 }
 export interface PrintableReport {
   title: string;
+  subtitle?: string;
   range?: DashboardRange | null;
   note?: string;
   sections: PrintableSection[];

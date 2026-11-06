@@ -100,7 +100,7 @@ export default function SettingsPage() {
         }}
       >
         {(
-          ["Prices", "Appearance", "Stock", "Deletion", "Purchasing"] as const
+          ["Prices", "Appearance", "Order", "Stock", "Deletion", "Purchasing"] as const
         ).map((group) => (
           <section
             className="settings-section"
@@ -109,7 +109,9 @@ export default function SettingsPage() {
           >
             <h2 id={`group-${group}`}>
               {t(
-                group === "Prices"
+                group === "Order"
+                  ? "PICKER_SETTINGS"
+                  : group === "Prices"
                   ? "UI_PRICES"
                   : group === "Stock"
                     ? "STOCK_TITLE"

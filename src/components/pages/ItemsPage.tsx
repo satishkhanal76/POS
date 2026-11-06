@@ -1,4 +1,9 @@
-import { useCallback, useState } from "react";
+import ItemsPrintButton from "../Items/ItemsPrintButton";
+import { useClientGlobal } from "../../contexts/ClientGlobal";
+import { STOCK_UPDATED } from "../../stock/events";
+import { itemSortOptions } from "../utils/catalogSorts";
+import CatalogSearch from "../Forms/CatalogSearch";
+import { useCallback, useEffect, useState } from "react";
 import { MdAdd } from "react-icons/md";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import { useLocaleText } from "../../contexts/Locale";
@@ -14,7 +19,6 @@ import ItemsView from "../Items/ItemsView";
 import PageHeader from "../Layout/PageHeader";
 import DeletedVisibility from "../utils/DeletedVisibility";
 import PaginationControls from "../utils/PaginationControls";
-import "../Forms/ListFilters.css";
 
 export default function ItemsPage() {
   const t = useLocaleText(),
@@ -34,9 +38,17 @@ export default function ItemsPage() {
     },
     [itemOS, includeDeleted, search, revision, refresh],
   );
-  const pagination = usePagedQuery(query, "items");
+  const { stockManagement } = useClientGlobal();
+  const sorts = itemSortOptions(stockManagement);
+  const pagination = usePagedQuery(query, 'items', 'name-asc', sorts.map(option => option.value));
+  useEffect(() => {
+    if (!stockManagement) return;
+    const update = () => setRefresh(value => value + 1);
+    window.addEventListener(STOCK_UPDATED, update);
+    return () => window.removeEventListener(STOCK_UPDATED, update);
+  }, [stockManagement]);
   return (
-    <main>
+    <main className="items-page">
       {adding && (
         <ItemAddForm
           onClose={() => setAdding(false)}
@@ -58,7 +70,8 @@ export default function ItemsPage() {
       )}
       <PageHeader
         title={t("ITEMS_TITLE")}
-        actions={
+        actions={<>
+          <ItemsPrintButton items={pagination.result?.rows ?? []} page={pagination.page} includeDeleted={includeDeleted} disabled={pagination.loading || pagination.error}/>
           <button
             type="button"
             className="page-add-button"
@@ -67,19 +80,14 @@ export default function ItemsPage() {
           >
             <MdAdd aria-hidden="true" />
           </button>
-        }
+        </>}
       />
       <DeletedVisibility />
-      <label className="list-filter">
-        {t("SEARCH_ITEMS")}
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-      </label>
       <PaginationControls
-        showSort={false}
+        className="catalog-toolbar"
+        sortOptions={sorts}
+        filters={<CatalogSearch label={t('SEARCH_ITEMS')} placeholder={t('SEARCH_ITEMS_PLACEHOLDER')} value={search} onChange={setSearch}/>}
+
         page={pagination.page}
         pageSize={pagination.pageSize}
         sort={pagination.sort}

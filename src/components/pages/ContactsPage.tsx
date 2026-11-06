@@ -1,3 +1,5 @@
+import { nameSortOptions } from "../utils/catalogSorts";
+import CatalogSearch from "../Forms/CatalogSearch";
 import { useCallback, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MdAdd } from "react-icons/md";
@@ -14,7 +16,6 @@ import DeletedVisibility from "../utils/DeletedVisibility";
 import PaginationControls from "../utils/PaginationControls";
 import ContactForm from "../Contacts/ContactForm";
 import ContactsTable from "../Contacts/ContactsTable";
-import "../Forms/ListFilters.css";
 
 export default function ContactsPage() {
   const t = useLocaleText(),
@@ -36,7 +37,7 @@ export default function ContactsPage() {
     },
     [contactOS, includeDeleted, search, revision, refresh],
   );
-  const pagination = usePagedQuery(query, "contacts");
+  const pagination = usePagedQuery(query, 'contacts', 'name-asc', nameSortOptions.map(option => option.value));
   return (
     <main>
       <PageHeader
@@ -57,16 +58,11 @@ export default function ContactsPage() {
         }
       />
       <DeletedVisibility />
-      <label className="list-filter">
-        {t("SEARCH_CONTACTS")}
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-      </label>
       <PaginationControls
-        showSort={false}
+        className="catalog-toolbar"
+        sortOptions={nameSortOptions}
+        filters={<CatalogSearch label={t('SEARCH_CONTACTS')} placeholder={t('SEARCH_CONTACTS_PLACEHOLDER')} value={search} onChange={setSearch}/>}
+
         page={pagination.page}
         pageSize={pagination.pageSize}
         sort={pagination.sort}

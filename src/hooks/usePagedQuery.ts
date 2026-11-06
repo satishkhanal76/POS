@@ -1,29 +1,25 @@
-import { useEffect, useState } from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
-import {
-  PageOptions,
-  PageResult,
-  pageSorts,
-  PageSort,
-} from "../database/Pagination";
+import { useEffect, useState } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { PageOptions, PageResult, historySorts, PageSort } from '../database/Pagination';
 
 /** URL-backed controls preserve the selected page when returning from detail views. */
 export default function usePagedQuery<T>(
   query: (options: PageOptions) => Promise<PageResult<T>>,
-  prefix = "",
+  prefix = '',
+  defaultSort: PageSort = 'newest',
+  allowedSorts: readonly PageSort[] = historySorts,
 ) {
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const param = (key: string) => (prefix ? `${prefix}-${key}` : key);
-  const page = Math.max(1, Number(params.get(param("page"))) || 1);
-  const requestedSize = Number(params.get(param("pageSize")));
+  const page = Math.max(1, Number(params.get(param('page'))) || 1);
+  const requestedSize = Number(params.get(param('pageSize')));
   const pageSize =
-    params.has(param("pageSize")) &&
-    [0, 10, 25, 50, 100].includes(requestedSize)
+    params.has(param('pageSize')) && [0, 10, 25, 50, 100].includes(requestedSize)
       ? requestedSize
       : 10;
-  const requestedSort = params.get(param("sort")) as PageSort;
-  const sort = pageSorts.includes(requestedSort) ? requestedSort : "newest";
+  const requestedSort = params.get(param('sort')) as PageSort;
+  const sort = allowedSorts.includes(requestedSort) ? requestedSort : defaultSort;
   const [state, setState] = useState<{
     result: PageResult<T> | null;
     loading: boolean;
@@ -47,10 +43,9 @@ export default function usePagedQuery<T>(
     setParams(
       (current) => {
         const next = new URLSearchParams(current);
-        next.set(param("page"), String(changes.page ?? 1));
-        if (changes.pageSize !== undefined)
-          next.set(param("pageSize"), String(changes.pageSize));
-        if (changes.sort) next.set(param("sort"), changes.sort);
+        next.set(param('page'), String(changes.page ?? 1));
+        if (changes.pageSize !== undefined) next.set(param('pageSize'), String(changes.pageSize));
+        if (changes.sort) next.set(param('sort'), changes.sort);
         return next;
       },
       { state: location.state },

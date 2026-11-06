@@ -1,0 +1,16 @@
+.catalog-toolbar { padding: 1rem; border: 1px solid var(--color-slate600); border-radius: 12px; background: var(--bg-primary); }
+.catalog-toolbar .pagination-options { flex: 1 1 100%; align-items: flex-end; }
+.catalog-toolbar .pagination-field { flex-direction: column; align-items: stretch; gap: .4rem; }
+.catalog-toolbar .pagination-navigation { width: 100%; justify-content: flex-end; }
+.catalog-toolbar .pagination-navigation > span:first-child { margin-right: auto; }
+.catalog-search { flex: 1 1 15rem; min-width: 0; }
+.catalog-search-label { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.catalog-search-control { position: relative; display: flex; align-items: center; }
+.catalog-search-control > svg { position: absolute; left: .85rem; width: 20px; height: 20px; color: var(--color-slate400); pointer-events: none; }
+.catalog-search input { --field-padding: .7rem .9rem .7rem 2.6rem; width: 100%; min-width: 0; }
+@media (max-width: 600px) {
+    .catalog-toolbar { padding: .85rem; }
+    .catalog-search { flex-basis: 100%; }
+    .catalog-toolbar .pagination-field { flex: 1 1 8rem; min-width: 0; }
+    .catalog-toolbar .pagination-navigation { justify-content: space-between; }
+}

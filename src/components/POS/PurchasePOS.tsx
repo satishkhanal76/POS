@@ -217,6 +217,7 @@ export default function PurchasePOS({
       />
       {supplierOpen && (
         <CustomerSelectionModal
+          purchase
           title={t("ORDER_SELECT_SUPPLIER")}
           isModalOpen
           onClose={() => {

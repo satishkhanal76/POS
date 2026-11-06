@@ -15,9 +15,11 @@ import "./PrintReportButton.css";
 export default function PrintReportButton({
   createReport,
   disabled = false,
+  help,
 }: {
   createReport: () => PrintableReport | Promise<PrintableReport>;
   disabled?: boolean;
+  help?: string;
 }) {
   const t = useLocaleText();
   const locale = useLocale();
@@ -30,7 +32,7 @@ export default function PrintReportButton({
       type="button"
       className="print-report-button"
       disabled={disabled || busy}
-      title={t("PRINT_HELP")}
+      title={help ?? t("PRINT_HELP")}
       onClick={async () => {
         if (lock.current) return;
         lock.current = true;

@@ -1,4 +1,4 @@
-export const pageSorts = [
+export const historySorts = [
   "newest",
   "oldest",
   "total-high",
@@ -6,6 +6,7 @@ export const pageSorts = [
   "items-high",
   "items-low",
 ] as const;
+export const pageSorts = [...historySorts, 'name-asc', 'name-desc', 'price-high', 'price-low', 'stock-high', 'stock-low'] as const;
 export type PageSort = (typeof pageSorts)[number];
 export interface PageOptions {
   page: number;

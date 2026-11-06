@@ -1,3 +1,4 @@
+import { loadSettings } from "../settings/settings";
 import { ensureListings } from "./listing/maintenance";
 import coalesceRead from "./listing/coalesceRead";
 import { indexedPriceChange } from "./listing/priceHistory";
@@ -54,11 +55,12 @@ export default class ProductOS
   }
 
   public async getCatalogPage(options: PageOptions, search = "") {
+    if ((!options.sort.startsWith('name-') && !options.sort.startsWith('price-') && !options.sort.startsWith('stock-')) || (options.sort.startsWith('stock-') && !loadSettings().stockManagement)) options = { ...options, sort: 'name-asc' };
     const database = await this.db.getDatabase();
     await ensureListings(database, ["PRODUCTS"]);
     return coalesceRead(database, JSON.stringify(['catalog-models', 'PRODUCTS', options, search]), async () => {
       const result = await readCatalogPage<ProductSchema>(
-        database.transaction("PRODUCTS").objectStore("PRODUCTS"),
+        database.transaction(options.sort.startsWith('price-') ? ['PRODUCTS', 'ITEM_PRICE_CHANGES'] : options.sort.startsWith('stock-') ? ['PRODUCTS', 'STOCK'] : ['PRODUCTS']).objectStore('PRODUCTS'),
         options,
         search,
       );

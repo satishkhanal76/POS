@@ -12,7 +12,7 @@ type Field<K extends keyof Settings> = {
       : "text";
   label: LocaleKey;
   description: LocaleKey;
-  group: "Prices" | "Appearance" | "Stock" | "Deletion" | "Purchasing";
+  group: "Prices" | "Appearance" | "Stock" | "Deletion" | "Purchasing" | "Order";
   min?: number;
   max?: number;
   integer?: boolean;
@@ -21,6 +21,8 @@ type Field<K extends keyof Settings> = {
 export type SettingField = { [K in keyof Settings]: Field<K> }[keyof Settings];
 
 export const settingsSchema: SettingField[] = [
+  { key: 'pickerPageSize', type: 'number', label: 'PICKER_LIMIT', description: 'PICKER_LIMIT_HELP', group: 'Order', min: 1, max: 50, integer: true },
+  { key: 'pickerRecentFirst', type: 'boolean', label: 'PICKER_RECENT', description: 'PICKER_RECENT_HELP', group: 'Order' },
   {
     key: "purchasing",
     type: "boolean",

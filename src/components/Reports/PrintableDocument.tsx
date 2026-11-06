@@ -47,7 +47,7 @@ export default function PrintableDocument({
         <header>
           <h1>{report.title}</h1>
           <p>
-            {t("DASH_PERIOD")}: {period}
+            {report.subtitle ?? `${t("DASH_PERIOD")}: ${period}`}
           </p>
           <p className="meta">{t("PRINT_WORKSPACE", { workspace })}</p>
           <p className="meta">
