@@ -1,3 +1,4 @@
+import Select from '../Forms/Select';
 import { useLocaleText } from '../../contexts/Locale';
 import { useEffect, useMemo, useState } from 'react';
 import { useDatabase } from '../../contexts/DatabaseContext';
@@ -39,10 +40,10 @@ export default function PriceHistoryPage() {
     {loading ? <p role="status">{t('UI_LOADING_PRICE_HISTORY')}</p> : error ? <p role="alert">{error}</p> : <>
       <div className="price-history-filters">
         <label htmlFor="price-history-item">{t('UI_FILTER_BY_ITEM')}</label>
-        <select id="price-history-item" value={itemId} onChange={event => setItemId(event.target.value)}>
+        <Select id="price-history-item" value={itemId} onChange={value => setItemId(value)}>
           <option value="">{t('UI_ALL_ITEMS')}</option>
           {items.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-        </select>
+        </Select>
       </div>
       <CustomTableView label={t('UI_PRICE_HISTORY')} columns={columns} data={itemId ? history.filter(entry => entry.itemId === itemId) : history} rowKey={entry => entry.id}
         emptyTitle={t('UI_NO_PRICE_CHANGES_YET')} emptyDescription={t('UI_EDIT_AN_ITEM_S_PRICE_FROM_MANAGE_ITEMS_ITS')} />

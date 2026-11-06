@@ -6,6 +6,7 @@ import App from "./App.tsx";
 import "./index.css";
 import "./styles/typography.css";
 import "./styles/responsive.css";
+import "./styles/forms.css";
 import { BrowserRouter } from "react-router-dom";
 import { DatabaseProvider } from "./contexts/DatabaseContext.tsx";
 import { ClientGlobalProvider } from "./contexts/ClientGlobal.tsx";

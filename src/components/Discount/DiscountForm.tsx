@@ -1,3 +1,4 @@
+import Select from '../Forms/Select';
 import { useState } from 'react';
 import { useLocaleText } from '../../contexts/Locale';
 import { useDatabase } from '../../contexts/DatabaseContext';
@@ -38,10 +39,10 @@ export default function DiscountForm({ transaction, onClose, onApplied }: Discou
     }}>
       <p>{t('DISCOUNT_DIALOG_DESCRIPTION')}</p>
       <div className="input-container"><label htmlFor="discount-type">{t('DISCOUNT_TYPE_LABEL')}</label>
-        <select className="input" id="discount-type" value={type} disabled={busy} onChange={event => { setType(Number(event.target.value) as DiscountItemType); setError(''); }}>
+        <Select className="input" id="discount-type" value={type} disabled={busy} onChange={value => { setType(Number(value) as DiscountItemType); setError(''); }}>
           <option value={DiscountItemType.FLAT}>{t('DISCOUNT_TYPE_FLAT')}</option>
           <option value={DiscountItemType.PERCENTAGE}>{t('DISCOUNT_TYPE_PERCENTAGE')}</option>
-        </select>
+        </Select>
       </div>
       <div className="input-container"><label htmlFor="discount-value">{t(type === DiscountItemType.PERCENTAGE ? 'DISCOUNT_PERCENTAGE_LABEL' : 'DISCOUNT_AMOUNT_LABEL')}</label>
         <input className="input" id="discount-value" type="number" inputMode="decimal" step="any" min="0" max={type === DiscountItemType.PERCENTAGE ? 100 : transaction.getTotal()} value={value} disabled={busy}

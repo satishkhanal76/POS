@@ -1,3 +1,4 @@
+import DashboardPage from "./components/pages/DashboardPage";
 import AppStatus from "./components/App/AppStatus";
 import PriceHistoryPage from "./components/pages/PriceHistoryPage";
 import DemoWelcome from "./components/Workspace/DemoWelcome";
@@ -23,6 +24,7 @@ function App() {
       <DemoBanner />
       <DemoWelcome />
       <Routes>
+        <Route path="/dashboard" Component={DashboardPage} />
         <Route path="/" Component={() => <POSPage />}></Route>
         <Route path="/customers" Component={() => <CustomersPage />}></Route>
         <Route path="/items" Component={() => <ItemsPage />}></Route>

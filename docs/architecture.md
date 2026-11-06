@@ -401,3 +401,25 @@ QuantityForm uses the shared FullScreenModal and form styling, with the current 
 Payments are distinct transaction headers (`kind: "payment"`) with negative totals and no product or discount lines. Older headers without a kind remain sales. The Transaction model reconstructs payments from their saved amount; payment details and paged histories label them explicitly.
 
 On the POS, Record Payment creates a draft. Add to Customer commits the payment header, customer link and summary balance together through CustomersTransactionsOS.recordPayment. Failures leave the draft available to retry; payments cannot be posted without a customer. Sales increase the summary total and payments decrease it; a negative balance represents customer credit. Counts include both sales and payments. Backups preserve the optional kind and derive balances from signed saved totals. No IndexedDB store/index migration is needed.
+
+### Admin dashboard
+
+`dashboard/period.ts` defines local calendar ranges (Monday-based weeks and inclusive custom end dates, converted to an exclusive upper bound). `database/DashboardOS.ts` scans the TRANSACTIONS timestamp index only within that range and reads linked customers and product quantities through their transactionId indexes in the same read-only transaction. It does not reconstruct item prices or load full transaction models.
+
+`controllers/DashboardController.ts` aggregates these projections into period metrics and zero-filled daily/monthly buckets. `DashboardPage` owns date controls, refresh and loading/error states; out-of-date responses cannot replace the selected range. All labels use locale keys. The dashboard follows the active real/demo database.
+
+Sales metrics exclude payment headers; payments received is the positive magnitude of payment totals. Customers handled means distinct customer IDs currently assigned to selected transactions. Customer balance change is linked sale totals minus payment amounts for the period, not lifetime receivables or cash revenue. Transactions are filtered by their original timestamp rather than the later customer-link timestamp.
+
+Dashboard presentation is split into `components/Dashboard/DashboardFilters`, `DashboardMetrics`, `DashboardTrend`, `TopSellingItems`. `DashboardPage` composes these sections and owns only the shared filter/refresh controls; `hooks/useDashboardSummary` handles cancellable period queries.
+
+Top-selling items aggregate the selected sales' product quantities and historical unit prices. Ranking uses quantities or gross item values before transaction-wide discounts (not net item revenue). `DashboardOS` reads the effective price using the itemTimestamp index within its snapshot transaction; it does not use today's price.
+
+`CustomerBalancesOS` reads current customer records and derived summaries in one snapshot independently of period filters. It filters/searches/sorts balance projections, then returns only the requested page. Summary totals include all customers regardless of the table filters. Without a balance index, this query scans customer records and summary lookups; it never loads past transaction rows. Zero balances include customers without history. Floating-point residues below 1e-7 are treated as settled.
+
+Customer balance management lives in `components/Customer/CustomerBalances` inside a collapsed dashboard disclosure. Customer Transactions retains its transaction summary list. Shared report styles live in `styles/Reports.css`; `utils/CollapsibleReport` provides accessible native disclosures for detailed reports.
+
+### Shared form controls
+
+`components/Forms/Select` renders all single-select dropdowns throughout settings, pagination, discounts, price history and dashboard reports. Callers supply the selected value, a value callback and localized option labels. The shared listbox supports arrow/Home/End navigation, type-ahead, Enter/Space selection, Escape, outside dismissal and disabled choices. Its menu uses the browser top layer for positioning above scroll containers and modal dialogs, with a fixed-position fallback.
+
+`components/Forms/DateInput` provides an editable ISO date and themed calendar dialog with month/year controls. `styles/forms.css` supplies common input surfaces, focus/invalid/disabled states and removes native number spinners. Settings' existing custom toggles remain intact. New forms should reuse these controls instead of native select or date-picker widgets.
