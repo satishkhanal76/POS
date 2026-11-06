@@ -1,8 +1,12 @@
+import { BackupProgress } from '../../backup/progress';
+import BackupExportProgress from './BackupExportProgress';
+import { hasUnfinishedRestore } from '../../backup/restoreStatus';
+import './BackupSettings.css';
 import { useLocaleText, LocaleKey } from '../../contexts/Locale';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDatabase } from '../../contexts/DatabaseContext';
 import BackupController from '../../controllers/BackupController';
-import { DatabaseBackup } from '../../database/DatabaseBackup';
+import { DatabaseBackup, RestoreProgress } from '../../database/DatabaseBackup';
 import { workspaceController } from '../../controllers/WorkspaceController';
 
 export default function BackupSettings() {
@@ -13,6 +17,23 @@ export default function BackupSettings() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [restored, setRestored] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<BackupProgress | null>(null);
+  const [progress, setProgress] = useState<RestoreProgress | null>(null);
+  const [interrupted, setInterrupted] = useState(false);
+  const restoring = useRef(false);
+  const lastProgress = useRef(0);
+  useEffect(() => {
+    let cancelled = false;
+    void database.getDatabase().then(db => { if (!cancelled) setInterrupted(hasUnfinishedRestore(db.name)); });
+    return () => { cancelled = true; };
+  }, [database]);
+  const restoreActive = progress !== null;
+  useEffect(() => {
+    if (!restoreActive) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [restoreActive]);
   const input = useRef<HTMLInputElement>(null);
   const tableLabels: Record<string, LocaleKey> = { STOCK: 'STOCK_TITLE', CUSTOMER_TRANSACTION_SUMMARIES: 'TABLE_CUSTOMER_TRANSACTION_SUMMARIES', PRODUCTS: 'TABLE_PRODUCTS', CUSTOMER: 'TABLE_CUSTOMER', DISCOUNTS: 'TABLE_DISCOUNTS', TRANSACTIONS: 'TABLE_TRANSACTIONS', TRANSACTION_PRODUCTS: 'TABLE_TRANSACTION_PRODUCTS', TRANSACTION_DISCOUNTS: 'TABLE_TRANSACTION_DISCOUNTS', CUSTOMERS_TRANSACTIONS: 'TABLE_CUSTOMERS_TRANSACTIONS', ITEM_PRICE_CHANGES: 'TABLE_ITEM_PRICE_CHANGES' };
   const workspace = t(workspaceController.isDemo() ? 'WORKSPACE_DEMO' : 'WORKSPACE_REAL');
@@ -26,9 +47,10 @@ export default function BackupSettings() {
     <section className="settings-section" aria-labelledby="backup-title">
       <h2 id="backup-title">{t('UI_DATABASE_BACKUP')}</h2>
       <p>{t("BACKUP_DESCRIPTION", { workspace })}</p>
+      {interrupted && <p role="alert">{t('RESTORE_INTERRUPTED')}</p>}
       <p>{t('UI_BACKUPS_CONTAIN_DATABASE_RECORDS_DISPLAY_SETTINGS_ARE_SAVED_SEPARATELY')}</p>
       <div className="workspace-buttons">
-        <button type="button" disabled={busy || restored} onClick={() => void run(async () => { await controller.download(); setStatus(t('UI_BACKUP_DOWNLOAD_STARTED')); })}>{t('UI_DOWNLOAD_FULL_BACKUP')}</button>
+        <button type="button" disabled={busy || restored} onClick={() => void run(async () => { try { await controller.download(setDownloadProgress); } finally { setDownloadProgress(null); } setStatus(t('UI_BACKUP_DOWNLOAD_STARTED')); })}>{t('UI_DOWNLOAD_FULL_BACKUP')}</button>
         <button type="button" disabled={busy || restored} onClick={() => input.current?.click()}>{t('UI_CHOOSE_BACKUP_TO_RESTORE')}</button>
       </div>
       <input ref={input} type="file" accept=".zip,application/zip,application/x-zip-compressed" aria-label={t('UI_CHOOSE_DATABASE_BACKUP')} hidden onChange={event => {
@@ -44,7 +66,14 @@ export default function BackupSettings() {
         <div className="workspace-buttons">
           <button type="button" disabled={busy} onClick={() => {
             if (window.confirm(t('UI_REPLACE_ALL_DATA_IN_YOUR_VALUE_WORKSPACE_WITH_THIS', { value0: workspace }))) void run(async () => {
-              await controller.restore(backup);
+              if (restoring.current) return;
+              restoring.current = true; setInterrupted(false);
+              try {
+                await controller.restore(backup, next => {
+                  const now = performance.now();
+                  if (next.phase !== 'writing' || next.completed === next.total || now - lastProgress.current > 100) { lastProgress.current = now; setProgress(next); }
+                });
+              } finally { restoring.current = false; setProgress(null); }
               setBackup(null); setRestored(true); setStatus(t('UI_DATABASE_RESTORED_RELOAD_THE_APP_TO_USE_THE_RESTORED'));
             });
           }}>{t('BACKUP_REPLACE_WORKSPACE', { workspace })}</button>
@@ -52,6 +81,12 @@ export default function BackupSettings() {
         </div>
       </div>}
       {restored && <div className="workspace-buttons"><button type="button" onClick={() => window.location.reload()}>{t('UI_RELOAD_APP')}</button></div>}
+      <BackupExportProgress progress={downloadProgress} />
+      {progress && <div className="restore-progress">
+        <p role="status">{t(progress.phase === 'validating' ? 'RESTORE_VALIDATING' : progress.phase === 'verifying' ? 'RESTORE_VERIFYING' : 'RESTORE_WRITING', { done: progress.completed.toLocaleString(), total: progress.total.toLocaleString() })}</p>
+        {progress.phase === 'writing' && <div className="restore-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total || 1} aria-valuenow={progress.completed} aria-label={t('RESTORE_PROGRESS')}><span style={{ width: `${progress.total ? progress.completed / progress.total * 100 : 0}%` }} /></div>}
+        <p>{t('RESTORE_KEEP_OPEN')}</p>
+      </div>}
       <p role="status">{busy ? t('UI_WORKING') : status}</p>
     </section>
   );

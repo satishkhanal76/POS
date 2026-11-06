@@ -1,0 +1,5 @@
+.restore-progress { padding: 1rem; margin-top: 1rem; border: 1px solid var(--color-slate600); border-radius: 10px; }
+.restore-progress p { margin: .5rem 0; font-size: .9rem; line-height: 1.5; }
+.restore-progress-track { height: 8px; overflow: hidden; border-radius: 8px; background: var(--color-slate600); margin: .8rem 0; }
+.restore-progress-track > span { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width .1s linear; }
+@media(prefers-reduced-motion: reduce) { .restore-progress-track > span { transition: none; } }

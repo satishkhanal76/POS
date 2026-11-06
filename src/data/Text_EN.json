@@ -559,5 +559,18 @@
   "PRINT_ID": "Transaction ID",
   "PRINT_BALANCE_FILTERS": "Balance filter: ${status}. Search: ${search}. These balances are current and all-time, not limited to a report period.",
   "PRINT_NO_SEARCH": "None",
-  "PRINT_WORKSPACE": "Workspace: ${workspace}"
+  "PRINT_WORKSPACE": "Workspace: ${workspace}",
+  "RESTORE_VALIDATING": "Checking the backup before replacement…",
+  "RESTORE_WRITING": "Restoring ${done} of ${total} records…",
+  "RESTORE_VERIFYING": "Writes finished. Checking the saved record counts…",
+  "RESTORE_PROGRESS": "Restore progress",
+  "RESTORE_KEEP_OPEN": "Keep this app open and in the foreground until completion. Large restores can take several minutes.",
+  "RESTORE_INTERRUPTED": "A previous restore did not report completion, possibly because the app closed. Check your records before continuing. If the backup was not applied, select the ZIP again and retry while keeping the app open.",
+  "RESTORE_QUOTA": "There is not enough browser storage to finish restoring. The replacement was rolled back; the previous database was kept. Free storage and try again.",
+  "RESTORE_VERIFY_FAILED": "The restore committed, but its saved counts could not be confirmed. Reload and check your data before attempting another restore.",
+  "EXPORT_PREPARING": "Counting records for your backup…",
+  "EXPORT_PACKING": "Preparing ZIP: ${done} of ${total} records…",
+  "EXPORT_FINALIZING": "Finishing the ZIP file…",
+  "EXPORT_PROGRESS": "Backup preparation progress",
+  "EXPORT_KEEP_OPEN": "Keep the app open while the backup is prepared. Your browser will handle saving the ZIP when it is ready."
 }

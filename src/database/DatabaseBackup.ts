@@ -1,3 +1,5 @@
+import { BackupProgress } from '../backup/progress';
+import { markRestoreStarted, clearRestoreStatus } from '../backup/restoreStatus';
 import { getLocaleText } from '../contexts/Locale';
 import { IDB } from './Database';
 
@@ -127,12 +129,14 @@ export function validateBackup(value: unknown): DatabaseBackup {
   return value as unknown as DatabaseBackup;
 }
 
+export interface RestoreProgress { completed: number; total: number; phase: 'validating' | 'writing' | 'verifying'; table?: string }
+
 /** Persistence boundary for complete, consistent snapshots and atomic replacement. */
 export default class DatabaseBackupStore {
   constructor(private readonly database: IDB) {}
 
   /** One consistent snapshot, emitted as bounded per-table JSON parts. No full database clone. */
-  public async exportParts(write: (table: string, part: number, json: string, count: number) => void) {
+  public async exportParts(write: (table: string, part: number, json: string, count: number) => void, onProgress?: (progress: BackupProgress) => void) {
     const db = await this.database.getDatabase();
     const names = Array.from(db.objectStoreNames);
     return new Promise<{ databaseVersion: number; sourceDatabase: string; createdAt: string }>((resolve, reject) => {
@@ -140,10 +144,12 @@ export default class DatabaseBackupStore {
       let failure: unknown;
       transaction.oncomplete = () => resolve({ databaseVersion: db.version, sourceDatabase: db.name, createdAt: new Date().toISOString() });
       transaction.onabort = () => reject(failure || new Error(getLocaleText('UI_UNABLE_TO_READ_THE_DATABASE_BACKUP')));
-      for (const name of names) {
+      let total = 0, completed = 0, pending = names.length;
+      onProgress?.({ completed, total, phase: 'preparing' });
+      const readTable = (name: string) => {
         let rows: string[] = [], bytes = 2, part = 0;
         const encoder = new TextEncoder();
-        const flush = () => { write(name, ++part, `[${rows.join(',')}]`, rows.length); rows = []; bytes = 2; };
+        const flush = () => { write(name, ++part, `[${rows.join(',')}]`, rows.length); completed += rows.length; onProgress?.({ completed, total, phase: 'packing' }); rows = []; bytes = 2; };
         const cursor = transaction.objectStore(name).openCursor();
         cursor.onsuccess = () => {
           try {
@@ -155,6 +161,13 @@ export default class DatabaseBackupStore {
             rows.push(json); bytes += size;
             entry.continue();
           } catch (error) { failure = error; transaction.abort(); }
+        };
+      };
+      for (const name of names) {
+        const count = transaction.objectStore(name).count();
+        count.onsuccess = () => {
+          total += count.result;
+          if (!--pending) { onProgress?.({ completed, total, phase: 'packing' }); for (const table of names) readTable(table); }
         };
       }
     });
@@ -170,26 +183,63 @@ export default class DatabaseBackupStore {
     return { format: 'pos-database-backup', formatVersion: 1, ...metadata, tables };
   }
 
-  public async restore(value: unknown): Promise<void> {
+  public async restore(value: unknown, onProgress?: (progress: RestoreProgress) => void): Promise<void> {
+    onProgress?.({ completed: 0, total: 0, phase: 'validating' });
+    // Paint the pending state before validating a large in-memory archive.
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
     const backup = validateBackup(value);
     const db = await this.database.getDatabase();
     const names = Array.from(db.objectStoreNames);
     if (db.version !== backup.databaseVersion || names.length !== Object.keys(backup.tables).length || names.some(name => !Object.prototype.hasOwnProperty.call(backup.tables, name))) {
       throw new Error(getLocaleText('UI_BACKUP_SCHEMA_DOES_NOT_MATCH_THIS_DATABASE'));
     }
+    const total = names.reduce((sum, name) => sum + backup.tables[name].length, 0);
+    let completed = 0;
+    markRestoreStarted(db.name);
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction(names, 'readwrite');
       transaction.oncomplete = () => resolve();
-      transaction.onabort = () => reject(new Error(getLocaleText('UI_RESTORE_FAILED_THE_ORIGINAL_DATABASE_HAS_BEEN_KEPT')));
-      try {
-        for (const name of names) {
+      transaction.onabort = () => {
+        clearRestoreStatus(db.name);
+        reject(new Error(getLocaleText(transaction.error?.name === 'QuotaExceededError' ? 'RESTORE_QUOTA' : 'UI_RESTORE_FAILED_THE_ORIGINAL_DATABASE_HAS_BEEN_KEPT')));
+      };
+      let tableIndex = 0, offset = 0;
+      const report = () => onProgress?.({ completed, total, phase: 'writing', table: names[tableIndex] });
+      // A success callback queues the next small group while the SAME transaction is active.
+      // Never await a timer between groups: that could commit a partly replaced database.
+      const writeNext = () => {
+        try {
+          if (tableIndex >= names.length) return;
+          const name = names[tableIndex];
           const store = transaction.objectStore(name);
-          store.clear();
-          for (const row of backup.tables[name]) store.add(row);
-        }
-      } catch {
-        transaction.abort();
+          const rows = backup.tables[name];
+          const end = Math.min(offset + 200, rows.length);
+          if (offset === end) { tableIndex++; offset = 0; report(); writeNext(); return; }
+          let last: IDBRequest | undefined;
+          const count = end - offset;
+          for (; offset < end; offset++) last = store.add(rows[offset]);
+          last!.onsuccess = () => { completed += count; report(); writeNext(); };
+        } catch { transaction.abort(); }
+      };
+      // Clear requests are also bounded to the number of stores, not the number of records.
+      let clears = names.length;
+      for (const name of names) {
+        const request = transaction.objectStore(name).clear();
+        request.onsuccess = () => { if (!--clears) { report(); writeNext(); } };
       }
     });
+    onProgress?.({ completed: total, total, phase: 'verifying' });
+    const counts = await new Promise<Record<string, number>>((resolve, reject) => {
+      const transaction = db.transaction(names);
+      const result: Record<string, number> = {};
+      transaction.oncomplete = () => resolve(result);
+      transaction.onabort = () => reject(new Error(getLocaleText('RESTORE_VERIFY_FAILED')));
+      for (const name of names) {
+        const request = transaction.objectStore(name).count();
+        request.onsuccess = () => { result[name] = request.result; };
+      }
+    });
+    if (names.some(name => counts[name] !== backup.tables[name].length)) throw new Error(getLocaleText('RESTORE_VERIFY_FAILED'));
+    clearRestoreStatus(db.name);
   }
 }

@@ -1,3 +1,5 @@
+import { BackupProgress } from '../../backup/progress';
+import BackupExportProgress from '../Settings/BackupExportProgress';
 import { useMemo, useRef, useState } from 'react';
 import { useDatabase } from '../../contexts/DatabaseContext';
 import { useLocaleText } from '../../contexts/Locale';
@@ -13,16 +15,17 @@ export default function UpdateDialog({ onClose, onUpdate }: { onClose: () => voi
   const backup = useMemo(() => new BackupController(database), [database]);
   const [busy, setBusy] = useState<'backup' | 'update' | null>(null);
   const inFlight = useRef(false);
+  const [downloadProgress, setDownloadProgress] = useState<BackupProgress | null>(null);
   const [downloaded, setDownloaded] = useState(false);
   const [error, setError] = useState('');
   const run = async (action: 'backup' | 'update') => {
     if (inFlight.current) return;
     inFlight.current = true; setBusy(action); setError('');
     try {
-      if (action === 'backup') { await backup.download(); setDownloaded(true); }
+      if (action === 'backup') { await backup.download(setDownloadProgress); setDownloaded(true); }
       else { await onUpdate(); onClose(); }
     } catch { setError(t(action === 'backup' ? 'UI_BACKUP_OPERATION_FAILED_PLEASE_TRY_AGAIN' : 'PWA_UPDATE_FAILED')); }
-    finally { inFlight.current = false; setBusy(null); }
+    finally { setDownloadProgress(null); inFlight.current = false; setBusy(null); }
   };
   return <FullScreenModal title={t('PWA_UPDATE_TITLE')} onClose={() => { if (!inFlight.current) onClose(); }}>
     <p>{t('PWA_BACKUP_RECOMMENDATION')}</p>
@@ -33,6 +36,7 @@ export default function UpdateDialog({ onClose, onUpdate }: { onClose: () => voi
       <button type="button" disabled={!!busy} onClick={() => void run('update')}>{t(busy === 'update' ? 'PWA_UPDATING' : 'PWA_UPDATE_ACTION')}</button>
       <button type="button" disabled={!!busy} onClick={onClose}>{t('PWA_UPDATE_LATER')}</button>
     </div>
+    <BackupExportProgress progress={downloadProgress} />
     {downloaded && <p role="status">{t('PWA_BACKUP_CHECK_DOWNLOAD')}</p>}
     {error && <p role="alert">{error}</p>}
   </FullScreenModal>;

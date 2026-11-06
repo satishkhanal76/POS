@@ -1,3 +1,4 @@
+import { BackupProgress } from './progress';
 import { Zip, ZipDeflate, strToU8, strFromU8, unzip } from 'fflate';
 import DatabaseBackupStore, { DatabaseBackup, validateBackup } from '../database/DatabaseBackup';
 import { getLocaleText } from '../localization/locale';
@@ -12,7 +13,7 @@ interface ArchiveManifest {
 }
 
 /** ZIP transport is separate from database snapshots and record/schema validation. */
-export async function createBackupArchive(store: DatabaseBackupStore) {
+export async function createBackupArchive(store: DatabaseBackupStore, onProgress?: (progress: BackupProgress) => void) {
   const chunks: Uint8Array[] = [];
   let zipError: Error | null = null;
   const zip = new Zip((error, chunk) => { if (error) zipError = error; else chunks.push(chunk); });
@@ -29,7 +30,9 @@ export async function createBackupArchive(store: DatabaseBackupStore) {
       const file = `tables/${table}/part-${String(part).padStart(6, '0')}.json`;
       (tables[table] ??= []).push({ file, count });
       addFile(file, json);
-    });
+    }, onProgress);
+    const total = Object.values(tables).flat().reduce((sum, part) => sum + part.count, 0);
+    onProgress?.({ completed: total, total, phase: 'finalizing' });
     const manifest: ArchiveManifest = { format: 'pos-database-archive', formatVersion: 1, ...metadata, tables };
     addFile('manifest.json', JSON.stringify(manifest, null, 2));
     zip.end();
@@ -59,6 +62,8 @@ export async function readBackupArchive(file: File): Promise<DatabaseBackup> {
         const records: unknown = JSON.parse(strFromU8(files[path]));
         if (!Array.isArray(records) || records.length !== part.count) throw new Error();
         for (const row of records) rows.push(row);
+        // Release each decoded byte buffer instead of retaining both forms of the whole database.
+        delete files[path];
       }
       tables[table] = rows;
     }

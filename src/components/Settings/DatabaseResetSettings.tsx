@@ -1,3 +1,5 @@
+import { BackupProgress } from '../../backup/progress';
+import BackupExportProgress from './BackupExportProgress';
 import { useMemo, useRef, useState } from 'react';
 import { useDatabase } from '../../contexts/DatabaseContext';
 import { useLocaleText } from '../../contexts/Locale';
@@ -17,6 +19,7 @@ export default function DatabaseResetSettings() {
   const [busy, setBusy] = useState(false);
   const locked = useRef(false);
   const [error, setError] = useState('');
+  const [downloadProgress, setDownloadProgress] = useState<BackupProgress | null>(null);
   const [notice, setNotice] = useState('');
   const run = async (action: () => Promise<void>) => {
     if (locked.current) return;
@@ -40,7 +43,7 @@ export default function DatabaseResetSettings() {
           <label className="database-reset-input" htmlFor="reset-database-name">{t('RESET_TYPE_NAME', { database: name })}
             <input id="reset-database-name" autoComplete="off" spellCheck={false} value={typed} onChange={event => setTyped(event.target.value)} disabled={busy} />
           </label>
-          <div className="workspace-buttons"><button type="button" disabled={busy} onClick={() => void run(async () => { await backup.download(); setNotice(t('PWA_BACKUP_CHECK_DOWNLOAD')); })}>{t('UI_DOWNLOAD_FULL_BACKUP')}</button>
+          <div className="workspace-buttons"><button type="button" disabled={busy} onClick={() => void run(async () => { try { await backup.download(setDownloadProgress); } finally { setDownloadProgress(null); } setNotice(t('PWA_BACKUP_CHECK_DOWNLOAD')); })}>{t('UI_DOWNLOAD_FULL_BACKUP')}</button>
             <button type="button" disabled={busy || typed !== name} onClick={() => setStep('confirm')}>{t('RESET_REVIEW')}</button>
             <button type="button" disabled={busy} onClick={close}>{t('UI_CANCEL')}</button></div>
         </> : <>
@@ -50,6 +53,7 @@ export default function DatabaseResetSettings() {
           })}>{t(busy ? 'UI_WORKING' : 'RESET_CONFIRM')}</button>
           <button type="button" disabled={busy} onClick={close}>{t('UI_CANCEL')}</button></div>
         </>}
+        <BackupExportProgress progress={downloadProgress} />
         {notice && <p role="status">{notice}</p>}{error && <p role="alert">{error}</p>}
       </>}
     </FullScreenModal>}

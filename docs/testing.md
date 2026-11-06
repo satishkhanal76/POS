@@ -87,3 +87,5 @@ To add a regression test, put it beside the relevant feature tests, start with `
 ## Bugs Found by the Initial Suite
 
 The numeric-validator regressions exposed and fixed valid values being replaced when fallback was disabled, ignored zero bounds, stale invalid state while parsing decimals, incorrect exclusive decimal bounds, and null/non-finite float handling. These cases remain in `validators.test.ts`.
+
+For large restores on a physical phone, keep the installed app open in the foreground and observe the restored-record counter followed by saved-count verification. Interrupting the process must never leave a partial replacement: the whole transaction either commits or rolls back. A subsequent launch may show an unfinished-restore notice if completion could not be recorded. Desktop/Node validation of a ZIP does not establish the phone's memory or IndexedDB behavior.

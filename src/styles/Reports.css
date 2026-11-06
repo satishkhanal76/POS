@@ -45,3 +45,13 @@
 
 .dashboard-page .page-header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 .dashboard-page .page-header-actions a { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* Report actions must not squeeze the title into a narrow column on phones. */
+@media(max-width: 800px) {
+  .dashboard-page > .page-header { flex-direction: column; align-items: stretch; gap: 1rem; }
+  .dashboard-page > .page-header > .page-header-copy { width: 100%; }
+  .dashboard-page > .page-header > .page-header-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .65rem; width: 100%; min-width: 0; }
+  .dashboard-page .page-header-actions > .print-report-button { grid-column: 1 / -1; width: 100%; white-space: normal; }
+  .dashboard-page .page-header-actions > a { justify-content: center; padding: .65rem 1rem; border: 1px solid var(--color-slate600); border-radius: 9px; font-size: .95rem; text-decoration: none; }
+  .dashboard-page .page-header-actions > button { min-width: 0; white-space: normal; }
+}
