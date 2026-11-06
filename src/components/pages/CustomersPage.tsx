@@ -1,7 +1,9 @@
+import useDeletedVisibility from '../../hooks/useDeletedVisibility';
+import DeletedVisibility from '../utils/DeletedVisibility';
 import { useLocaleText } from '../../contexts/Locale';
 import CustomerEditForm from "../Customer/CustomerEditForm";
 import PageHeader from "../Layout/PageHeader";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import FullScreenModal from "../Modals/FullScreenModal";
 import CustomForm from "../Customer/CustomForm";
 import { useLocale } from "../../contexts/Locale";
@@ -13,7 +15,7 @@ import CustomersView from "../Customer/CustomersView";
 
 const CustomersPage = () => {
   const t = useLocaleText();
-  const [error, setError] = useState("");
+  const { includeDeleted } = useDeletedVisibility();
 
   const [editing, setEditing] = useState<ICustomer | null>(null);
   const [isAddModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -33,20 +35,8 @@ const CustomersPage = () => {
       }
     };
   
-    const handleDelete = async (customer: ICustomer) => {
-      setError('');
-      try {
-        const deletedCustomer = await customerController.deleteCustomer(customer);
-        setCustomers(current => current.filter(entry => entry.getId() !== deletedCustomer.getId()));
-      } catch (failure) { setError(failure instanceof Error ? failure.message : t('CUSTOMER_DELETE_FAILED')); }
-
-    };
-  
-    useEffect(() => {
-      customerController
-        .getAllCustomers()
-        .then((allCustomers) => setCustomers(allCustomers));
-    }, []);
+    const refresh = useCallback(() => customerOS.getAll(undefined, includeDeleted).then(setCustomers), [customerOS, includeDeleted]);
+    useEffect(() => { void refresh(); }, [refresh]);
     
   return <>
           {isAddModalOpen && <FullScreenModal title={text.CUSTOMER_FORM_TITLE} onClose={() => setIsModalOpen(false)}>
@@ -77,13 +67,13 @@ const CustomersPage = () => {
               onFormSubmit={handleFormSubmit}
             ></CustomForm>
           </FullScreenModal>}
-          {editing && <CustomerEditForm customer={editing} onClose={() => setEditing(null)} onSaved={updated => {
-            setCustomers(current => current.map(customer => customer.getId() === updated.getId() ? updated : customer));
+          {editing && <CustomerEditForm customer={editing} onClose={() => setEditing(null)} onSaved={() => {
+            void refresh();
             setEditing(null);
           }} />}
           <PageHeader title={text.CUSTOMERS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label={t('CUSTOMER_FORM_TITLE')} title={t('CUSTOMER_FORM_TITLE')}><MdAdd aria-hidden="true" /></button>} />
-          {error && <p role="alert">{error}</p>}
-          <CustomersView onEdit={setEditing} handleDelete={handleDelete} customers={customers} />
+          <DeletedVisibility />
+          <CustomersView onDeleted={() => void refresh()} onEdit={setEditing} handleDelete={() => {}} customers={customers} />
         </>;
 };
 

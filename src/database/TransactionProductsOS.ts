@@ -61,7 +61,7 @@ export default class TransactionProductsOS
   public async getSchemaAsObject(schema: TransactionProductSchema) {
     return new ProductTransactionItem({
       ...schema,
-      item: await this.itemOS.getOne(schema.productId),
+      item: await this.itemOS.getOne(schema.productId, true),
     });
   }
 }

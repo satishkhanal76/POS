@@ -10,7 +10,7 @@ for (const version of [1, 2] as const) {
   test(`version ${version} upgrades in place, preserving records and rebuilding summaries`, async () => {
     const stores = await legacyDatabase(version);
     const database = await stores.database.getDatabase();
-    assert.equal(database.version, 4);
+    assert.equal(database.version, 5);
     assert.equal((await stores.transactionsOS.getOne('old')).getTotal(), 6);
     assert.equal((await stores.itemOS.getOne('p')).getAmount(), version === 2 ? 5 : 3);
     const summaries = await stores.customerSummariesOS.getPage({ page: 1, pageSize: 10, sort: 'newest' });

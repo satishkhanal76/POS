@@ -12,6 +12,7 @@ export interface IProductOS extends IObjectStore<ProductSchema, ProductItem> {
 // this is what will be stored on database
 export interface ProductSchema {
   id: string;
+  deletedAt?: number;
   name: string;
   amount: number;
 }
@@ -26,7 +27,7 @@ export default class ProductOS
     super(db, ProductOS.OBJECT_STORE_NAME);
   }
 
-  public onObjectStoreCreation(objectStore: IDBObjectStore, db: IDB) {
+  public onObjectStoreCreation(objectStore: IDBObjectStore) {
     objectStore.createIndex("id", "id", { unique: true });
     objectStore.createIndex("name", "name", { unique: false });
   }
@@ -34,6 +35,7 @@ export default class ProductOS
   public getObjectAsSchema(item: ProductItem) {
     return {
       id: item.getId(),
+      ...(item.deletedAt ? { deletedAt: item.deletedAt } : {}),
       name: item.getName(),
       amount: item.getOriginalAmount(),
     } as ProductSchema;
@@ -41,35 +43,15 @@ export default class ProductOS
 
   public async getSchemaAsObject(schema: ProductSchema): Promise<ProductItem> {
     const amount = await this.priceChanges?.getPriceAt(schema.id);
-    return new ProductItem({ ...schema, amount: amount ?? schema.amount }, schema.amount);
+    return Object.assign(new ProductItem({ ...schema, amount: amount ?? schema.amount }, schema.amount), { deletedAt: schema.deletedAt });
   }
 
   public async getAtTimestamp(id: string, timestamp: number): Promise<ProductItem> {
-    const item = await this.getOne(id);
+    const item = await this.getOne(id, true);
     const amount = await this.priceChanges?.getPriceAt(id, timestamp);
-    return new ProductItem({ id, name: item.getName(), amount: amount ?? item.getOriginalAmount() }, item.getOriginalAmount());
+    return Object.assign(new ProductItem({ id, name: item.getName(), amount: amount ?? item.getOriginalAmount() }, item.getOriginalAmount()), { deletedAt: item.deletedAt });
   }
 
-  public async deleteOne(id: string): Promise<ProductItem> {
-    const item = await this.getOne(id);
-    const db = await this.db.getDatabase();
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(['PRODUCTS', 'TRANSACTION_PRODUCTS', 'ITEM_PRICE_CHANGES', 'STOCK'], 'readwrite');
-      let message = getLocaleText('UI_ITEM_COULD_NOT_BE_DELETED');
-      transaction.oncomplete = () => resolve();
-      transaction.onabort = () => reject(new Error(message));
-      const used = transaction.objectStore('TRANSACTION_PRODUCTS').index('productId').count(id);
-      used.onsuccess = () => {
-        if (used.result) { message = getLocaleText('UI_THIS_ITEM_IS_USED_IN_SAVED_TRANSACTIONS_AND_CANNOT'); transaction.abort(); return; }
-        transaction.objectStore('PRODUCTS').delete(id);
-        transaction.objectStore('STOCK').delete(id);
-        const cursor = transaction.objectStore('ITEM_PRICE_CHANGES').index('itemTimestamp')
-          .openCursor(IDBKeyRange.bound([id, 0], [id, Number.MAX_SAFE_INTEGER]));
-        cursor.onsuccess = () => { if (cursor.result) { cursor.result.delete(); cursor.result.continue(); } };
-      };
-    });
-    return item;
-  }
 
   /** Keep the original price intact; name edits and new price events commit together. */
   public async updateDetails(id: string, name: string, amount: number): Promise<void> {

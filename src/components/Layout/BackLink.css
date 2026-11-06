@@ -1,0 +1,6 @@
+.page-back-link { display: inline-flex; align-items: center; justify-content: flex-start; gap: .65rem; min-height: 48px; max-width: 100%; padding: .65rem 1rem; box-sizing: border-box; border: 1px solid var(--color-slate600); border-radius: 11px; background: transparent; color: var(--color-slate200); font-size: 1rem; font-weight: 500; line-height: 1.4; text-decoration: none; transition: background-color .15s, border-color .15s, color .15s; }
+.page-back-link svg { width: 21px; height: 21px; flex-shrink: 0; }
+.page-back-link:hover { background: color-mix(in srgb, var(--color-slate500) 12%, transparent); border-color: var(--color-slate400); color: var(--color-slate100); text-decoration: none; }
+.page-back-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.page-back-link:active { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+@media(prefers-reduced-motion: reduce) { .page-back-link { transition: none; } }

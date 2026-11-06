@@ -1,10 +1,12 @@
+import CustomerActivityStore from './CustomerActivityStore';
+import Customer from '../models/Customer';
 import { IDB } from './Database';
 import ObjectStore from './ObjectStore';
 import { ICustomerOS } from './CustomerOS';
 import CustomerTransactionSummary, { CustomerSummarySchema } from '../models/CustomerTransactionSummary';
 import { CustomerTransactionsSchema } from './CustomersTransactionsOS';
 import { TransactionsSchema } from './TransactionsOS';
-import { PageOptions, readIndexPage } from './Pagination';
+import { PageOptions } from './Pagination';
 
 export default class CustomerTransactionSummariesOS extends ObjectStore<CustomerSummarySchema, CustomerTransactionSummary> {
   constructor(db: IDB, private readonly customers: ICustomerOS) { super(db, 'CUSTOMER_TRANSACTION_SUMMARIES'); }
@@ -14,12 +16,15 @@ export default class CustomerTransactionSummariesOS extends ObjectStore<Customer
   }
   public getObjectAsSchema(summary: CustomerTransactionSummary) { return summary.data; }
   public async getSchemaAsObject(schema: CustomerSummarySchema) {
-    return new CustomerTransactionSummary(schema, await this.customers.getOne(schema.id));
+    return new CustomerTransactionSummary(schema, await this.customers.getOne(schema.id, true));
   }
   public async getPage(options: PageOptions) {
-    const db = await this.db.getDatabase();
-    const result = await readIndexPage<CustomerSummarySchema>(db.transaction(this.objectStoreName).objectStore(this.objectStoreName).index('timestamp'), options);
-    return { ...result, rows: await Promise.all(result.rows.map(row => this.getSchemaAsObject(row))) };
+    const rows = (await new CustomerActivityStore(this.db).list(options.includeDeleted)).filter(row => row.count > 0).sort((a, b) => options.sort === 'oldest' ? a.timestamp - b.timestamp : b.timestamp - a.timestamp);
+    const pageSize = [0, 10, 25, 50, 100].includes(options.pageSize) ? options.pageSize : 10;
+    const size = pageSize || Math.max(1, rows.length);
+    const page = Math.min(Math.max(1, options.page), Math.max(1, Math.ceil(rows.length / size)));
+    return { total: rows.length, pageSize, page, rows: rows.slice((page - 1) * size, page * size).map(row => new CustomerTransactionSummary({ id: row.id, total: row.total, count: row.count, timestamp: row.timestamp }, Object.assign(new Customer(row), { deletedAt: row.deletedAt }))) };
+
   }
 
   /** One-time v3 migration aggregates existing links without rebuilding sale models. */

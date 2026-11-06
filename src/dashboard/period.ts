@@ -21,4 +21,4 @@ export function dashboardRange(period: DashboardPeriod, anchor: string, customEn
   if (!Number.isFinite(end.getTime())) return null;
   return { start: start.getTime(), end: end.getTime() };
 }
-export interface DashboardRange { start: number; end: number; all?: boolean }
+export interface DashboardRange { start: number; end: number; all?: boolean; includeDeleted?: boolean }

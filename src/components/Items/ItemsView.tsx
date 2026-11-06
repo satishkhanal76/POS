@@ -1,3 +1,4 @@
+import DeleteRecordButton from '../utils/DeleteRecordButton';
 import { useState } from 'react';
 import { useClientGlobal } from '../../contexts/ClientGlobal';
 import useStockCounts from '../../hooks/useStockCounts';
@@ -11,12 +12,13 @@ import { IItem } from "../../models/Item";
 import CustomTableView, { CustomTableColumn } from "../utils/CustomTableView";
 interface ItemsViewProps {
   items: IProductItem[];
+  onDeleted?: () => void;
   onEdit?: (item: IProductItem) => void;
   handleDelete: (item: IItem) => void;
 }
 
 
-const ItemsView = ({ items, handleDelete, onEdit }: ItemsViewProps) => {
+const ItemsView = ({ items, onDeleted, onEdit }: ItemsViewProps) => {
   const t = useLocaleText();
   const text = useLocale();
   const { stockManagement } = useClientGlobal();
@@ -30,9 +32,9 @@ const ItemsView = ({ items, handleDelete, onEdit }: ItemsViewProps) => {
     {key: "actions", header: t('UI_ACTIONS'), variant: "actions", 
       render: (item) => (
         <>
-        {stockManagement && <button type="button" disabled={!counts || error} aria-label={t('STOCK_EDIT_TITLE', { item: item.getName() })} onClick={() => setStockItem(item)}>{t('STOCK_EDIT')}</button>}
+        {stockManagement && !item.deletedAt && <button type="button" disabled={!counts || error} aria-label={t('STOCK_EDIT_TITLE', { item: item.getName() })} onClick={() => setStockItem(item)}>{t('STOCK_EDIT')}</button>}
         {onEdit && <button type="button" aria-label={t('UI_EDIT_VALUE', { value0: item.getName() })} onClick={() => onEdit(item)}>{t('UI_EDIT')}</button>}
-        <button type="button" className="table-delete" aria-label={t('UI_DELETE_VALUE', { value0: item.getName() })} onClick={() => handleDelete(item)}>{text.ITEM_DELETE_BUTTON}</button>
+        <DeleteRecordButton table="PRODUCTS" id={item.getId()} name={item.getName()} deleted={!!item.deletedAt} onDeleted={onDeleted} />
         </>
       )
     }

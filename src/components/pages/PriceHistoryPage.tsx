@@ -1,3 +1,5 @@
+import useDeletedVisibility from '../../hooks/useDeletedVisibility';
+import DeletedVisibility from '../utils/DeletedVisibility';
 import Select from '../Forms/Select';
 import { useLocaleText } from '../../contexts/Locale';
 import { useEffect, useMemo, useState } from 'react';
@@ -10,6 +12,7 @@ import './PriceHistoryPage.css';
 
 export default function PriceHistoryPage() {
   const t = useLocaleText();
+  const { includeDeleted } = useDeletedVisibility();
   const { itemOS, itemPriceChangesOS } = useDatabase();
   const [history, setHistory] = useState<PriceHistoryEntry[]>([]);
   const [itemId, setItemId] = useState('');
@@ -18,13 +21,13 @@ export default function PriceHistoryPage() {
   useEffect(() => {
     let cancelled = false;
     const controller = new PriceHistoryController(itemOS, itemPriceChangesOS);
-    controller.getHistory().then(entries => {
+    controller.getHistory(includeDeleted).then(entries => {
       if (!cancelled) { setHistory(entries); setLoading(false); }
     }).catch(() => {
       if (!cancelled) { setError(t('UI_PRICE_HISTORY_COULD_NOT_BE_LOADED_RELOAD_THE_PAGE')); setLoading(false); }
     });
     return () => { cancelled = true; };
-  }, [itemOS, itemPriceChangesOS, t]);
+  }, [itemOS, itemPriceChangesOS, t, includeDeleted]);
 
   const items = useMemo(() => Array.from(new Map(history.map(entry => [entry.itemId, entry.itemName])))
     .sort((a, b) => a[1].localeCompare(b[1])), [history]);
@@ -37,6 +40,7 @@ export default function PriceHistoryPage() {
 
   return <main>
     <PageHeader title={t('NAVBAR_PRICE_HISTORY')} description={t('UI_REVIEW_ITEM_PRICE_CHANGES_NEWEST_FIRST_ITEM_NAMES_REFLECT')} />
+    <DeletedVisibility />
     {loading ? <p role="status">{t('UI_LOADING_PRICE_HISTORY')}</p> : error ? <p role="alert">{error}</p> : <>
       <div className="price-history-filters">
         <label htmlFor="price-history-item">{t('UI_FILTER_BY_ITEM')}</label>

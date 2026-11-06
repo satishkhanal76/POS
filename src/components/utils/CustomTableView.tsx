@@ -1,3 +1,5 @@
+import { isDeleted } from '../../deletion/state';
+import './DeletedVisibility.css';
 import { useLocaleText } from '../../contexts/Locale';
 import { ReactNode } from 'react';
 import './CustomTableView.css';
@@ -43,7 +45,7 @@ export default function CustomTableView<T>({
           ))}</tr></thead>
           <tbody role="rowgroup">
             {data.map(row => (
-              <tr role="row" key={rowKey(row)} className={onRowClick ? 'table-row-clickable' : undefined}
+              <tr role="row" data-deleted={isDeleted(row) || isDeleted((row as { customer?: unknown }).customer) || undefined} key={rowKey(row)} className={onRowClick ? 'table-row-clickable' : undefined}
                 tabIndex={onRowClick ? 0 : undefined}
                 aria-label={onRowClick ? t('UI_OPEN_VALUE_RECORD_VALUE', { value0: label.toLowerCase(), value1: rowKey(row) }) : undefined}
                 onClick={event => { if (!isInteractiveTarget(event.target)) onRowClick?.(row); }}
@@ -52,9 +54,9 @@ export default function CustomTableView<T>({
                     event.preventDefault(); onRowClick(row);
                   }
                 }}>
-                {columns.map(column => (
+                {columns.map((column, columnIndex) => (
                   <td role="cell" data-label={column.header} key={column.key} data-align={column.align || (column.variant === 'numeric' || column.variant === 'actions' ? 'right' : 'left')} data-variant={column.variant || 'default'}>
-                    <span className="table-cell-value">{column.render(row)}</span>
+                    <span className="table-cell-value">{column.render(row)}{columnIndex === 0 && (isDeleted(row) || isDeleted((row as { customer?: unknown }).customer)) && <span className="deleted-badge">{t('DELETED_BADGE')}</span>}</span>
                   </td>
                 ))}
               </tr>

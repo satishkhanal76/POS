@@ -13,6 +13,7 @@ import DiscountItem, { DiscountItemType, IDiscountItem } from "./DiscountItem";
 import FloatValidator from "../validators/FloatValidator";
 
 export interface ITransaction {
+  deletedAt?: number;
   getTimestamp: () => number;
   getId: () => string;
   getTotal: () => number;
@@ -83,6 +84,7 @@ export interface ITransaction {
 }
 
 export default class Transaction implements ITransaction {
+  public deletedAt?: number;
   private timestamp: number;
   private id: string;
   private transactionProductItems: ProductTransactionItem[];

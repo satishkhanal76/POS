@@ -1,3 +1,5 @@
+import DeleteRecordButton from '../utils/DeleteRecordButton';
+import useDeletionRevision from '../../hooks/useDeletionRevision';
 import { useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLocale, useLocaleText } from '../../contexts/Locale';
@@ -19,6 +21,7 @@ export default function TransactionsView({ customerId, range: fixedRange, kind, 
   customerId?: string; range?: DashboardRange; kind?: TransactionKindFilter; scope?: string; refresh?: number;
 }) {
   const t = useLocaleText();
+  const revision = useDeletionRevision();
   const text = useLocale();
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,15 +30,16 @@ export default function TransactionsView({ customerId, range: fixedRange, kind, 
   const range = fixedRange ?? period.range;
   const controller = useMemo(() => new TransactionHistoryController(new TransactionHistoryStore(database), transactionsOS), [database, transactionsOS]);
   const query = useCallback((options: PageOptions) => {
-    void refresh;
-    return range ? controller.getPage(options, range, kind, customerId) : Promise.reject(new Error());
-  }, [range, controller, kind, customerId, refresh]);
+    void refresh; void revision;
+    return range ? controller.getPage({ ...options, includeDeleted: range.includeDeleted }, range, kind, customerId) : Promise.reject(new Error());
+  }, [range, controller, kind, customerId, refresh, revision]);
   const pagination = usePagedQuery(query, scope);
   const columns: CustomTableColumn<TransactionListEntry>[] = [
     { key: 'time', header: text.TRANSACTION_TABLE_HEADER_TIME, render: row => new Date(row.timestamp).toLocaleString() },
     { key: 'kind', header: t('PAYMENT_TYPE'), render: row => t(row.kind === 'payment' ? 'PAYMENT_TITLE' : 'PAYMENT_SALE') },
     { key: 'items', header: text.TRANSACTION_TABLE_HEADER_NUM_OF_ITEMS, variant: 'numeric', render: row => row.itemCount },
     { key: 'total', header: kind === 'payment' ? t('PAYMENT_AMOUNT') : text.TRANSACTION_TABLE_HEADER_TOTAL, variant: 'numeric', render: row => <Price price={kind === 'payment' ? -row.total : row.total} /> },
+    { key: 'actions', header: t('UI_ACTIONS'), variant: 'actions', render: row => <DeleteRecordButton table="TRANSACTIONS" id={row.id} name={row.id} deleted={!!row.deletedAt} /> },
   ];
   return <>
     {!fixedRange && <DashboardFilters {...period} />}
@@ -44,7 +48,7 @@ export default function TransactionsView({ customerId, range: fixedRange, kind, 
     {pagination.error ? <p role="alert">{t('PAGINATION_ERROR')}</p> : pagination.loading ? <p role="status">{t('PAGINATION_LOADING')}</p> :
       <CustomTableView label={t(kind === 'payment' ? 'REPORT_PAYMENTS' : 'TRANSACTIONS_TITLE')} emptyTitle={t(kind === 'payment' ? 'REPORT_NO_PAYMENTS' : 'UI_NO_TRANSACTIONS_YET')} emptyDescription={kind === 'payment' ? undefined : t('UI_POSTED_SALES_WILL_APPEAR_HERE_CREATE_A_SALE_FROM')}
         data={pagination.result?.rows ?? []} columns={columns} rowKey={row => row.id}
-        onRowClick={row => navigate(`/transaction?id=${encodeURIComponent(row.id)}`, { state: { returnTo: location.pathname + location.search, returnState: location.state } })} />}
+        onRowClick={row => navigate(`/transaction?id=${encodeURIComponent(row.id)}${range?.includeDeleted ? '&deleted=1' : ''}`, { state: { returnTo: location.pathname + location.search, returnState: location.state } })} />}
     </>}
   </>;
 }

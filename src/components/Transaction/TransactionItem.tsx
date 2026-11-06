@@ -1,3 +1,4 @@
+import { useLocaleText } from '../../contexts/Locale';
 import { HtmlHTMLAttributes } from "react";
 import Price from "../Items/Price";
 import { IProductTransactionItem } from "../../models/ProductTransactionItem";
@@ -15,6 +16,7 @@ const TransactionItem = ({
   isDiscountItem,
   ...otherProps
 }: TransactionItemProps) => {
+  const t = useLocaleText();
   return (
     <div
       className={`transaction-item ${isActiveTransactionItem && "active"} ${
@@ -29,7 +31,7 @@ const TransactionItem = ({
       }}
     >
       <span className="quantity">{transactionItem.getQuantity()}</span>
-      <span className="name">{transactionItem.getItem().getName()}</span>
+      <span className="name">{transactionItem.getItem().getName()}{transactionItem.getItem().deletedAt && <small className="deleted-badge">{t('DELETED_BADGE')}</small>}</span>
       <Price
         isDeductionItem={isDiscountItem}
         price={transactionItem.getAmount()}

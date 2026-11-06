@@ -1,6 +1,7 @@
 export interface PageOptions {
   page: number;
   pageSize: number;
+  includeDeleted?: boolean;
   sort: 'newest' | 'oldest';
 }
 export interface PageResult<T> {

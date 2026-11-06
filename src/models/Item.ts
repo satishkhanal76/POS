@@ -1,6 +1,7 @@
 import { IComparable } from "../Data-Structures/UniqueSet";
 
 export interface IItem {
+  deletedAt?: number;
   getId: () => string;
   getName: () => string;
   getAmount: () => number;
@@ -13,6 +14,7 @@ export interface ItemParams {
 }
 
 export default class Item implements IItem, IComparable {
+  public deletedAt?: number;
   protected id: string;
   protected name: string;
   protected amount: number;

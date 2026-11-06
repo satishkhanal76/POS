@@ -1,12 +1,13 @@
+import useDeletedVisibility from '../../hooks/useDeletedVisibility';
+import DeletedVisibility from '../utils/DeletedVisibility';
 import { useLocaleText } from '../../contexts/Locale';
 import ItemEditForm from "../Items/ItemEditForm";
 import PageHeader from "../Layout/PageHeader";
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useCallback, useState } from 'react'
 import ItemAddForm from '../Items/ItemAddForm'
 import { IProductItem } from '../../models/ProductItem'
 import ItemsView from '../Items/ItemsView'
 import { useDatabase } from '../../contexts/DatabaseContext'
-import ItemsController from '../../controllers/ItemsController'
 import { useLocale } from '../../contexts/Locale'
 import { MdAdd } from 'react-icons/md'
 
@@ -15,33 +16,23 @@ import { MdAdd } from 'react-icons/md'
 const ItemsPage = () => {
   const t = useLocaleText();
   const { itemOS } = useDatabase();
-  const itemController = new ItemsController(itemOS);
+  const { includeDeleted } = useDeletedVisibility();
 
   
   const [isAddModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [error, setError] = useState("");
   const [editing, setEditing] = useState<IProductItem | null>(null);
   const [items, setItems] = useState<IProductItem[]>([]);
   const text = useLocale();
 
   
 
-  const updateItems = () => {
-    itemController.getAllItems().then(setItems);
-  }
-
-  const handleDelete = async (item: IProductItem) => {
-    setError('');
-    try {
-      const deletedItem = await itemController.deleteItem(item);
-      setItems(current => current.filter(entry => entry.getId() !== deletedItem?.getId()));
-    } catch (failure) { setError(failure instanceof Error ? failure.message : t('UI_UNABLE_TO_DELETE_ITEM')); }
-
-  }
+  const updateItems = useCallback(() => {
+    void itemOS.getAll(undefined, includeDeleted).then(setItems);
+  }, [itemOS, includeDeleted]);
 
   useEffect(() => {
     updateItems();
-  }, [])
+  }, [updateItems])
 
   const onClose = () => {
     setIsModalOpen(false)
@@ -56,8 +47,8 @@ const ItemsPage = () => {
 
       {editing && <ItemEditForm item={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); updateItems(); }} />}
       <PageHeader title={text.ITEMS_TITLE} actions={<button type="button" className="page-add-button" onClick={() => setIsModalOpen(true)} aria-label={t('ITEM_FORM_TITLE')} title={t('ITEM_FORM_TITLE')}><MdAdd aria-hidden="true" /></button>} />
-      {error && <p role="alert">{error}</p>}
-      <ItemsView onEdit={setEditing} handleDelete={handleDelete} items={items}></ItemsView>
+      <DeletedVisibility />
+      <ItemsView onDeleted={updateItems} onEdit={setEditing} handleDelete={() => {}} items={items}></ItemsView>
     </>
   )
 }

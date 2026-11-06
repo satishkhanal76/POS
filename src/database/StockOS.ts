@@ -26,7 +26,7 @@ export default class StockOS extends ObjectStore<StockSchema, StockSchema> {
       transaction.onabort = () => reject(new Error(getLocaleText('STOCK_SAVE_FAILED')));
       const product = transaction.objectStore('PRODUCTS').get(id);
       product.onsuccess = () => {
-        if (!product.result) { transaction.abort(); return; }
+        if (!product.result || product.result.deletedAt) { transaction.abort(); return; }
         transaction.objectStore('STOCK').put({ id, count });
       };
     });

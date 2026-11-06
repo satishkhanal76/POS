@@ -1,5 +1,5 @@
 import { IDB } from './Database';
-import { PageOptions, PageResult, readIndexPage } from './Pagination';
+import { PageOptions, PageResult } from './Pagination';
 import { TransactionsSchema } from './TransactionsOS';
 import { CustomerTransactionsSchema } from './CustomersTransactionsOS';
 import { DashboardRange } from '../dashboard/period';
@@ -13,7 +13,6 @@ export default class TransactionHistoryStore {
     const transaction = db.transaction(['TRANSACTIONS', 'CUSTOMERS_TRANSACTIONS']);
     const index = transaction.objectStore('TRANSACTIONS').index('timestamp');
     const bound = range.all ? undefined : IDBKeyRange.bound(range.start, range.end, false, true);
-    if (!kind && !customerId) return readIndexPage<TransactionsSchema>(index, options, bound);
     // Filtering requires a header scan; retain only the requested page plus the last page for clamping.
     return new Promise((resolve, reject) => {
       const pageSize = [0, 10, 25, 50, 100].includes(options.pageSize) ? options.pageSize : 10;
@@ -30,6 +29,7 @@ export default class TransactionHistoryStore {
         const cursor = request.result;
         if (!cursor) return;
         const header = cursor.value as TransactionsSchema;
+        if (header.deletedAt && !options.includeDeleted) { cursor.continue(); return; }
         const accept = () => {
           if (pageSize && total % pageSize === 0) lastPage.length = 0;
           lastPage.push(header);

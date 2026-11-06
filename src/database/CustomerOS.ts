@@ -5,6 +5,7 @@ import ObjectStore, { IObjectStore } from "./ObjectStore";
 
 export interface CustomerSchema {
   id: string;
+  deletedAt?: number;
   name: string;
   phoneNumber: string;
 }
@@ -22,7 +23,7 @@ export default class CustomerOS
     super(db, CustomerOS.OBJECT_STORE_NAME);
   }
 
-  public onObjectStoreCreation(objectStore: IDBObjectStore, db: IDB) {
+  public onObjectStoreCreation(objectStore: IDBObjectStore) {
     objectStore.createIndex("id", "id", { unique: true });
     objectStore.createIndex("name", "name", { unique: false });
   }
@@ -30,27 +31,12 @@ export default class CustomerOS
   public getObjectAsSchema(customer: ICustomer) {
     return {
       id: customer.getId(),
+      ...(customer.deletedAt ? { deletedAt: customer.deletedAt } : {}),
       name: customer.getName(),
       phoneNumber: customer.getPhoneNumber(),
     } as CustomerSchema;
   }
 
-  public async deleteOne(id: string): Promise<Customer> {
-    const customer = await this.getOne(id);
-    const db = await this.db.getDatabase();
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([this.objectStoreName, 'CUSTOMERS_TRANSACTIONS'], 'readwrite');
-      let message = getLocaleText('CUSTOMER_DELETE_FAILED');
-      transaction.oncomplete = () => resolve();
-      transaction.onabort = () => reject(new Error(message));
-      const count = transaction.objectStore('CUSTOMERS_TRANSACTIONS').index('customerId').count(id);
-      count.onsuccess = () => {
-        if (count.result) { message = getLocaleText('CUSTOMER_HAS_TRANSACTIONS'); transaction.abort(); return; }
-        transaction.objectStore(this.objectStoreName).delete(id);
-      };
-    });
-    return customer;
-  }
 
   /** Update only an existing record, retaining its ID and transaction links. */
   public async updateOne(customer: Customer): Promise<Customer> {
@@ -68,14 +54,13 @@ export default class CustomerOS
           transaction.abort();
           return;
         }
-        store.put(this.getObjectAsSchema(customer));
+        customer.deletedAt = request.result.deletedAt;
+        store.put({ ...request.result, ...this.getObjectAsSchema(customer) });
       };
     });
   }
 
-  public getSchemaAsObject(schema: CustomerSchema): Promise<Customer> {
-    return new Promise((resolve, reject) => {
-      resolve(new Customer(schema));
-    });
+  public async getSchemaAsObject(schema: CustomerSchema): Promise<Customer> {
+    return Object.assign(new Customer(schema), { deletedAt: schema.deletedAt });
   }
 }

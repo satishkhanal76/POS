@@ -1,4 +1,5 @@
 export interface ICustomer {
+  deletedAt?: number;
   getId: () => string;
   getName: () => string;
   getPhoneNumber: () => string;
@@ -11,6 +12,7 @@ export interface CustomerParams {
 }
 
 export default class Customer implements ICustomer {
+  public deletedAt?: number;
   private id: string;
   private name: string;
   private phoneNumber: string;

@@ -1,7 +1,8 @@
+import TransactionHistoryStore from './TransactionHistoryStore';
 import { loadSettings } from '../settings/settings';
 import { publishStockChange } from '../stock/events';
 import { getLocaleText } from "../localization/locale";
-import { PageOptions, readIndexPage, requestValue } from "./Pagination";
+import { PageOptions, requestValue } from "./Pagination";
 import { TransactionListEntry } from "../models/TransactionListEntry";
 import Transaction, { ITransaction } from "../models/Transaction";
 import { IDB } from "./Database";
@@ -17,6 +18,9 @@ export interface TransactionsSchema {
   timestamp: number;
   id: string;
   total: number;
+  deletedAt?: number;
+  stockDeducted?: number;
+  stockReversed?: number;
   kind?: "sale" | "payment";
 }
 
@@ -92,13 +96,13 @@ export default class TransactionsOS
         console.error(err);
       }
     }
+    transaction.deletedAt = schema.deletedAt;
     transaction.setIsPosted(true);
     return transaction;
   }
 
   public async getPage(options: PageOptions) {
-    const db = await this.db.getDatabase();
-    const result = await readIndexPage<TransactionsSchema>(db.transaction(this.objectStoreName).objectStore(this.objectStoreName).index('timestamp'), options);
+    const result = await new TransactionHistoryStore(this.db).getPage(options, { start: 0, end: Number.MAX_SAFE_INTEGER, all: true });
     return { ...result, rows: await this.getListEntries(result.rows.map(row => row.id)) };
   }
 
@@ -140,6 +144,7 @@ export default class TransactionsOS
 
       cursorReq.onsuccess = (event: Event) => {
         const cursor: IDBCursorWithValue = (event.target as IDBRequest).result;
+        if (cursor?.value.deletedAt) { cursor.continue(); return; }
         if (cursor) {
           resolve(this.getSchemaAsObject(cursor.value));
         } else {
@@ -176,13 +181,13 @@ export default class TransactionsOS
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(new Error(message));
       try {
-        transaction.objectStore('TRANSACTIONS').add(this.getObjectAsSchema(sale));
+        transaction.objectStore('TRANSACTIONS').add({ ...this.getObjectAsSchema(sale), stockDeducted: settings.stockManagement ? 1 : 0 });
         for (const line of products) transaction.objectStore('TRANSACTION_PRODUCTS').add(this.transactionItemsOS.getObjectAsSchema(line));
         for (const line of discounts) transaction.objectStore('TRANSACTION_DISCOUNTS').add(this.transactionDiscountsOS.getObjectAsSchema(line));
         for (const [id, item] of quantities) {
           const product = transaction.objectStore('PRODUCTS').get(id);
           product.onsuccess = () => {
-            if (!product.result) { message = getLocaleText('UI_UNAVAILABLE_ITEM'); transaction.abort(); return; }
+            if (!product.result || product.result.deletedAt) { message = getLocaleText('UI_UNAVAILABLE_ITEM'); transaction.abort(); return; }
             if (!settings.stockManagement) return;
             const stock = transaction.objectStore('STOCK');
             const count = stock.get(id);

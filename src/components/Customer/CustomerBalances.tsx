@@ -1,3 +1,5 @@
+import useDeletedVisibility from '../../hooks/useDeletedVisibility';
+import useDeletionRevision from '../../hooks/useDeletionRevision';
 import Select from '../Forms/Select';
 import '../../styles/Reports.css';
 import { useEffect, useMemo, useState } from 'react';
@@ -11,6 +13,8 @@ import Price from '../Items/Price';
 type Result = Awaited<ReturnType<CustomerBalancesOS['getPage']>>;
 export default function CustomerBalances({ refresh = 0, embedded = false }: { refresh?: number; embedded?: boolean }) {
   const t = useLocaleText();
+  const { includeDeleted } = useDeletedVisibility();
+  const revision = useDeletionRevision();
   const { database } = useDatabase();
   const store = useMemo(() => new CustomerBalancesOS(database), [database]);
   const navigate = useNavigate();
@@ -25,11 +29,11 @@ export default function CustomerBalances({ refresh = 0, embedded = false }: { re
     let cancelled = false;
     setBusy(true); setError(false);
     const timer = window.setTimeout(() => {
-      store.getPage({ filter, search, page, pageSize }).then(data => { if (!cancelled) setResult(data); })
+      store.getPage({ filter, search, page, pageSize, includeDeleted }).then(data => { if (!cancelled) setResult(data); })
         .catch(() => { if (!cancelled) setError(true); }).finally(() => { if (!cancelled) setBusy(false); });
     }, 150);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [store, filter, search, page, pageSize, refresh]);
+  }, [store, filter, search, page, pageSize, refresh, includeDeleted, revision]);
   const columns: CustomTableColumn<CustomerBalance>[] = [
     { key: 'name', header: t('CUSTOMER_TABLE_HEADER_NAME'), render: row => row.name },
     { key: 'phone', header: t('DASH_PHONE'), render: row => row.phoneNumber },
@@ -50,7 +54,7 @@ export default function CustomerBalances({ refresh = 0, embedded = false }: { re
       <label>{t('DASH_PAGE_SIZE')}<Select value={pageSize} onChange={value => { setPageSize(Number(value)); setPage(1); }}><option value={0}>{t('REPORT_ALL')}</option>{[10, 25, 50, 100].map(size => <option key={size}>{size}</option>)}</Select></label>
     </div>
     {busy ? <p role="status">{t('DASH_LOADING')}</p> : error ? <p role="alert">{t('DASH_ERROR')}</p> : result && <>
-      <CustomTableView label={t('DASH_BALANCES')} emptyTitle={t('DASH_NO_CUSTOMERS')} data={result.rows} columns={columns} rowKey={row => row.id} onRowClick={row => navigate(`/customer-transactions?id=${encodeURIComponent(row.id)}`)} />
+      <CustomTableView label={t('DASH_BALANCES')} emptyTitle={t('DASH_NO_CUSTOMERS')} data={result.rows} columns={columns} rowKey={row => row.id} onRowClick={row => navigate(`/customer-transactions?id=${encodeURIComponent(row.id)}${includeDeleted ? '&deleted=1' : ''}`)} />
       <div className="dashboard-pagination"><button type="button" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)}>{t('DASH_PREVIOUS')}</button>
         <span>{t('DASH_PAGE', { page: result.page, pages: Math.max(1, Math.ceil(result.total / (result.pageSize || Math.max(1, result.total)))), count: result.total })}</span>
         <button type="button" disabled={!result.pageSize || result.page * result.pageSize >= result.total} onClick={() => setPage(result.page + 1)}>{t('DASH_NEXT')}</button></div>

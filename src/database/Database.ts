@@ -40,7 +40,7 @@ export interface IObjectStoreDB {
 
 export default class DB implements IDB {
   private static DB_NAME = "POS";
-  private static DB_VERSION = 4;
+  private static DB_VERSION = 5;
 
   private objectStoresMap: Map<string, IObjectStoreDB>;
 

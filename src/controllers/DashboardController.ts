@@ -21,10 +21,10 @@ export default class DashboardController {
     }
     let salesCount = 0, sales = 0, paymentCount = 0, payments = 0, linkedSales = 0, unlinkedSales = 0, units = 0;
     const customers = new Set<string>();
-    const handled = new Map<string, { id: string; name: string; phoneNumber: string; sales: number; salesCount: number; payments: number; paymentCount: number }>();
-    const items = new Map<string, { id: string; name: string; quantity: number; gross: number; salesCount: number }>();
+    const handled = new Map<string, { id: string; name: string; phoneNumber: string; deletedAt?: number; sales: number; salesCount: number; payments: number; paymentCount: number }>();
+    const items = new Map<string, { id: string; name: string; quantity: number; gross: number; deletedAt?: number; salesCount: number }>();
     for (const entry of entries) {
-      entry.customerIds.forEach(id => customers.add(id));
+      entry.customers.forEach(customer => customers.add(customer.id));
       for (const customer of entry.customers) {
         const row = handled.get(customer.id) ?? { ...customer, sales: 0, salesCount: 0, payments: 0, paymentCount: 0 };
         if (entry.kind === 'payment') { row.payments -= entry.total; row.paymentCount++; }
@@ -37,7 +37,7 @@ export default class DashboardController {
         salesCount++; sales += entry.total; units += entry.units;
         const counted = new Set<string>();
         for (const product of entry.products) {
-          const item = items.get(product.id) || { id: product.id, name: product.name, quantity: 0, gross: 0, salesCount: 0 };
+          const item = items.get(product.id) || { id: product.id, name: product.name, deletedAt: product.deletedAt, quantity: 0, gross: 0, salesCount: 0 };
           item.quantity += product.quantity; item.gross += product.gross;
           if (!counted.has(product.id)) item.salesCount++;
           counted.add(product.id); items.set(item.id, item);

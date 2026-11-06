@@ -1,3 +1,4 @@
+import DeletedVisibility from '../utils/DeletedVisibility';
 import DateInput from '../Forms/DateInput';
 import Select from '../Forms/Select';
 import { useLocaleText } from '../../contexts/Locale';
@@ -14,6 +15,7 @@ export default function DashboardFilters({ period, anchor, end, range, onPeriod,
       {period === 'custom' && <label>{t('DASH_TO')}<DateInput value={end} min={anchor} onChange={onEnd} /></label>}
       {range && !range.all && <p>{new Date(range.start).toLocaleDateString()} – {new Date(range.end - 1).toLocaleDateString()}</p>}
     </section>
+    <DeletedVisibility />
     <p className="dashboard-note">{t('DASH_DATES_HELP')}</p>
 </>;
 }

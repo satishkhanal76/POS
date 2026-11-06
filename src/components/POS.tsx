@@ -164,6 +164,7 @@ const POS = () => {
     if (!item || saveInFlight.current || transaction?.isPosted() || transaction?.getKind() === 'payment') return;
     saveInFlight.current = true; setSaving(true);
     try {
+      await itemOS.getOne(item.getId());
       const requested = (transaction?.getTransactionProductItem(item.getId())?.getQuantity() ?? 0) + 1;
       const warning = await stockController.checkQuantity(item.getId(), item.getName(), requested);
       if (!transaction) await handleCreateNewTransaction(item);

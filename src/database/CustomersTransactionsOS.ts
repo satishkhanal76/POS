@@ -1,8 +1,9 @@
+import TransactionHistoryStore from './TransactionHistoryStore';
 import Transaction from "../models/Transaction";
 import { v4 as uuidv4 } from "uuid";
 import { ICustomer } from "../models/Customer";
 import { getLocaleText } from "../localization/locale";
-import { PageOptions, readIndexPage, requestValue } from "./Pagination";
+import { PageOptions, requestValue } from "./Pagination";
 import { CustomerSummarySchema } from "../models/CustomerTransactionSummary";
 import CustomerTransaction, {
   ICustomerTransaction,
@@ -62,17 +63,15 @@ export default class CustomersTransactionsOS
   }
 
   public async getPage(customerId: string, options: PageOptions) {
-    const db = await this.db.getDatabase();
-    const index = db.transaction(this.objectStoreName).objectStore(this.objectStoreName).index('customerTimestamp');
-    const result = await readIndexPage<CustomerTransactionsSchema>(index, options, IDBKeyRange.bound([customerId, 0], [customerId, Number.MAX_SAFE_INTEGER]));
-    return { ...result, rows: await this.transactionsOS.getListEntries(result.rows.map(link => link.transactionId)) };
+    const result = await new TransactionHistoryStore(this.db).getPage(options, { start: 0, end: Number.MAX_SAFE_INTEGER, all: true }, undefined, customerId);
+    return { ...result, rows: await this.transactionsOS.getListEntries(result.rows.map(row => row.id)) };
   }
 
   public async getLinkedCustomer(transactionId: string) {
     const db = await this.db.getDatabase();
     const store = db.transaction(this.objectStoreName).objectStore(this.objectStoreName);
     const link = await requestValue(store.index('transactionId').get(transactionId)) as CustomerTransactionsSchema | undefined;
-    return link ? this.customerOS.getOne(link.customerId) : null;
+    return link ? this.customerOS.getOne(link.customerId, true) : null;
   }
 
   /** Payment header, customer link and balance are saved in a single commit. */
@@ -103,12 +102,12 @@ export default class CustomersTransactionsOS
         if (existing.result) { message = getLocaleText('TRANSACTION_ALREADY_LINKED'); transaction.abort(); return; }
         const customer = transaction.objectStore('CUSTOMER').get(link.customerId);
         customer.onsuccess = () => {
-          if (!customer.result) { message = getLocaleText('PAGINATION_CUSTOMER_MISSING'); transaction.abort(); return; }
+          if (!customer.result || customer.result.deletedAt) { message = getLocaleText('PAGINATION_CUSTOMER_MISSING'); transaction.abort(); return; }
           const sales = transaction.objectStore('TRANSACTIONS');
           if (payment) sales.add({ id: payment.getId(), timestamp: payment.getTimestamp(), total: payment.getTotal(), kind: 'payment' });
           const sale = sales.get(link.transactionId);
           sale.onsuccess = () => {
-            if (!sale.result) { message = getLocaleText('PAGINATION_TRANSACTION_MISSING'); transaction.abort(); return; }
+            if (!sale.result || sale.result.deletedAt) { message = getLocaleText('PAGINATION_TRANSACTION_MISSING'); transaction.abort(); return; }
             links.add(link);
             const summaries = transaction.objectStore('CUSTOMER_TRANSACTION_SUMMARIES');
             const previous = summaries.get(link.customerId);
@@ -135,8 +134,8 @@ export default class CustomersTransactionsOS
   public async getSchemaAsObject(
     schema: CustomerTransactionsSchema
   ): Promise<CustomerTransaction> {
-    const customer = await this.customerOS.getOne(schema.customerId);
-    const transaction = await this.transactionsOS.getOne(schema.transactionId);
+    const customer = await this.customerOS.getOne(schema.customerId, true);
+    const transaction = await this.transactionsOS.getOne(schema.transactionId, true);
     const customerTransaction = new CustomerTransaction({
       ...schema,
       customer: customer,
@@ -146,10 +145,10 @@ export default class CustomersTransactionsOS
   }
 
   public async getCustomerTransactions(customerId: string) {
-    return this.getAllByIndexName("customerId", customerId);
+    return (await this.getAllByIndexName("customerId", customerId)).filter(link => !link.getTransaction().deletedAt);
   }
 
   public async getAllCustomersTransactions() {
-    return this.getAllByIndexName("customerId");
+    return (await this.getAllByIndexName("customerId")).filter(link => !link.getTransaction().deletedAt && !link.getCustomer().deletedAt);
   }
 }

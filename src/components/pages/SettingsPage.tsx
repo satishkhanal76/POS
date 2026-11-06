@@ -56,9 +56,9 @@ export default function SettingsPage() {
           setStatus(error instanceof Error && error.message.includes(':') ? error.message : t('UI_UNABLE_TO_SAVE_SETTINGS_CHECK_BROWSER_STORAGE_AND_TRY'));
         }
       }}>
-        {(['Prices', 'Appearance', 'Stock'] as const).map(group => (
+        {(['Prices', 'Appearance', 'Stock', 'Deletion'] as const).map(group => (
           <section className="settings-section" key={group} aria-labelledby={`group-${group}`}>
-            <h2 id={`group-${group}`}>{t(group === "Prices" ? "UI_PRICES" : group === "Stock" ? "STOCK_TITLE" : "UI_APPEARANCE")}</h2>
+            <h2 id={`group-${group}`}>{t(group === "Prices" ? "UI_PRICES" : group === "Stock" ? "STOCK_TITLE" : group === "Deletion" ? "DELETED_CATEGORY" : "UI_APPEARANCE")}</h2>
             {settingsSchema.filter(field => field.group === group).map(field => {
               const id = `setting-${field.key}`;
               const error = fieldError(field, displayDraft[field.key], t);

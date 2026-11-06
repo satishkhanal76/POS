@@ -3,5 +3,6 @@
   "numOfDecimalPlaces": 2,
   "darkMode": false,
   "stockManagement": false,
-  "forceStockAdherence": false
+  "forceStockAdherence": false,
+  "showSoftDeletedToggle": false
 }

@@ -430,3 +430,7 @@ That abstraction is arguably the most technically significant part of the POS pr
 ## Stock (Version 4)
 
 STOCK stores one current `{ id: productId, count }` record per product. Missing counts are zero. Manual counts are absolute nonnegative safe integers; advisory stock deductions can leave a negative count. No historical stock ledger is maintained. Master and adherence settings live in browser preferences, separately from database records. Sales update current stock atomically with their saved header and lines only while stock management is enabled. Payment transactions and later customer assignment have no inventory effect.
+
+## Soft Deletion (Version 5)
+
+PRODUCTS, CUSTOMER and TRANSACTIONS support an optional positive deletedAt timestamp; absent means active. Data remains physically present after ordinary deletion. Historical line reconstruction opts into deleted product reads and continues to use effective prices. Generic store reads exclude deleted records by default and accept explicit inclusion. Canonical customer summaries exclude deleted transactions; inclusive history views derive alternate summaries without changing canonical data. Hard deletion requires prior soft deletion and explicitly confirmed cascades, as described in architecture.md.

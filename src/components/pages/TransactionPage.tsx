@@ -1,3 +1,9 @@
+import BackLink from '../Layout/BackLink';
+import { useNavigate } from 'react-router-dom';
+import DeletedVisibility from '../utils/DeletedVisibility';
+import DeleteRecordButton from '../utils/DeleteRecordButton';
+import useDeletedVisibility from '../../hooks/useDeletedVisibility';
+import useDeletionRevision from '../../hooks/useDeletionRevision';
 import { useNotifications } from "../../contexts/Notifications";
 import { ICustomer } from "../../models/Customer";
 import CustomersTransactionsController from "../../controllers/CustomersTransactionsController";
@@ -7,7 +13,6 @@ import PageHeader from "../Layout/PageHeader";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useDatabase } from '../../contexts/DatabaseContext';
-import TransactionController from '../../controllers/TransactionController';
 import { ITransaction } from '../../models/Transaction';
 import { IProductTransactionItem } from '../../models/ProductTransactionItem';
 import { IDiscountTransactionItem } from '../../models/DiscountTransactionItem';
@@ -19,6 +24,9 @@ type SelectedItem = IProductTransactionItem | IDiscountTransactionItem | null;
 /** Saved amounts stay read-only; unassigned sales may be linked to one customer. */
 export default function TransactionPage() {
   const t = useLocaleText();
+  const navigate = useNavigate();
+  const { includeDeleted } = useDeletedVisibility();
+  const revision = useDeletionRevision();
   const { transactionsOS, cutomersTransactionsOS } = useDatabase();
   const { notify } = useNotifications();
   const links = useMemo(() => new CustomersTransactionsController(cutomersTransactionsOS), [cutomersTransactionsOS]);
@@ -44,8 +52,7 @@ export default function TransactionPage() {
       setResult({ id, transaction: null, customer: null, error: t('UI_NO_TRANSACTION_WAS_SELECTED') });
       return;
     }
-    const controller = new TransactionController(transactionsOS);
-    Promise.all([controller.getTransactionById(id), links.getLinkedCustomer(id)]).then(([transaction, customer]) => {
+    Promise.all([transactionsOS.getOne(id, includeDeleted), links.getLinkedCustomer(id)]).then(([transaction, customer]) => {
       if (cancelled) return;
       setResult({ id, transaction, customer, error: transaction ? '' : t('UI_THIS_TRANSACTION_COULD_NOT_BE_FOUND') });
       setSelected(transaction?.getLast() || null);
@@ -53,7 +60,7 @@ export default function TransactionPage() {
       if (!cancelled) setResult({ id, transaction: null, customer: null, error: t('UI_THIS_TRANSACTION_COULD_NOT_BE_LOADED_RETURN_TO_HISTORY') });
     });
     return () => { cancelled = true; };
-  }, [id, transactionsOS, links, t]);
+  }, [id, transactionsOS, links, t, includeDeleted, revision]);
 
   const current = result?.id === id ? result : null;
   const linkToCustomer = async (customer: ICustomer | null) => {
@@ -76,17 +83,25 @@ export default function TransactionPage() {
 
   return (
     <main className="transaction-page">
-      <Link className="transaction-back-link" to={returnTo} state={location.state?.returnState}>← {reportHistory ? t('REPORT_BACK') : customerHistory ? t('UI_BACK_TO_CUSTOMER_TRANSACTIONS_2') : t('UI_BACK_TO_TRANSACTIONS')}</Link>
+      <div className="transaction-toolbar">
+        <BackLink to={returnTo} state={location.state?.returnState}>{reportHistory ? t('REPORT_BACK') : customerHistory ? t('UI_BACK_TO_CUSTOMER_TRANSACTIONS_2') : t('UI_BACK_TO_TRANSACTIONS')}</BackLink>
+        {current?.transaction && <div className="transaction-toolbar-actions">
+          {current.transaction.deletedAt && <span className="deleted-badge">{t('DELETED_BADGE')}</span>}
+          <DeleteRecordButton variant="standalone" table="TRANSACTIONS" id={current.transaction.getId()} name={current.transaction.getId()} deleted={!!current.transaction.deletedAt} onDeleted={() => navigate(returnTo, { state: location.state?.returnState })} />
+        </div>}
+      </div>
       <PageHeader title={t('UI_TRANSACTION_DETAILS_2')} description={t('UI_A_SAVED_SALE_FROM_YOUR_TRANSACTION_HISTORY')} />
+      <DeletedVisibility />
+
       {!current && <p role="status">{t('UI_LOADING_TRANSACTION')}</p>}
       {current?.error && <p role="alert">{current.error}</p>}
       {current?.transaction && <section className="transaction-customer" aria-label={t('CUSTOMER_NAME')}>
         <div><span className="transaction-customer-label">{t('CUSTOMER_NAME')}</span><p>
           {current.customer
-            ? <Link to={`/customer-transactions?id=${encodeURIComponent(current.customer.getId())}`}>{current.customer.getName()}</Link>
+            ? <><Link to={`/customer-transactions?id=${encodeURIComponent(current.customer.getId())}${current.customer.deletedAt ? '&deleted=1' : ''}`}>{current.customer.getName()}</Link>{current.customer.deletedAt && <span className="deleted-badge">{t('DELETED_BADGE')}</span>}</>
             : t('TRANSACTION_NO_CUSTOMER')}
         </p></div>
-        {!current.customer && <button type="button" disabled={linking} onClick={() => setCustomerModalOpen(true)}>
+        {!current.customer && !current.transaction.deletedAt && <button type="button" disabled={linking} onClick={() => setCustomerModalOpen(true)}>
           {t(linking ? 'TRANSACTION_LINKING' : 'TRANSACTION_LINK_ACTION')}
         </button>}
       </section>}
