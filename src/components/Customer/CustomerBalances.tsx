@@ -47,13 +47,13 @@ export default function CustomerBalances({ refresh = 0, embedded = false }: { re
         <option value="owing">{t('DASH_OWING')}</option><option value="settled">{t('DASH_SETTLED')}</option><option value="credit">{t('DASH_CREDIT')}</option><option value="all">{t('DASH_ALL_CUSTOMERS')}</option>
       </Select></label>
       <label>{t('DASH_SEARCH_CUSTOMERS')}<input type="search" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} /></label>
-      <label>{t('DASH_PAGE_SIZE')}<Select value={pageSize} onChange={value => { setPageSize(Number(value)); setPage(1); }}>{[10, 25, 50, 100].map(size => <option key={size}>{size}</option>)}</Select></label>
+      <label>{t('DASH_PAGE_SIZE')}<Select value={pageSize} onChange={value => { setPageSize(Number(value)); setPage(1); }}><option value={0}>{t('REPORT_ALL')}</option>{[10, 25, 50, 100].map(size => <option key={size}>{size}</option>)}</Select></label>
     </div>
     {busy ? <p role="status">{t('DASH_LOADING')}</p> : error ? <p role="alert">{t('DASH_ERROR')}</p> : result && <>
       <CustomTableView label={t('DASH_BALANCES')} emptyTitle={t('DASH_NO_CUSTOMERS')} data={result.rows} columns={columns} rowKey={row => row.id} onRowClick={row => navigate(`/customer-transactions?id=${encodeURIComponent(row.id)}`)} />
       <div className="dashboard-pagination"><button type="button" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)}>{t('DASH_PREVIOUS')}</button>
-        <span>{t('DASH_PAGE', { page: result.page, pages: Math.max(1, Math.ceil(result.total / result.pageSize)), count: result.total })}</span>
-        <button type="button" disabled={result.page * result.pageSize >= result.total} onClick={() => setPage(result.page + 1)}>{t('DASH_NEXT')}</button></div>
+        <span>{t('DASH_PAGE', { page: result.page, pages: Math.max(1, Math.ceil(result.total / (result.pageSize || Math.max(1, result.total)))), count: result.total })}</span>
+        <button type="button" disabled={!result.pageSize || result.page * result.pageSize >= result.total} onClick={() => setPage(result.page + 1)}>{t('DASH_NEXT')}</button></div>
     </>}
   </section>;
 }

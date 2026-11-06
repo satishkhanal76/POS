@@ -1,4 +1,4 @@
-export type DashboardPeriod = 'day' | 'week' | 'month' | 'year' | 'custom';
+export type DashboardPeriod = 'day' | 'week' | 'month' | 'year' | 'custom' | 'all';
 export const dateInput = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
 function parseDate(value: string) {
@@ -9,6 +9,7 @@ function parseDate(value: string) {
 }
 /** Calendar boundaries use the user's local timezone; weeks start on Monday. End is exclusive. */
 export function dashboardRange(period: DashboardPeriod, anchor: string, customEnd: string) {
+  if (period === 'all') return { start: -8640000000000000, end: 8640000000000000, all: true };
   const start = parseDate(anchor);
   if (!start) return null;
   let end = new Date(start);
@@ -20,4 +21,4 @@ export function dashboardRange(period: DashboardPeriod, anchor: string, customEn
   if (!Number.isFinite(end.getTime())) return null;
   return { start: start.getTime(), end: end.getTime() };
 }
-export interface DashboardRange { start: number; end: number }
+export interface DashboardRange { start: number; end: number; all?: boolean }

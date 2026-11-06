@@ -12,13 +12,14 @@ export interface PageResult<T> {
 
 /** Skip index entries without loading their records, then read only this page. */
 export function readIndexPage<T>(index: IDBIndex, options: PageOptions, range?: IDBKeyRange): Promise<PageResult<T>> {
-  const pageSize = [10, 25, 50, 100].includes(options.pageSize) ? options.pageSize : 10;
+  const requestedSize = [0, 10, 25, 50, 100].includes(options.pageSize) ? options.pageSize : 10;
   return new Promise((resolve, reject) => {
     const count = index.count(range);
     count.onerror = () => reject(count.error);
     count.onsuccess = () => {
+      const pageSize = requestedSize === 0 ? Math.max(1, count.result) : requestedSize;
       const page = Math.max(1, Math.min(Math.floor(options.page) || 1, Math.max(1, Math.ceil(count.result / pageSize))));
-      const result: PageResult<T> = { rows: [], total: count.result, page, pageSize };
+      const result: PageResult<T> = { rows: [], total: count.result, page, pageSize: requestedSize };
       const cursor = index.openCursor(range, options.sort === 'oldest' ? 'next' : 'prev');
       let skipped = false;
       cursor.onerror = () => reject(cursor.error);

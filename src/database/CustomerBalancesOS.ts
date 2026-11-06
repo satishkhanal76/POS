@@ -16,9 +16,10 @@ export default class CustomerBalancesOS {
       transaction.onabort = () => reject(transaction.error);
       transaction.oncomplete = () => {
         matches.sort((a, b) => options.filter === 'credit' ? a.balance - b.balance || a.name.localeCompare(b.name) : b.balance - a.balance || a.name.localeCompare(b.name));
-        const pageSize = [10, 25, 50, 100].includes(options.pageSize) ? options.pageSize : 10;
-        const page = Math.max(1, Math.min(options.page, Math.max(1, Math.ceil(matches.length / pageSize))));
-        resolve({ rows: matches.slice((page - 1) * pageSize, page * pageSize), total: matches.length, page, pageSize, outstanding, credit, owingCount });
+        const pageSize = [0, 10, 25, 50, 100].includes(options.pageSize) ? options.pageSize : 10;
+        const size = pageSize || Math.max(1, matches.length);
+        const page = pageSize === 0 ? 1 : Math.max(1, Math.min(options.page, Math.max(1, Math.ceil(matches.length / size))));
+        resolve({ rows: matches.slice((page - 1) * size, page * size), total: matches.length, page, pageSize, outstanding, credit, owingCount });
       };
       const cursor = transaction.objectStore('CUSTOMER').openCursor();
       cursor.onsuccess = () => {

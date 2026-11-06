@@ -42,3 +42,6 @@
 .dashboard-customer-link a { display: inline-flex; align-items: center; min-height: 44px; }
 .customer-transactions-page { margin-bottom: 4rem; }
 @media (prefers-reduced-motion: reduce) { .report-disclosure > summary::before { transition: none; } }
+
+.dashboard-page .page-header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.dashboard-page .page-header-actions a { display: inline-flex; align-items: center; min-height: 44px; }

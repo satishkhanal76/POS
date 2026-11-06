@@ -32,7 +32,6 @@ export default function NavBar() {
       </button>
       <div className="nav-links" id="main-navigation-links">
         <NavLink className="nav-control" to="/" end>{t('NAVBAR_ITEM_HOME')}</NavLink>
-        <NavLink className="nav-control" to="/dashboard">{t('DASH_NAV')}</NavLink>
         {navigationGroups.map(group => <NavigationDropdown key={group.id} group={group} translate={t} />)}
         <NavLink className="nav-control nav-settings" to="/settings">
           {t('NAVBAR_SETTINGS')}

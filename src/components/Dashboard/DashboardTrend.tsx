@@ -1,8 +1,9 @@
+import ReportTable from './ReportTable';
 import CollapsibleReport from '../utils/CollapsibleReport';
 import { useLocaleText } from '../../contexts/Locale';
 import { DashboardSummary } from '../../controllers/DashboardController';
 import Price from '../Items/Price';
-import CustomTableView, { CustomTableColumn } from '../utils/CustomTableView';
+import { CustomTableColumn } from '../utils/CustomTableView';
 
 export default function DashboardTrend({ data }: { data: DashboardSummary }) {
   const t = useLocaleText();
@@ -19,6 +20,6 @@ export default function DashboardTrend({ data }: { data: DashboardSummary }) {
           <div className="dashboard-bars"><i style={{ height: `${Math.abs(bucket.sales) / max * 100}%` }} /><i style={{ height: `${bucket.payments / max * 100}%` }} /></div>
           <span>{new Date(bucket.timestamp).toLocaleDateString(undefined, data.monthly ? { month: 'short', year: '2-digit' } : { day: 'numeric', month: 'short' })}</span>
         </div>)}</div>
-        <CollapsibleReport title={t('DASH_BREAKDOWN')} nested><CustomTableView label={t('DASH_BREAKDOWN')} data={data.buckets} columns={columns} rowKey={row => row.key} /></CollapsibleReport>
+        <CollapsibleReport title={t('DASH_BREAKDOWN')} nested><ReportTable label={t('DASH_BREAKDOWN')} rows={[...data.buckets].reverse()} columns={columns} rowKey={row => row.key} /></CollapsibleReport>
       </section>);
 }

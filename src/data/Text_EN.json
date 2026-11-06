@@ -485,5 +485,16 @@
   "RESET_DONE_TITLE": "Database Cleared",
   "RESET_DONE": "All records in ${database} were erased. Reload the app to start fresh.",
   "RESET_NAME_MISMATCH": "The database name does not match. Nothing was erased.",
-  "RESET_FAILED": "The database could not be cleared. The reset was not completed."
+  "RESET_FAILED": "The database could not be cleared. The reset was not completed.",
+  "REPORT_ALL_TIME": "All Time",
+  "REPORT_ALL": "All",
+  "REPORT_OVERVIEW": "Overview",
+  "REPORT_NAV": "Reports",
+  "REPORT_DASHBOARD": "Dashboard",
+  "REPORT_DASHBOARD_HELP": "Explore sales, payments, customers and items for the selected period. Each table has its own page controls.",
+  "REPORT_TRANSACTIONS": "Transactions",
+  "REPORT_PAYMENTS": "Payments",
+  "REPORT_ITEMS_SOLD": "Items Sold",
+  "REPORT_BACK": "Back to Report",
+  "REPORT_NO_PAYMENTS": "No payments in this period."
 }

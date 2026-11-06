@@ -14,6 +14,10 @@ export interface NavigationGroup {
 }
 
 export const navigationGroups: NavigationGroup[] = [
+  { id: 'reports', localeKey: 'REPORT_NAV', links: [
+    { path: '/dashboard', localeKey: 'DASH_NAV' },
+    { path: '/overview', localeKey: 'REPORT_OVERVIEW' },
+  ] },
   {
     id: 'manage', localeKey: 'NAVBAR_MANAGE',
     links: [

@@ -31,9 +31,10 @@ export default function TransactionPage() {
   const [result, setResult] = useState<{ id: string | null; transaction: ITransaction | null; customer: ICustomer | null; error: string } | null>(null);
   const [selected, setSelected] = useState<SelectedItem>(null);
   const requestedReturn: unknown = location.state?.returnTo;
-  const returnTo = typeof requestedReturn === 'string' && /^\/(transactions|customer-transactions)(\?|$)/.test(requestedReturn)
+  const returnTo = typeof requestedReturn === 'string' && /^\/(transactions|customer-transactions|dashboard|overview)(\?|$)/.test(requestedReturn)
     ? requestedReturn : '/transactions';
   const customerHistory = returnTo.startsWith('/customer-transactions');
+  const reportHistory = returnTo.startsWith('/dashboard') || returnTo.startsWith('/overview');
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +76,7 @@ export default function TransactionPage() {
 
   return (
     <main className="transaction-page">
-      <Link className="transaction-back-link" to={returnTo} state={location.state?.returnState}>← {customerHistory ? t('UI_BACK_TO_CUSTOMER_TRANSACTIONS_2') : t('UI_BACK_TO_TRANSACTIONS')}</Link>
+      <Link className="transaction-back-link" to={returnTo} state={location.state?.returnState}>← {reportHistory ? t('REPORT_BACK') : customerHistory ? t('UI_BACK_TO_CUSTOMER_TRANSACTIONS_2') : t('UI_BACK_TO_TRANSACTIONS')}</Link>
       <PageHeader title={t('UI_TRANSACTION_DETAILS_2')} description={t('UI_A_SAVED_SALE_FROM_YOUR_TRANSACTION_HISTORY')} />
       {!current && <p role="status">{t('UI_LOADING_TRANSACTION')}</p>}
       {current?.error && <p role="alert">{current.error}</p>}

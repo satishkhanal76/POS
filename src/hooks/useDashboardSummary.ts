@@ -11,15 +11,15 @@ export default function useDashboardSummary(range: DashboardRange | null, refres
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState(false);
-  const start = range?.start, end = range?.end;
+  const start = range?.start, end = range?.end, all = range?.all;
   useEffect(() => {
     let cancelled = false;
     setData(null); setError(false);
     if (start === undefined || end === undefined) { setBusy(false); return; }
     setBusy(true);
-    controller.getSummary({ start, end }).then(result => { if (!cancelled) setData(result); })
+    controller.getSummary({ start, end, all }).then(result => { if (!cancelled) setData(result); })
       .catch(() => { if (!cancelled) setError(true); }).finally(() => { if (!cancelled) setBusy(false); });
     return () => { cancelled = true; };
-  }, [controller, start, end, refresh]);
+  }, [controller, start, end, all, refresh]);
   return { data, busy, error };
 }

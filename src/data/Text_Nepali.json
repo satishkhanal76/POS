@@ -485,5 +485,16 @@
   "RESET_DONE_TITLE": "डाटाबेस खाली भयो",
   "RESET_DONE": "${database} का सबै विवरण हटे। नयाँ सुरु गर्न एप फेरि खोल्नुस्।",
   "RESET_NAME_MISMATCH": "डाटाबेसको नाम मिलेन। केही हटेको छैन।",
-  "RESET_FAILED": "डाटाबेस खाली गर्न सकिएन। हटाउने काम पूरा भएन।"
+  "RESET_FAILED": "डाटाबेस खाली गर्न सकिएन। हटाउने काम पूरा भएन।",
+  "REPORT_ALL_TIME": "सबै समय",
+  "REPORT_ALL": "सबै",
+  "REPORT_OVERVIEW": "एक नजरमा",
+  "REPORT_NAV": "रिपोर्टहरू",
+  "REPORT_DASHBOARD": "ड्यासबोर्ड",
+  "REPORT_DASHBOARD_HELP": "छानेको अवधिका बिक्री, तिरेको पैसा, ग्राहक र सामान हेर्नुस्। हरेक टेबलको पेज छुट्टै मिलाउन मिल्छ।",
+  "REPORT_TRANSACTIONS": "कारोबारहरू",
+  "REPORT_PAYMENTS": "तिरेको पैसा",
+  "REPORT_ITEMS_SOLD": "बेचिएका सामान",
+  "REPORT_BACK": "रिपोर्टमा फर्कने",
+  "REPORT_NO_PAYMENTS": "यो अवधिमा पैसा तिरेको विवरण छैन।"
 }
