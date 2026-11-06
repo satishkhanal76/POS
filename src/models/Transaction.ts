@@ -16,6 +16,7 @@ export interface ITransaction {
   getTimestamp: () => number;
   getId: () => string;
   getTotal: () => number;
+  getKind: () => "sale" | "payment";
 
   getAllTransactionItems: () => (IProductTransactionItem | IDiscountTransactionItem)[];
 
@@ -90,7 +91,7 @@ export default class Transaction implements ITransaction {
   private total: number;
   private hasBeenPosted: boolean;
 
-  constructor(id?: string, timestamp?: number) {
+  constructor(id?: string, timestamp?: number, private readonly paymentAmount?: number) {
     this.id = id || uuidv4();
     this.timestamp = timestamp || Date.now();
     this.transactionProductItems = [];
@@ -204,7 +205,10 @@ export default class Transaction implements ITransaction {
     );
   }
 
+  public getKind(): "sale" | "payment" { return this.paymentAmount === undefined ? "sale" : "payment"; }
+
   public getTotal() {
+    if (this.paymentAmount !== undefined) return -this.paymentAmount;
     this.calculateTotal();
     return this.total;
   }

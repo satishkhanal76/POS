@@ -58,6 +58,8 @@ export function validateBackup(value: unknown): DatabaseBackup {
       for (const [field, type] of Object.entries(fields)) {
         if (typeof row[field] !== type || (type === 'number' && !Number.isFinite(row[field]))) throw new Error(getLocaleText('UI_INVALID_VALUE_VALUE', { value0: name, value1: field }));
       }
+      if (name === 'TRANSACTIONS' && row.kind !== undefined && row.kind !== 'sale' && row.kind !== 'payment') throw new Error(getLocaleText('PAYMENT_INVALID'));
+      if (name === 'TRANSACTIONS' && row.kind === 'payment' && (row.total as number) >= 0) throw new Error(getLocaleText('PAYMENT_INVALID'));
       const id = row.id as string;
       if (!id || ids[name].has(id)) throw new Error(getLocaleText('UI_MISSING_OR_DUPLICATE_ID_IN_VALUE', { value0: name }));
       ids[name].add(id);
@@ -80,6 +82,13 @@ export function validateBackup(value: unknown): DatabaseBackup {
     for (const row of tables[table] as BackupRow[]) {
       if (!ids[target].has(row[field] as string)) throw new Error(getLocaleText('UI_BROKEN_RELATIONSHIP_VALUE_VALUE', { value0: table, value1: field }));
     }
+  }
+  // Payment records must stay attached to exactly one customer and contain no sale lines.
+  for (const payment of tables.TRANSACTIONS as BackupRow[]) {
+    if (payment.kind !== 'payment') continue;
+    const links = (tables.CUSTOMERS_TRANSACTIONS as BackupRow[]).filter(link => link.transactionId === payment.id);
+    const hasLines = ['TRANSACTION_PRODUCTS', 'TRANSACTION_DISCOUNTS'].some(name => (tables[name] as BackupRow[]).some(line => line.transactionId === payment.id));
+    if (links.length !== 1 || hasLines) throw new Error(getLocaleText('PAYMENT_INVALID'));
   }
   // Summary rows are derived from canonical links and saved totals, never trusted blindly.
   const sales = new Map((tables.TRANSACTIONS as BackupRow[]).map(row => [row.id, Number(row.total)]));

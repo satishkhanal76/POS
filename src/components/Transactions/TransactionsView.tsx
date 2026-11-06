@@ -25,6 +25,7 @@ export default function TransactionsView({ customerId }: { customerId?: string }
   const pagination = usePagedQuery(query);
   const columns: CustomTableColumn<TransactionListEntry>[] = [
     { key: 'time', header: text.TRANSACTION_TABLE_HEADER_TIME, render: row => new Date(row.timestamp).toLocaleString() },
+    { key: 'kind', header: t('PAYMENT_TYPE'), render: row => t(row.kind === 'payment' ? 'PAYMENT_TITLE' : 'PAYMENT_SALE') },
     { key: 'items', header: text.TRANSACTION_TABLE_HEADER_NUM_OF_ITEMS, variant: 'numeric', render: row => row.itemCount },
     { key: 'total', header: text.TRANSACTION_TABLE_HEADER_TOTAL, variant: 'numeric', render: row => <Price price={row.total} /> },
   ];

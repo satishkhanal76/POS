@@ -395,3 +395,9 @@ NotificationProvider supplies the shared `useNotifications().notify(message, ton
 POS success feedback for posting, customer linking, quantity changes, discounts, and clearing an order uses this provider. Save failures retain the current order and display an error pill. A save-in-flight guard prevents duplicate submission. If posting succeeds but customer linking fails, the order is marked posted and can retry only the customer link, avoiding a duplicate sale.
 
 QuantityForm uses the shared FullScreenModal and form styling, with the current quantity prefilled and a line-total preview. QuantityValidator accepts safe, positive whole numbers without silently truncating fractional input. Validation stays inline; Save mutates the existing in-memory transaction model and the values persist when the sale is posted. Cancel/Escape leave quantities unchanged. Discount lines keep fixed quantities, and posted transactions cannot be edited. Browser-native alerts and quantity prompts are no longer used for POS feedback; explicit destructive confirmations remain separate decisions.
+
+### Customer payments
+
+Payments are distinct transaction headers (`kind: "payment"`) with negative totals and no product or discount lines. Older headers without a kind remain sales. The Transaction model reconstructs payments from their saved amount; payment details and paged histories label them explicitly.
+
+On the POS, Record Payment creates a draft. Add to Customer commits the payment header, customer link and summary balance together through CustomersTransactionsOS.recordPayment. Failures leave the draft available to retry; payments cannot be posted without a customer. Sales increase the summary total and payments decrease it; a negative balance represents customer credit. Counts include both sales and payments. Backups preserve the optional kind and derive balances from signed saved totals. No IndexedDB store/index migration is needed.

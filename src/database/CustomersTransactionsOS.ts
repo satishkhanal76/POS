@@ -1,4 +1,8 @@
-import { PageOptions, readIndexPage } from "./Pagination";
+import Transaction from "../models/Transaction";
+import { v4 as uuidv4 } from "uuid";
+import { ICustomer } from "../models/Customer";
+import { getLocaleText } from "../localization/locale";
+import { PageOptions, readIndexPage, requestValue } from "./Pagination";
 import { CustomerSummarySchema } from "../models/CustomerTransactionSummary";
 import CustomerTransaction, {
   ICustomerTransaction,
@@ -64,23 +68,55 @@ export default class CustomersTransactionsOS
     return { ...result, rows: await this.transactionsOS.getListEntries(result.rows.map(link => link.transactionId)) };
   }
 
-  /** A customer link and its summary commit atomically, keeping paged totals exact. */
+  public async getLinkedCustomer(transactionId: string) {
+    const db = await this.db.getDatabase();
+    const store = db.transaction(this.objectStoreName).objectStore(this.objectStoreName);
+    const link = await requestValue(store.index('transactionId').get(transactionId)) as CustomerTransactionsSchema | undefined;
+    return link ? this.customerOS.getOne(link.customerId) : null;
+  }
+
+  /** Payment header, customer link and balance are saved in a single commit. */
+  public async recordPayment(payment: Transaction, customer: ICustomer) {
+    if (payment.getKind() !== "payment" || !Number.isFinite(payment.getTotal()) || payment.getTotal() >= 0 || !Number.isSafeInteger(Math.round(-payment.getTotal() * 100)) || Math.abs(-payment.getTotal() * 100 - Math.round(-payment.getTotal() * 100)) > 0.000001) throw new Error(getLocaleText("PAYMENT_INVALID"));
+    const link = new CustomerTransaction({ id: uuidv4(), timestamp: payment.getTimestamp(), transaction: payment, customer });
+    await this.commitLink(link, payment);
+    payment.setIsPosted(true);
+    return payment;
+  }
+
+  /** Enforce one customer per sale and commit its link/summary together, including across tabs. */
   public async addOne(model: CustomerTransaction): Promise<CustomerTransaction> {
+    return this.commitLink(model);
+  }
+
+  private async commitLink(model: CustomerTransaction, payment?: Transaction): Promise<CustomerTransaction> {
     const db = await this.db.getDatabase();
     const link = this.getObjectAsSchema(model);
     await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction([this.objectStoreName, 'CUSTOMER_TRANSACTION_SUMMARIES', 'TRANSACTIONS'], 'readwrite');
+      const transaction = db.transaction([this.objectStoreName, 'CUSTOMER_TRANSACTION_SUMMARIES', 'TRANSACTIONS', 'CUSTOMER'], 'readwrite');
+      let message = getLocaleText('TRANSACTION_LINK_FAILED');
       transaction.oncomplete = () => resolve();
-      transaction.onabort = () => reject(transaction.error);
-      transaction.objectStore(this.objectStoreName).add(link);
-      const summaries = transaction.objectStore('CUSTOMER_TRANSACTION_SUMMARIES');
-      const sale = transaction.objectStore('TRANSACTIONS').get(link.transactionId);
-      sale.onsuccess = () => {
-        if (!sale.result) { transaction.abort(); return; }
-        const previous = summaries.get(link.customerId);
-        previous.onsuccess = () => {
-          const summary: CustomerSummarySchema = previous.result || { id: link.customerId, count: 0, total: 0, timestamp: 0 };
-          summaries.put({ id: summary.id, count: summary.count + 1, total: summary.total + sale.result.total, timestamp: Math.max(summary.timestamp, link.timestamp) });
+      transaction.onabort = () => reject(new Error(message));
+      const links = transaction.objectStore(this.objectStoreName);
+      const existing = links.index('transactionId').count(link.transactionId);
+      existing.onsuccess = () => {
+        if (existing.result) { message = getLocaleText('TRANSACTION_ALREADY_LINKED'); transaction.abort(); return; }
+        const customer = transaction.objectStore('CUSTOMER').get(link.customerId);
+        customer.onsuccess = () => {
+          if (!customer.result) { message = getLocaleText('PAGINATION_CUSTOMER_MISSING'); transaction.abort(); return; }
+          const sales = transaction.objectStore('TRANSACTIONS');
+          if (payment) sales.add({ id: payment.getId(), timestamp: payment.getTimestamp(), total: payment.getTotal(), kind: 'payment' });
+          const sale = sales.get(link.transactionId);
+          sale.onsuccess = () => {
+            if (!sale.result) { message = getLocaleText('PAGINATION_TRANSACTION_MISSING'); transaction.abort(); return; }
+            links.add(link);
+            const summaries = transaction.objectStore('CUSTOMER_TRANSACTION_SUMMARIES');
+            const previous = summaries.get(link.customerId);
+            previous.onsuccess = () => {
+              const summary: CustomerSummarySchema = previous.result || { id: link.customerId, count: 0, total: 0, timestamp: 0 };
+              summaries.put({ id: summary.id, count: summary.count + 1, total: summary.total + sale.result.total, timestamp: Math.max(summary.timestamp, link.timestamp) });
+            };
+          };
         };
       };
     });

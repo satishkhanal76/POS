@@ -1,3 +1,11 @@
 .transaction-page { margin: 1rem 0 4rem; }
 .transaction-back-link { display: inline-flex; align-items: center; min-height: 44px; font-size: .9rem; }
 .transaction-back-link:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+.transaction-customer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.25rem; margin-bottom: 1rem; border: 1px solid var(--color-slate600); border-radius: 12px; }
+.transaction-customer-label { color: var(--color-slate400); font-size: .875rem; }
+.transaction-customer p { margin: .35rem 0 0; }
+.transaction-customer button { min-height: 44px; padding: .75rem 1rem; border: 1px solid var(--color-slate100); border-radius: 9px; background: var(--color-slate100); color: var(--bg-primary); cursor: pointer; }
+.transaction-customer button:disabled { opacity: .5; cursor: wait; }
+.transaction-customer :is(button, a):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 600px) { .transaction-customer { align-items: stretch; flex-direction: column; padding: 1rem; } .transaction-customer button { width: 100%; } }

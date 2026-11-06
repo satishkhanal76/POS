@@ -3,5 +3,6 @@ export interface TransactionListEntry {
   id: string;
   timestamp: number;
   total: number;
+  kind?: "sale" | "payment";
   itemCount: number;
 }

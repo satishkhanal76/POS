@@ -1,3 +1,6 @@
+import { v4 as uuidv4 } from "uuid";
+import { ICustomer } from "../models/Customer";
+import { ITransaction } from "../models/Transaction";
 import { getLocaleText } from "../localization/locale";
 import { PageOptions } from "../database/Pagination";
 import CustomerTransactionSummariesOS from "../database/CustomerTransactionSummariesOS";
@@ -35,6 +38,18 @@ export default class CustomersTransactionsController
 {
   constructor(customersTransactionsOS: CustomersTransactionsOS, private readonly summaries?: CustomerTransactionSummariesOS) {
     super(customersTransactionsOS);
+  }
+
+  public async getLinkedCustomer(transactionId: string) {
+    return this.objectStore.getLinkedCustomer(transactionId);
+  }
+
+  /** Link an already posted sale without posting or changing its historical amounts. */
+  public async linkTransaction(transaction: ITransaction, customer: ICustomer) {
+    if (!transaction.isPosted()) throw new Error(getLocaleText('TRANSACTION_LINK_REQUIRES_POSTED'));
+    return this.objectStore.addOne(new CustomerTransaction({
+      id: uuidv4(), timestamp: Date.now(), transaction, customer,
+    }));
   }
 
   public async getPage(customerId: string, options: PageOptions) { return this.objectStore.getPage(customerId, options); }

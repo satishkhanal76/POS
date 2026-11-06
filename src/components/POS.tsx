@@ -1,3 +1,6 @@
+import PaymentForm from "./Transaction/PaymentForm";
+import PaymentTransaction from "../models/Transaction";
+import TransactionView from "./Transaction/TransactionView";
 import QuantityForm from "./Transaction/QuantityForm";
 import { useNotifications } from "../contexts/Notifications";
 import DiscountForm from "./Discount/DiscountForm";
@@ -43,6 +46,7 @@ const POS = () => {
   const t = useLocaleText();
   const { notify } = useNotifications();
   const [quantityItem, setQuantityItem] = useState<IProductTransactionItem | IDiscountTransactionItem | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const saveInFlight = useRef(false);
   const text = useLocale();
@@ -201,33 +205,39 @@ const POS = () => {
     saveInFlight.current = true; setSaving(true);
     setTransactionState(current => ({ ...current, isCustomerModalOpen: false }));
     try {
-      if (!transaction.isPosted()) {
-        const posted = await transactionController.postTransaction(transaction);
-        if (!posted) throw new Error(t('NOTIFICATION_POST_FAILED'));
-        transaction.setIsPosted(true);
+      if (transaction.getKind() === "payment") {
+        await cutomersTransactionsOS.recordPayment(transaction as PaymentTransaction, customer);
+      } else {
+        if (!transaction.isPosted()) {
+          const posted = await transactionController.postTransaction(transaction);
+          if (!posted) throw new Error(t('NOTIFICATION_POST_FAILED'));
+          transaction.setIsPosted(true);
+        }
+        await cutomersTransactionsOS.addOne(new CustomerTransaction({
+          id: uuidv4(), timestamp: Date.now(), customer, transaction,
+        }));
       }
-      await cutomersTransactionsOS.addOne(new CustomerTransaction({
-        id: uuidv4(), timestamp: Date.now(), customer, transaction,
-      }));
       setTransactionState(current => ({ ...current, transaction: null, activeTransactionItem: null }));
-      notify(t('TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS', { CUSTOMER_NAME: customer.getName() }));
+      notify(t(transaction.getKind() === "payment" ? "PAYMENT_SAVED" : 'TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS', { CUSTOMER_NAME: customer.getName() }));
     } catch {
       notify(t(transaction.isPosted() ? 'NOTIFICATION_CUSTOMER_LINK_FAILED' : 'NOTIFICATION_POST_FAILED'), 'error');
       setTransactionState(current => ({ ...current }));
     } finally { saveInFlight.current = false; setSaving(false); }
   };
 
+  const isPayment = transaction?.getKind() === "payment";
   const buttonsProps: IButtonProps[] = [
+    { children: t("PAYMENT_RECORD"), disabled: !!transaction, onClick: () => setPaymentModalOpen(true) },
     {
       children: text.BUTTON_ADD,
       className: "pos-action pos-action-add",
-      disabled: transaction?.isPosted() ? true : false,
+      disabled: isPayment || !!transaction?.isPosted(),
       onClick: handleAddBtnClick,
     },
     {
       children: text.BUTTON_REMOVE,
       disabled:
-        transaction?.isPosted() || !transactionState.activeTransactionItem
+        isPayment || transaction?.isPosted() || !transactionState.activeTransactionItem
           ? true
           : false,
       onClick: handleRemoveBtnClick,
@@ -235,7 +245,7 @@ const POS = () => {
     {
       children: text.BUTTON_CHANGE_QUANTITY,
       disabled:
-        transaction?.isPosted() || !transactionState.activeTransactionItem?.getIsQuantityChangable()
+        isPayment || transaction?.isPosted() || !transactionState.activeTransactionItem?.getIsQuantityChangable()
           ? true
           : false,
       onClick: () => handleChangeQuantity(),
@@ -244,7 +254,7 @@ const POS = () => {
       children: text.BUTTON_POST_TRANSACTION,
       className: "pos-action pos-action-primary",
       disabled:
-        transaction?.isPosted() || !transaction?.hasItems() ? true : false,
+        isPayment || transaction?.isPosted() || !transaction?.hasItems() ? true : false,
       onClick: handlePostTransaction,
     },
     {
@@ -264,13 +274,17 @@ const POS = () => {
     },
     {
       children: text.BUTTON_DISCOUNT,
-      disabled: !transaction?.hasItems() || transaction.isPosted(),
+      disabled: isPayment || !transaction?.hasItems() || transaction.isPosted(),
       onClick: handleDiscount,
     },
   ];
 
   return (
     <>
+      {paymentModalOpen && <PaymentForm onClose={() => setPaymentModalOpen(false)} onApply={amount => {
+        setTransactionState(current => ({ ...current, transaction: new PaymentTransaction(undefined, undefined, amount), activeTransactionItem: null }));
+        setPaymentModalOpen(false);
+      }} />}
       {quantityItem && transaction && <QuantityForm item={quantityItem} onClose={() => setQuantityItem(null)} onApply={quantity => {
         if (transaction.isPosted()) return;
         transaction.changeTransactionItemQuantity(quantityItem.getItem().getId(), quantity);
@@ -310,7 +324,7 @@ const POS = () => {
           actions={<span className={`pos-status${transaction?.isPosted() ? ' is-posted' : ''}`}>{transaction?.isPosted() ? t('UI_POSTED_TRANSACTION') : transaction ? t('UI_IN_PROGRESS') : t('UI_READY_FOR_A_NEW_SALE')}</span>} />
         <div className="pos-layout">
           <section className="pos-order" aria-label={t('UI_CURRENT_ORDER')}>
-            {transaction && transactionState.activeTransactionItem ? (
+            {transaction && isPayment ? <TransactionView transaction={transaction} activeItem={null} onClick={() => {}} onDoubleClick={() => {}} /> : transaction && transactionState.activeTransactionItem ? (
               <Transaction
                 transaction={transaction}
                 activeTransactionItem={transactionState.activeTransactionItem}
@@ -334,13 +348,13 @@ const POS = () => {
           </section>
           <aside className="pos-actions-panel" aria-labelledby="pos-actions-title">
             <h2 id="pos-actions-title">{t('UI_ORDER_ACTIONS')}</h2>
-            <p>{transaction?.isPosted() ? t('UI_THIS_SALE_HAS_BEEN_POSTED_START_A_NEW_TRANSACTION') : t('UI_SELECT_AN_ORDER_ITEM_TO_CHANGE_ITS_QUANTITY_OR')}</p>
+            <p>{isPayment ? t('PAYMENT_NEXT') : transaction?.isPosted() ? t('UI_THIS_SALE_HAS_BEEN_POSTED_START_A_NEW_TRANSACTION') : t('UI_SELECT_AN_ORDER_ITEM_TO_CHANGE_ITS_QUANTITY_OR')}</p>
             <TransactionButtons
               buttonsClassName="pos-action"
               buttonsClassNameWhenActive="pos-action"
               buttonsProps={buttonsProps.map(button => ({ ...button, disabled: saving || button.disabled }))}
             />
-            <div className="pos-actions-note">{transaction?.isPosted() ? t('UI_POSTED_SALES_ARE_AVAILABLE_IN_HISTORY') : t('UI_POST_SAVES_THE_SALE_ADD_TO_CUSTOMER_SAVES_IT')}</div>
+            <div className="pos-actions-note">{isPayment ? t('PAYMENT_DESCRIPTION') : transaction?.isPosted() ? t('UI_POSTED_SALES_ARE_AVAILABLE_IN_HISTORY') : t('UI_POST_SAVES_THE_SALE_ADD_TO_CUSTOMER_SAVES_IT')}</div>
           </aside>
         </div>
       </main>

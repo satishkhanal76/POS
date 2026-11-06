@@ -1,6 +1,10 @@
+import { useNotifications } from "../../contexts/Notifications";
+import { ICustomer } from "../../models/Customer";
+import CustomersTransactionsController from "../../controllers/CustomersTransactionsController";
+import CustomerSelectionModal from "../Modals/CustomerSelectionModal";
 import { useLocaleText } from '../../contexts/Locale';
 import PageHeader from "../Layout/PageHeader";
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useDatabase } from '../../contexts/DatabaseContext';
 import TransactionController from '../../controllers/TransactionController';
@@ -12,14 +16,19 @@ import './TransactionPage.css';
 
 type SelectedItem = IProductTransactionItem | IDiscountTransactionItem | null;
 
-/** History detail is read-only; list pages own browsing and customer filtering. */
+/** Saved amounts stay read-only; unassigned sales may be linked to one customer. */
 export default function TransactionPage() {
   const t = useLocaleText();
-  const { transactionsOS } = useDatabase();
+  const { transactionsOS, cutomersTransactionsOS } = useDatabase();
+  const { notify } = useNotifications();
+  const links = useMemo(() => new CustomersTransactionsController(cutomersTransactionsOS), [cutomersTransactionsOS]);
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const linkingRef = useRef(false);
   const [params] = useSearchParams();
   const location = useLocation();
   const id = params.get('id');
-  const [result, setResult] = useState<{ id: string | null; transaction: ITransaction | null; error: string } | null>(null);
+  const [result, setResult] = useState<{ id: string | null; transaction: ITransaction | null; customer: ICustomer | null; error: string } | null>(null);
   const [selected, setSelected] = useState<SelectedItem>(null);
   const requestedReturn: unknown = location.state?.returnTo;
   const returnTo = typeof requestedReturn === 'string' && /^\/(transactions|customer-transactions)(\?|$)/.test(requestedReturn)
@@ -29,28 +38,59 @@ export default function TransactionPage() {
   useEffect(() => {
     let cancelled = false;
     setSelected(null);
+    setCustomerModalOpen(false);
     if (!id) {
-      setResult({ id, transaction: null, error: t('UI_NO_TRANSACTION_WAS_SELECTED') });
+      setResult({ id, transaction: null, customer: null, error: t('UI_NO_TRANSACTION_WAS_SELECTED') });
       return;
     }
     const controller = new TransactionController(transactionsOS);
-    controller.getTransactionById(id).then(transaction => {
+    Promise.all([controller.getTransactionById(id), links.getLinkedCustomer(id)]).then(([transaction, customer]) => {
       if (cancelled) return;
-      setResult({ id, transaction, error: transaction ? '' : t('UI_THIS_TRANSACTION_COULD_NOT_BE_FOUND') });
+      setResult({ id, transaction, customer, error: transaction ? '' : t('UI_THIS_TRANSACTION_COULD_NOT_BE_FOUND') });
       setSelected(transaction?.getLast() || null);
     }).catch(() => {
-      if (!cancelled) setResult({ id, transaction: null, error: t('UI_THIS_TRANSACTION_COULD_NOT_BE_LOADED_RETURN_TO_HISTORY') });
+      if (!cancelled) setResult({ id, transaction: null, customer: null, error: t('UI_THIS_TRANSACTION_COULD_NOT_BE_LOADED_RETURN_TO_HISTORY') });
     });
     return () => { cancelled = true; };
-  }, [id, transactionsOS, t]);
+  }, [id, transactionsOS, links, t]);
 
   const current = result?.id === id ? result : null;
+  const linkToCustomer = async (customer: ICustomer | null) => {
+    const sale = current?.transaction;
+    if (!customer || !sale || current?.customer || linkingRef.current) return;
+    linkingRef.current = true; setLinking(true); setCustomerModalOpen(false);
+    try {
+      await links.linkTransaction(sale, customer);
+      setResult(previous => previous?.id === sale.getId() ? { ...previous, customer } : previous);
+      notify(t('TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS', { CUSTOMER_NAME: customer.getName() }));
+    } catch (error) {
+      notify(error instanceof Error ? error.message : t('TRANSACTION_LINK_FAILED'), 'error');
+      // Another tab may have assigned the sale after this page initially loaded.
+      try {
+        const assigned = await links.getLinkedCustomer(sale.getId());
+        setResult(previous => previous?.id === sale.getId() ? { ...previous, customer: assigned } : previous);
+      } catch { /* Keep the saved transaction visible; the action can be retried. */ }
+    } finally { linkingRef.current = false; setLinking(false); }
+  };
+
   return (
     <main className="transaction-page">
       <Link className="transaction-back-link" to={returnTo} state={location.state?.returnState}>← {customerHistory ? t('UI_BACK_TO_CUSTOMER_TRANSACTIONS_2') : t('UI_BACK_TO_TRANSACTIONS')}</Link>
       <PageHeader title={t('UI_TRANSACTION_DETAILS_2')} description={t('UI_A_SAVED_SALE_FROM_YOUR_TRANSACTION_HISTORY')} />
       {!current && <p role="status">{t('UI_LOADING_TRANSACTION')}</p>}
       {current?.error && <p role="alert">{current.error}</p>}
+      {current?.transaction && <section className="transaction-customer" aria-label={t('CUSTOMER_NAME')}>
+        <div><span className="transaction-customer-label">{t('CUSTOMER_NAME')}</span><p>
+          {current.customer
+            ? <Link to={`/customer-transactions?id=${encodeURIComponent(current.customer.getId())}`}>{current.customer.getName()}</Link>
+            : t('TRANSACTION_NO_CUSTOMER')}
+        </p></div>
+        {!current.customer && <button type="button" disabled={linking} onClick={() => setCustomerModalOpen(true)}>
+          {t(linking ? 'TRANSACTION_LINKING' : 'TRANSACTION_LINK_ACTION')}
+        </button>}
+      </section>}
+      {customerModalOpen && current?.transaction && !current.customer && <CustomerSelectionModal isModalOpen
+        onClose={() => setCustomerModalOpen(false)} handleAddItem={linkToCustomer} />}
       {current?.transaction && <TransactionView transaction={current.transaction} activeItem={selected} onClick={setSelected} onDoubleClick={() => {}} />}
     </main>
   );

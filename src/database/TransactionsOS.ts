@@ -15,6 +15,7 @@ export interface TransactionsSchema {
   timestamp: number;
   id: string;
   total: number;
+  kind?: "sale" | "payment";
 }
 
 export interface ITransactionsOS
@@ -56,6 +57,7 @@ export default class TransactionsOS
       timestamp: object.getTimestamp(),
       id: object.getId(),
       total: object.getTotal(),
+      kind: object.getKind(),
     };
   }
 
@@ -63,7 +65,7 @@ export default class TransactionsOS
     schema: TransactionsSchema
   ): Promise<Transaction> {
     let transactionProductItems, transactionDiscountItems;
-    const transaction = new Transaction(schema.id, schema.timestamp);
+    const transaction = new Transaction(schema.id, schema.timestamp, schema.kind === "payment" ? -schema.total : undefined);
     try {
       transactionProductItems =
         await this.transactionItemsOS.getAllByTransactionId(schema.id, schema.timestamp);
@@ -151,6 +153,7 @@ export default class TransactionsOS
   }
 
   public async postTransaction(transaction: Transaction) {
+    if (transaction.getKind() === "payment") throw new Error(getLocaleText("PAYMENT_CUSTOMER_REQUIRED"));
     const transactionProductItems = transaction.getAllTransactionProductItems();
     const transactionDiscountItems =
       transaction.getAllTransactionDiscountItems();

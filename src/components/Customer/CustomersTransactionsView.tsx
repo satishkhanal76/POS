@@ -22,8 +22,8 @@ export default function CustomersTransactionsView() {
   const columns: CustomTableColumn<CustomerTransactionSummary>[] = [
     { key: 'name', header: text.CUSTOMER_TABLE_HEADER_NAME, render: row => row.customer.getName() },
     { key: 'count', header: text.CUSTOMERS_TRANSACTIONS_NUM_OF_TRANS, variant: 'numeric', render: row => row.data.count },
-    { key: 'total', header: text.CUSTOMERS_TRANSACTIONS_TOTAL, variant: 'numeric', render: row => <Price price={row.data.total} /> },
-    { key: 'latest', header: t('PAGINATION_LATEST_SALE'), render: row => new Date(row.data.timestamp).toLocaleString() },
+    { key: 'total', header: t('PAYMENT_BALANCE'), variant: 'numeric', render: row => <Price price={row.data.total} /> },
+    { key: 'latest', header: t('PAYMENT_ACTIVITY'), render: row => new Date(row.data.timestamp).toLocaleString() },
   ];
   return <>
     <PaginationControls page={pagination.page} pageSize={pagination.pageSize} sort={pagination.sort} total={pagination.result?.total ?? 0} busy={pagination.loading} onChange={pagination.change} />
