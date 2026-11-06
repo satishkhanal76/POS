@@ -1,48 +1,247 @@
-.table-card { margin: 1rem 0 3rem; border: 1px solid var(--color-slate600); border-radius: 16px; overflow: hidden; background: var(--bg-primary); }
-.table-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
-.custom-table { width: 100%; border-collapse: collapse; font-family: inherit; font-size: .95rem; line-height: 1.5; }
-.custom-table th { padding: 1rem 1.25rem; background: color-mix(in srgb, var(--color-slate600) 16%, var(--bg-primary)); color: var(--color-slate400); font-size: .75rem; font-weight: 600; letter-spacing: .04em; white-space: nowrap; border-bottom: 1px solid var(--color-slate600); }
-.custom-table td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--color-slate600); color: var(--color-slate200); overflow-wrap: anywhere; }
-.custom-table tbody tr:last-child td { border-bottom: 0; }
-.custom-table [data-align=left] { text-align: left; }
-.custom-table [data-align=right] { text-align: right; }
-.custom-table [data-align=center] { text-align: center; }
-.custom-table td[data-variant=numeric] { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.custom-table td[data-variant=numeric] .price { font-weight: 600; }
-.custom-table td[data-variant=actions] { width: 1%; white-space: nowrap; }
-.custom-table tbody tr:not(:has(.table-empty)):hover { background: color-mix(in srgb, var(--color-slate600) 12%, var(--bg-primary)); }
-.custom-table .table-row-clickable { cursor: pointer; }
-.custom-table .table-row-clickable:hover td:first-child { color: var(--accent); }
-.custom-table td button { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: .4rem .75rem; border: 1px solid var(--color-slate600); border-radius: 8px; background: transparent; color: var(--color-slate300); font: inherit; font-size: .8rem; cursor: pointer; }
-.custom-table td .table-delete:hover { color: var(--rose-600); border-color: var(--rose-600); background: color-mix(in srgb, var(--rose-600) 5%, var(--bg-primary)); }
-.table-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
-.custom-table :is(tr, button, a):focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
-.custom-table .table-empty { text-align: center; padding: 3.5rem 1.5rem; }
-.table-empty-icon { display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto 1rem; border: 1px solid var(--color-slate600); border-radius: 14px; color: var(--accent); font-size: 1.75rem; }
-.table-empty h3 { font-size: 1.1rem; margin: 0 0 .4rem; font-weight: 600; }
-.table-empty p { max-width: 350px; margin: 0 auto; font-size: .9rem; line-height: 1.6; }
-.table-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; padding: .85rem 1.25rem; border-top: 1px solid var(--color-slate600); color: var(--color-slate400); font-size: .75rem; }
-@media (max-width: 600px) { .table-card { border-radius: 12px; } .custom-table { min-width: 460px; font-size: .9rem; } .custom-table th, .custom-table td { padding: .85rem 1rem; } .table-footer { padding: .85rem 1rem; } }
-.custom-table td[data-variant=actions] button + button { margin-left: .5rem; }
+.table-card {
+  margin: 1rem 0 3rem;
+  border: 1px solid var(--color-slate600);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+.table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.custom-table th {
+  padding: 1rem 1.25rem;
+  background: color-mix(in srgb, var(--color-slate600) 16%, var(--bg-primary));
+  color: var(--color-slate400);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--color-slate600);
+}
+.custom-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-slate600);
+  color: var(--color-slate200);
+  overflow-wrap: anywhere;
+}
+.custom-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.custom-table [data-align="left"] {
+  text-align: left;
+}
+.custom-table [data-align="right"] {
+  text-align: right;
+}
+.custom-table [data-align="center"] {
+  text-align: center;
+}
+.custom-table td[data-variant="numeric"] {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.custom-table td[data-variant="numeric"] .price {
+  font-weight: 600;
+}
+.custom-table td[data-variant="actions"] {
+  width: 1%;
+  white-space: nowrap;
+}
+.custom-table tbody tr:not(:has(.table-empty)):hover {
+  background: color-mix(in srgb, var(--color-slate600) 12%, var(--bg-primary));
+}
+.custom-table .table-row-clickable {
+  cursor: pointer;
+}
+.custom-table .table-row-clickable:hover td:first-child {
+  color: var(--accent);
+}
+.custom-table td button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-slate600);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-slate300);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.custom-table td .table-delete:hover {
+  color: var(--rose-600);
+  border-color: var(--rose-600);
+  background: color-mix(in srgb, var(--rose-600) 5%, var(--bg-primary));
+}
+.table-scroll:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+.custom-table :is(tr, button, a):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -3px;
+}
+.custom-table .table-empty {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+}
+.table-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  border: 1px solid var(--color-slate600);
+  border-radius: 14px;
+  color: var(--accent);
+  font-size: 1.75rem;
+}
+.table-empty h3 {
+  font-size: 1.1rem;
+  margin: 0 0 0.4rem;
+  font-weight: 600;
+}
+.table-empty p {
+  max-width: 350px;
+  margin: 0 auto;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--color-slate600);
+  color: var(--color-slate400);
+  font-size: 0.75rem;
+}
+@media (max-width: 600px) {
+  .table-card {
+    border-radius: 12px;
+  }
+  .custom-table {
+    min-width: 460px;
+    font-size: 0.9rem;
+  }
+  .custom-table th,
+  .custom-table td {
+    padding: 0.85rem 1rem;
+  }
+  .table-footer {
+    padding: 0.85rem 1rem;
+  }
+}
+.custom-table td[data-variant="actions"] button + button {
+  margin-left: 0.5rem;
+}
 
 /* Small screens present each record as a labeled card, with no sideways scrolling. */
 @media (max-width: 600px) {
-  .custom-table { min-width: 0; display: block; }
-  .custom-table thead { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
-  .custom-table tbody { display: block; padding: .5rem; }
-  .custom-table tbody tr { display: block; border: 1px solid var(--color-slate600); border-radius: 10px; margin-bottom: .75rem; overflow: hidden; }
-  .custom-table tbody tr:last-child { margin-bottom: 0; }
-  .custom-table tbody td { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); align-items: center; gap: .75rem; width: 100%; padding: .8rem; text-align: right; white-space: normal; }
-  .custom-table tbody td::before { content: attr(data-label); color: var(--color-slate400); font-size: var(--text-small); font-weight: 500; text-align: left; }
-  .custom-table tbody td:first-child { background: color-mix(in srgb, var(--color-slate600) 12%, var(--bg-primary)); font-weight: 600; }
-  .custom-table tbody td:last-child { border-bottom: 0; }
-  .custom-table tbody td[data-variant=actions] { width: 100%; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; }
-  .custom-table td[data-variant=actions]::before { flex: 1; margin-right: auto; }
-  .custom-table td[data-variant=actions] button + button { margin-left: 0; }
-  .custom-table td button { min-height: 44px; font-size: var(--text-small); }
-  .custom-table tbody td.table-empty { display: block; padding: 2rem 1rem; text-align: center; background: transparent; }
-  .custom-table td.table-empty::before { content: none; }
+  .custom-table {
+    min-width: 0;
+    display: block;
+  }
+  .custom-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .custom-table tbody {
+    display: block;
+    padding: 0.5rem;
+  }
+  .custom-table tbody tr {
+    display: block;
+    border: 1px solid var(--color-slate600);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+  .custom-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+  .custom-table tbody td {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.8rem;
+    text-align: right;
+    white-space: normal;
+  }
+  .custom-table tbody td::before {
+    content: attr(data-label);
+    color: var(--color-slate400);
+    font-size: var(--text-small);
+    font-weight: 500;
+    text-align: left;
+  }
+  .custom-table tbody td:first-child {
+    background: color-mix(
+      in srgb,
+      var(--color-slate600) 12%,
+      var(--bg-primary)
+    );
+    font-weight: 600;
+  }
+  .custom-table tbody td:last-child {
+    border-bottom: 0;
+  }
+  .custom-table tbody td[data-variant="actions"] {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+  .custom-table td[data-variant="actions"]::before {
+    flex: 1;
+    margin-right: auto;
+  }
+  .custom-table td[data-variant="actions"] button + button {
+    margin-left: 0;
+  }
+  .custom-table td button {
+    min-height: 44px;
+    font-size: var(--text-small);
+  }
+  .custom-table tbody td.table-empty {
+    display: block;
+    padding: 2rem 1rem;
+    text-align: center;
+    background: transparent;
+  }
+  .custom-table td.table-empty::before {
+    content: none;
+  }
 }
 
-.table-cell-value { min-width: 0; overflow-wrap: anywhere; }
-@media (max-width: 600px) { .custom-table td[data-variant=actions] .table-cell-value { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; } }
+.table-cell-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .custom-table td[data-variant="actions"] .table-cell-value {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+}

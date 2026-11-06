@@ -1,0 +1,63 @@
+.purchase-details-page .page-header {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.purchase-details-page .page-header-actions {
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  max-width: 100%;
+}
+.purchase-details-page .purchase-pay-action,
+.purchase-details-page .print-report-button,
+.purchase-details-page .record-delete-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font: inherit;
+  font-size: var(--text-small);
+  font-weight: 500;
+  line-height: 1.4;
+  width: auto;
+  white-space: normal;
+}
+.purchase-details-page .purchase-pay-action {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--bg-primary);
+  cursor: pointer;
+}
+.purchase-details-page .purchase-pay-action:hover {
+  filter: brightness(0.92);
+}
+.purchase-details-page .purchase-pay-action:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.purchase-details-page .purchase-pay-action svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .purchase-details-page .page-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .purchase-details-page .page-header-actions {
+    width: 100%;
+  }
+  .purchase-details-page .page-header-actions > button,
+  .purchase-details-page .page-header-actions > .delete-record-control {
+    flex: 1 1 auto;
+  }
+  .purchase-details-page .record-delete-action {
+    width: 100%;
+  }
+}
+.purchase-payments {
+  margin-top: 2rem;
+}

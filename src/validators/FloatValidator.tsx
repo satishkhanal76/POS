@@ -5,7 +5,7 @@ export interface FloatValidatorOptions extends IntegerValidatorOptions {
 }
 
 export default class FloatValidator extends IntegerValidator {
-  protected declare options: FloatValidatorOptions;
+  declare protected options: FloatValidatorOptions;
   constructor(value: unknown, options?: FloatValidatorOptions) {
     super(value, options);
     this.options = {

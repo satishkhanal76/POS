@@ -1,14 +1,19 @@
-import { getLocaleText } from '../contexts/Locale';
-import { createDatabaseStores } from '../database/DatabaseStores';
-import DemoDataController from './DemoDataController';
+import { markListingsReady } from "../database/listing/maintenance";
+import { getLocaleText } from "../contexts/Locale";
+import { createDatabaseStores } from "../database/DatabaseStores";
+import DemoDataController from "./DemoDataController";
 
-const MODE_KEY = 'pos.workspace';
-const WELCOME_KEY = 'pos.welcomeSeen';
+const MODE_KEY = "pos.workspace";
+const WELCOME_KEY = "pos.welcomeSeen";
 
 /** Workspace operations never clear or seed the real POS database. */
 class WorkspaceController {
   public isDemo(): boolean {
-    try { return sessionStorage.getItem(MODE_KEY) === 'demo'; } catch { return false; }
+    try {
+      return sessionStorage.getItem(MODE_KEY) === "demo";
+    } catch {
+      return false;
+    }
   }
 
   public async shouldOfferDemo(): Promise<boolean> {
@@ -18,31 +23,52 @@ class WorkspaceController {
     const db = await stores.database.getDatabase();
     // Existing users should not receive a first-visit prompt, even if only history remains.
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(Array.from(db.objectStoreNames), 'readonly');
+      const transaction = db.transaction(
+        Array.from(db.objectStoreNames),
+        "readonly",
+      );
       let hasData = false;
       for (const name of Array.from(db.objectStoreNames)) {
         const request = transaction.objectStore(name).count();
-        request.onsuccess = () => { if (request.result) hasData = true; };
+        request.onsuccess = () => {
+          if (request.result) hasData = true;
+        };
       }
-      transaction.oncomplete = () => { db.close(); resolve(!hasData); };
-      transaction.onabort = () => { db.close(); reject(transaction.error); };
+      transaction.oncomplete = () => {
+        db.close();
+        resolve(!hasData);
+      };
+      transaction.onabort = () => {
+        db.close();
+        reject(transaction.error);
+      };
     });
   }
 
-  public dismissWelcome(): void { localStorage.setItem(WELCOME_KEY, 'true'); }
+  public dismissWelcome(): void {
+    localStorage.setItem(WELCOME_KEY, "true");
+  }
 
   /** Clear every related demo store and optionally seed, together in one transaction. */
   public async resetDemo(seed: boolean): Promise<void> {
-    const stores = createDatabaseStores('POS_DEMO');
+    const stores = createDatabaseStores("POS_DEMO");
     const records = seed ? new DemoDataController(stores).build() : null;
     const db = await stores.database.getDatabase();
     try {
       await new Promise<void>((resolve, reject) => {
-        const transaction = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
+        const transaction = db.transaction(
+          Array.from(db.objectStoreNames),
+          "readwrite",
+        );
         transaction.oncomplete = () => resolve();
-        transaction.onabort = () => reject(transaction.error || new Error(getLocaleText('UI_DEMO_RESET_FAILED')));
+        transaction.onabort = () =>
+          reject(
+            transaction.error ||
+              new Error(getLocaleText("UI_DEMO_RESET_FAILED")),
+          );
         try {
-          for (const name of Array.from(db.objectStoreNames)) transaction.objectStore(name).clear();
+          for (const name of Array.from(db.objectStoreNames))
+            transaction.objectStore(name).clear();
           if (records) {
             for (const [name, rows] of Object.entries(records)) {
               const store = transaction.objectStore(name);
@@ -54,7 +80,10 @@ class WorkspaceController {
           reject(error);
         }
       });
-    } finally { db.close(); }
+      markListingsReady(db);
+    } finally {
+      db.close();
+    }
   }
 
   public async startDemo(): Promise<void> {
@@ -65,7 +94,7 @@ class WorkspaceController {
   /** Resume the saved demo as-is; only explicit restart/clear actions modify its data. */
   public useDemoWorkspace(): void {
     this.dismissWelcome();
-    sessionStorage.setItem(MODE_KEY, 'demo');
+    sessionStorage.setItem(MODE_KEY, "demo");
     window.location.reload();
   }
 

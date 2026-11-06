@@ -1,5 +1,28 @@
-.app-status { margin-top: 1rem; padding: .75rem 1rem; border: 1px solid var(--color-slate500); border-radius: 10px; }
-.app-status p { margin: 0; font-size: var(--text-small); }
-.app-status-update { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; }
-.app-status button { min-height: 44px; padding: .6rem 1rem; border: 1px solid var(--color-slate500); border-radius: 8px; cursor: pointer; }
-.app-status button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.app-status {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-slate500);
+  border-radius: 10px;
+}
+.app-status p {
+  margin: 0;
+  font-size: var(--text-small);
+}
+.app-status-update {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+.app-status button {
+  min-height: 44px;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--color-slate500);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.app-status button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}

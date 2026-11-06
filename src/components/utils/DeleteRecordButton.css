@@ -1,6 +1,43 @@
-.delete-record-control { display: inline-flex; align-items: center; }
-.delete-record-control .record-delete-action { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; min-height: 48px; padding: .65rem 1rem; border: 1px solid color-mix(in srgb, var(--rose-600) 65%, var(--color-slate600)); border-radius: 11px; background: color-mix(in srgb, var(--rose-600) 7%, transparent); color: var(--rose-600); font: inherit; font-size: 1rem; font-weight: 500; line-height: 1.4; cursor: pointer; transition: background-color .15s, border-color .15s; }
-.record-delete-action svg { width: 21px; height: 21px; flex-shrink: 0; }
-.delete-record-control .record-delete-action:hover { background: color-mix(in srgb, var(--rose-600) 14%, transparent); border-color: var(--rose-600); }
-.record-delete-action:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-@media(prefers-reduced-motion: reduce) { .delete-record-control .record-delete-action { transition: none; } }
+.delete-record-control {
+  display: inline-flex;
+  align-items: center;
+}
+.delete-record-control .record-delete-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 48px;
+  padding: 0.65rem 1rem;
+  border: 1px solid
+    color-mix(in srgb, var(--rose-600) 65%, var(--color-slate600));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--rose-600) 7%, transparent);
+  color: var(--rose-600);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
+}
+.record-delete-action svg {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+}
+.delete-record-control .record-delete-action:hover {
+  background: color-mix(in srgb, var(--rose-600) 14%, transparent);
+  border-color: var(--rose-600);
+}
+.record-delete-action:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .delete-record-control .record-delete-action {
+    transition: none;
+  }
+}

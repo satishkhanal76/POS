@@ -1,0 +1,115 @@
+:root {
+  --purchase-accent: #2dd4bf;
+  --purchase-action-text: #12312f;
+}
+body.light-theme {
+  --purchase-accent: #0f766e;
+  --purchase-action-text: #fff;
+}
+.pos-mode-panel[hidden] {
+  display: none !important;
+}
+.order-mode-control {
+  border: 1px solid var(--color-slate600);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+}
+.order-mode-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.order-mode-heading > span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.order-mode-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--color-slate600);
+  border-radius: 10px;
+}
+.order-mode-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 40px;
+  padding: 0.55rem 0.9rem;
+  border-radius: 7px;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--color-slate300);
+}
+.order-mode-switch button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg-primary));
+  color: var(--accent);
+}
+.order-mode-switch .purchase-mode[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--purchase-accent) 18%, var(--bg-primary));
+  color: var(--purchase-accent);
+}
+.order-mode-switch button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.order-mode-control > p {
+  margin: 0.5rem 0 0;
+  color: var(--color-slate400);
+  font-size: 0.8rem;
+}
+.purchase-workspace .transaction-container {
+  border-top: 3px solid var(--purchase-accent);
+}
+.purchase-workspace .pos-status {
+  border-color: var(--purchase-accent);
+  color: var(--purchase-accent);
+}
+.purchase-order-line {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+}
+.purchase-order-line .purchase-unit-cost {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+  margin-top: 0.35rem;
+  color: var(--color-slate400);
+}
+.purchase-order-line .purchase-unit-cost .price {
+  font-weight: 400;
+}
+.purchase-order-line.active {
+  border-color: var(--purchase-accent);
+  background: color-mix(in srgb, var(--purchase-accent) 12%, var(--bg-primary));
+}
+.purchase-order-meta {
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--color-slate600);
+  font-size: 0.85rem;
+  color: var(--color-slate300);
+}
+@media (max-width: 480px) {
+  .order-mode-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .order-mode-switch {
+    display: flex;
+  }
+  .order-mode-switch button {
+    flex: 1;
+  }
+}
+
+.purchase-workspace .pos-action-primary {
+  background: var(--purchase-accent);
+  border-color: var(--purchase-accent);
+  color: var(--purchase-action-text);
+}

@@ -2,8 +2,10 @@ import DiscountItem, { DiscountItemParams } from "../models/DiscountItem";
 import { IDB } from "./Database";
 import ObjectStore, { IObjectStore } from "./ObjectStore";
 
-export interface IDiscountOS
-  extends IObjectStore<DiscountSchema, DiscountItem> {}
+export interface IDiscountOS extends IObjectStore<
+  DiscountSchema,
+  DiscountItem
+> {}
 
 // this is what will be stored on database
 export interface DiscountSchema extends DiscountItemParams {}

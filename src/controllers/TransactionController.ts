@@ -16,7 +16,7 @@ export interface ITransactionController {
   postTransaction: (transaction: ITransaction) => Promise<ITransaction | null>;
 
   getLatestTransaction: (
-    currenltyViewingTransaction: ITransaction | null
+    currenltyViewingTransaction: ITransaction | null,
   ) => Promise<ITransaction | null>;
 
   getNewTransaction: () => ITransaction;
@@ -39,14 +39,16 @@ export default class TransactionController
     this.#transaction = this.getNewTransaction();
   }
 
-  public async getPage(options: PageOptions) { return this.objectStore.getPage(options); }
+  public async getPage(options: PageOptions) {
+    return this.objectStore.getPage(options);
+  }
 
   public async getAllTransactionsByTimestamp(): Promise<ITransaction[]> {
     return await this.objectStore.getAllTransactionsByTimestamp();
   }
 
   public async postTransaction(
-    transaction: ITransaction
+    transaction: ITransaction,
   ): Promise<ITransaction | null> {
     if (transaction.getId() === this.#transaction.getId()) {
       return this.objectStore.postTransaction(this.#transaction);
@@ -55,10 +57,10 @@ export default class TransactionController
   }
 
   public async getLatestTransaction(
-    currenltyViewingTransaction: ITransaction | null
+    currenltyViewingTransaction: ITransaction | null,
   ): Promise<ITransaction | null> {
     const transaction = await this.objectStore.getLatestTransaction(
-      currenltyViewingTransaction
+      currenltyViewingTransaction,
     );
     if (transaction) {
       this.#transaction = transaction;

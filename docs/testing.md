@@ -6,16 +6,16 @@ Use a recent Node version with `--import` and `--test-timeout` support (Node 22.
 
 ## Commands
 
-| Command | Runs |
-| --- | --- |
-| `npm test` | Core model, controller, database, validation, and localization tests |
-| `npm run test:watch` | Core tests again when imported files change |
-| `npm run test:types` | Type-checks application code and all tests |
-| `npm run lint:tests` | Lints the test suite |
-| `npm run test:coverage` | Core tests with a terminal V8 coverage report |
-| `npm run check` | Test types, test lint, core tests, and production build |
-| `npm run test:browser` | Browser interaction and responsive-layout checks |
-| `npm run test:all` | `check` plus browser tests |
+| Command                 | Runs                                                                 |
+| ----------------------- | -------------------------------------------------------------------- |
+| `npm test`              | Core model, controller, database, validation, and localization tests |
+| `npm run test:watch`    | Core tests again when imported files change                          |
+| `npm run test:types`    | Type-checks application code and all tests                           |
+| `npm run lint:tests`    | Lints the test suite                                                 |
+| `npm run test:coverage` | Core tests with a terminal V8 coverage report                        |
+| `npm run check`         | Test types, test lint, core tests, and production build              |
+| `npm run test:browser`  | Browser interaction and responsive-layout checks                     |
+| `npm run test:all`      | `check` plus browser tests                                           |
 
 The full application lint command (`npm run lint`) remains separate because existing application files have lint issues outside this testing work. `check` does not suppress or change those rules.
 
@@ -50,25 +50,25 @@ On Linux, Playwright may also need system packages; use `npx playwright install 
 
 ## What Is Covered
 
-| Test file | Main behavior |
-| --- | --- |
-| `models.test.ts` | Line merging, quantities, totals, discounts, original prices, unique IDs |
-| `controllers.test.ts` | Creating/posting sales, controller boundaries, legacy JSON operations |
-| `editing.test.ts` | Item/customer edits, stable IDs, linked-history preservation, deletion guards |
-| `price-history.test.ts` | Effective-date boundaries, successive changes, historical totals, history listing |
-| `quantity.test.ts` | Positive whole-number quantities and invalid/unsafe input rejection |
-| `discounts.test.ts` | Flat/percentage deductions, decimals, limits, saved types/totals, failed writes |
-| `pagination.test.ts` | Newest/oldest, page limits, customer ranges, lifetime summaries, bounded reads |
-| `migrations.test.ts` | Actual version 1/2 databases upgrading without data loss, fresh schema, concurrent connections |
-| `backups.test.ts` | Every-table round trips, old backup compatibility, validation, atomic rollback, workspace isolation |
-| `settings.test.ts` | Typed drafts, validation, defaults, persistence and notification failures |
-| `localization.test.ts` | English/Nepali/custom, placeholders, uploads, storage synchronization and fallback |
-| `localization-audit.test.ts` | Built-in placeholder compatibility and preventing literal JSX copy |
-| `demo-data.test.ts` | Complete fresh-demo fixtures, historical pricing, linked summaries, relative dates, atomic reset failure |
-| `workspaces.test.ts` | First-visit choice, demo seeding/restart/clear, real-data isolation |
-| `pwa.test.ts` | Manifest paths/identity, icon dimensions, maskable opacity, launch-image media/dimensions, startup markup |
-| `browser/pwa.test.ts` | Production install assets, offline launch, controlled updates, slow/failed bundle startup |
-| `browser/app.test.ts` | Pagination/back links, phone/tablet overflow, menu/dialogs, editing, discounts, locale/template uploads, backup download/restore |
+| Test file                    | Main behavior                                                                                                                    |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `models.test.ts`             | Line merging, quantities, totals, discounts, original prices, unique IDs                                                         |
+| `controllers.test.ts`        | Creating/posting sales, controller boundaries, legacy JSON operations                                                            |
+| `editing.test.ts`            | Item/customer edits, stable IDs, linked-history preservation, deletion guards                                                    |
+| `price-history.test.ts`      | Effective-date boundaries, successive changes, historical totals, history listing                                                |
+| `quantity.test.ts`           | Positive whole-number quantities and invalid/unsafe input rejection                                                              |
+| `discounts.test.ts`          | Flat/percentage deductions, decimals, limits, saved types/totals, failed writes                                                  |
+| `pagination.test.ts`         | Newest/oldest, page limits, customer ranges, lifetime summaries, bounded reads                                                   |
+| `migrations.test.ts`         | Actual version 1/2 databases upgrading without data loss, fresh schema, concurrent connections                                   |
+| `backups.test.ts`            | Every-table round trips, old backup compatibility, validation, atomic rollback, workspace isolation                              |
+| `settings.test.ts`           | Typed drafts, validation, defaults, persistence and notification failures                                                        |
+| `localization.test.ts`       | English/Nepali/custom, placeholders, uploads, storage synchronization and fallback                                               |
+| `localization-audit.test.ts` | Built-in placeholder compatibility and preventing literal JSX copy                                                               |
+| `demo-data.test.ts`          | Complete fresh-demo fixtures, historical pricing, linked summaries, relative dates, atomic reset failure                         |
+| `workspaces.test.ts`         | First-visit choice, demo seeding/restart/clear, real-data isolation                                                              |
+| `pwa.test.ts`                | Manifest paths/identity, icon dimensions, maskable opacity, launch-image media/dimensions, startup markup                        |
+| `browser/pwa.test.ts`        | Production install assets, offline launch, controlled updates, slow/failed bundle startup                                        |
+| `browser/app.test.ts`        | Pagination/back links, phone/tablet overflow, menu/dialogs, editing, discounts, locale/template uploads, backup download/restore |
 
 Pagination tests deliberately fail if history listing calls `getAll` or hydrates full transaction models. They also record the transaction IDs read for a page. Backup tests inject a write failure after clearing starts, proving the whole operation rolls back.
 

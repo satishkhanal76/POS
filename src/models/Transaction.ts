@@ -19,7 +19,9 @@ export interface ITransaction {
   getTotal: () => number;
   getKind: () => "sale" | "payment";
 
-  getAllTransactionItems: () => (IProductTransactionItem | IDiscountTransactionItem)[];
+  getAllTransactionItems: () => (
+    IProductTransactionItem | IDiscountTransactionItem
+  )[];
 
   /**
    * Finds and returns the transaction item that matches the id provided.
@@ -27,15 +29,13 @@ export interface ITransaction {
    * @returns transaction item or undefinded if none found
    */
   getTransactionItem: (
-    id: string
+    id: string,
   ) => IProductTransactionItem | IDiscountTransactionItem | undefined;
 
   doesTransactionItemExist: (id: string) => boolean;
 
   getLastTransactionItem: () =>
-    | IProductTransactionItem
-    | IDiscountTransactionItem
-    | null;
+    IProductTransactionItem | IDiscountTransactionItem | null;
 
   /**
    *
@@ -49,11 +49,11 @@ export interface ITransaction {
    * @returns the decremented item
    */
   decrementTransactionItem: (
-    id: string
+    id: string,
   ) => IProductTransactionItem | IDiscountTransactionItem | null;
 
   removeTransactionItem: (
-    id: string
+    id: string,
   ) => IProductTransactionItem | IDiscountTransactionItem | null;
 
   changeTransactionItemQuantity: (id: string, quantity: number) => void;
@@ -93,7 +93,11 @@ export default class Transaction implements ITransaction {
   private total: number;
   private hasBeenPosted: boolean;
 
-  constructor(id?: string, timestamp?: number, private readonly paymentAmount?: number) {
+  constructor(
+    id?: string,
+    timestamp?: number,
+    private readonly paymentAmount?: number,
+  ) {
     this.id = id || uuidv4();
     this.timestamp = timestamp || Date.now();
     this.transactionProductItems = [];
@@ -128,7 +132,7 @@ export default class Transaction implements ITransaction {
     if (productTransItem) {
       this.changeTransactionItemQuantity(
         item.getId(),
-        productTransItem.getQuantity() + 1
+        productTransItem.getQuantity() + 1,
       );
       return productTransItem;
     }
@@ -146,11 +150,11 @@ export default class Transaction implements ITransaction {
   }
 
   public getTransactionDiscountItem(
-    id: string
+    id: string,
   ): IDiscountTransactionItem | null {
     return (
       this.transactionDiscountItems.find(
-        (item) => item.getItem().getId() === id
+        (item) => item.getItem().getId() === id,
       ) || null
     );
   }
@@ -162,7 +166,7 @@ export default class Transaction implements ITransaction {
   public getTransactionProductItem(id: string): IProductTransactionItem | null {
     return (
       this.transactionProductItems.find(
-        (item) => item.getItem().getId() === id
+        (item) => item.getItem().getId() === id,
       ) || null
     );
   }
@@ -174,7 +178,7 @@ export default class Transaction implements ITransaction {
     const productTotal = this.transactionProductItems.reduce(
       (accumulation: number, transactionProduct) =>
         accumulation + transactionProduct.getAmount(),
-      0
+      0,
     );
 
     const discountTotal = this.transactionDiscountItems.reduce(
@@ -184,12 +188,12 @@ export default class Transaction implements ITransaction {
           DiscountItemType.PERCENTAGE
         ) {
           transactionDiscount.setDiscountAmount(
-            (transactionDiscount.getItem().getAmount() / 100) * productTotal
+            (transactionDiscount.getItem().getAmount() / 100) * productTotal,
           );
         }
         return accumulation + transactionDiscount.getAmount();
       },
-      0
+      0,
     );
     this.total = productTotal - discountTotal;
   }
@@ -203,11 +207,13 @@ export default class Transaction implements ITransaction {
 
   public getTransactionItem(id: string) {
     return this.getAllTransactionItems().find(
-      (transactionItem) => transactionItem.getItem().getId() === id
+      (transactionItem) => transactionItem.getItem().getId() === id,
     );
   }
 
-  public getKind(): "sale" | "payment" { return this.paymentAmount === undefined ? "sale" : "payment"; }
+  public getKind(): "sale" | "payment" {
+    return this.paymentAmount === undefined ? "sale" : "payment";
+  }
 
   public getTotal() {
     if (this.paymentAmount !== undefined) return -this.paymentAmount;
@@ -231,15 +237,15 @@ export default class Transaction implements ITransaction {
   }
 
   public removeProductTransactionItem(
-    id: string
+    id: string,
   ): IProductTransactionItem | null {
     const productIndex = this.transactionProductItems.findIndex(
-      (transactionItem) => transactionItem.getItem().getId() === id
+      (transactionItem) => transactionItem.getItem().getId() === id,
     );
     if (productIndex >= 0) {
       const removedItem = this.transactionProductItems.splice(
         productIndex,
-        1
+        1,
       )[0];
       this.calculateTotal();
 
@@ -249,15 +255,15 @@ export default class Transaction implements ITransaction {
   }
 
   public removeDiscountTransactionItem(
-    id: string
+    id: string,
   ): IDiscountTransactionItem | null {
     const discountIndex = this.transactionDiscountItems.findIndex(
-      (transactionItem) => transactionItem.getItem().getId() === id
+      (transactionItem) => transactionItem.getItem().getId() === id,
     );
     if (discountIndex >= 0) {
       const removedItem = this.transactionDiscountItems.splice(
         discountIndex,
-        1
+        1,
       )[0];
       this.calculateTotal();
 
@@ -295,13 +301,16 @@ export default class Transaction implements ITransaction {
   public doesTransactionItemExist(id: string) {
     return (
       this.getAllTransactionItems().find(
-        (transactionItem) => transactionItem.getItem().getId() === id
+        (transactionItem) => transactionItem.getItem().getId() === id,
       ) !== undefined
     );
   }
 
   public getLast(): ProductTransactionItem | DiscountTransactionItem | null {
-    return this.transactionProductItems[this.transactionProductItems.length - 1]
-      || this.transactionDiscountItems[this.transactionDiscountItems.length - 1] || null;
+    return (
+      this.transactionProductItems[this.transactionProductItems.length - 1] ||
+      this.transactionDiscountItems[this.transactionDiscountItems.length - 1] ||
+      null
+    );
   }
 }

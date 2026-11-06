@@ -10,10 +10,12 @@ export interface TransactionDiscountSchema {
   quantity: number;
 }
 
-export interface ITransactionDiscountsOS
-  extends IObjectStore<TransactionDiscountSchema, DiscountTransactionItem> {
+export interface ITransactionDiscountsOS extends IObjectStore<
+  TransactionDiscountSchema,
+  DiscountTransactionItem
+> {
   getAllByTransactionId: (
-    transactionId: string
+    transactionId: string,
   ) => Promise<DiscountTransactionItem[]>;
 }
 
@@ -47,7 +49,7 @@ export default class TransactionDiscountsOS
   }
 
   public async getAllByTransactionId(
-    transactionId: string
+    transactionId: string,
   ): Promise<DiscountTransactionItem[]> {
     return this.getAllByIndexName("transactionId", transactionId);
   }

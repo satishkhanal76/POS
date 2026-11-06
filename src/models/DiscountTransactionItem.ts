@@ -4,8 +4,7 @@ import TransactionItem, {
   TransactionItemParams,
 } from "./TransactionItem";
 
-export interface IDiscountTransactionItem
-  extends ITransactionItem<DiscountItem> {
+export interface IDiscountTransactionItem extends ITransactionItem<DiscountItem> {
   /**
    * Sets the discount amount to the amount passed in
    * Only works if the discount type is percentage because if it is flat, the discount amount is already set
@@ -15,8 +14,7 @@ export interface IDiscountTransactionItem
   setDiscountAmount: (discountAmount: number) => void;
 }
 
-export interface DiscountTransactionItemParams
-  extends TransactionItemParams<DiscountItem> {}
+export interface DiscountTransactionItemParams extends TransactionItemParams<DiscountItem> {}
 
 export default class DiscountTransactionItem
   extends TransactionItem<DiscountItem>

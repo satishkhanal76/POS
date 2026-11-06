@@ -1,4 +1,4 @@
-import { useLocaleText } from '../../contexts/Locale';
+import { useLocaleText } from "../../contexts/Locale";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import ProductItem, { IProductItem } from "../../models/ProductItem";
 import ItemsController, {
@@ -64,7 +64,7 @@ const Items = () => {
       const contents = e.target?.result;
       if (!contents) return;
       const productItems = await itemController.addManyFromJSON(
-        contents.toString()
+        contents.toString(),
       );
       setItems(productItems);
     });
@@ -108,14 +108,18 @@ const Items = () => {
       </FullScreenModal>
 
       <div className="backup-file-container">
-        <button onClick={handleDownloadClick}>{t('UI_DOWNLOAD_ALL_ITEMS')}</button>
+        <button onClick={handleDownloadClick}>
+          {t("UI_DOWNLOAD_ALL_ITEMS")}
+        </button>
         <input
           type="file"
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={handleLoadItemsClick}
         />
-        <button onClick={() => fileInputRef.current?.click()}>{t('UI_LOAD_ITEMS_FROM_FILE')}</button>
+        <button onClick={() => fileInputRef.current?.click()}>
+          {t("UI_LOAD_ITEMS_FROM_FILE")}
+        </button>
       </div>
 
       <ItemsView handleDelete={handleDelete} items={items}></ItemsView>

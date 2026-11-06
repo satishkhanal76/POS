@@ -1,4 +1,4 @@
-import { useLocaleText } from '../../contexts/Locale';
+import { useLocaleText } from "../../contexts/Locale";
 import { HtmlHTMLAttributes } from "react";
 import Price from "../Items/Price";
 import { IProductTransactionItem } from "../../models/ProductTransactionItem";
@@ -26,12 +26,20 @@ const TransactionItem = ({
       role="button"
       tabIndex={0}
       aria-pressed={isActiveTransactionItem}
-      onKeyDown={event => {
-        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); event.currentTarget.click(); }
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.currentTarget.click();
+        }
       }}
     >
       <span className="quantity">{transactionItem.getQuantity()}</span>
-      <span className="name">{transactionItem.getItem().getName()}{transactionItem.getItem().deletedAt && <small className="deleted-badge">{t('DELETED_BADGE')}</small>}</span>
+      <span className="name">
+        {transactionItem.getItem().getName()}
+        {transactionItem.getItem().deletedAt && (
+          <small className="deleted-badge">{t("DELETED_BADGE")}</small>
+        )}
+      </span>
       <Price
         isDeductionItem={isDiscountItem}
         price={transactionItem.getAmount()}

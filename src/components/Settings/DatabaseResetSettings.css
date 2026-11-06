@@ -1,6 +1,31 @@
-.settings-section.database-danger { border-color: var(--rose-600); }
-.database-danger-button, .workspace-buttons .database-danger-button:first-child { border: 1px solid var(--rose-600); border-radius: 9px; padding: .8rem 1rem; min-height: 44px; background: var(--rose-600); color: white; font: inherit; cursor: pointer; }
-.database-danger-button:disabled { opacity: .5; cursor: not-allowed; }
-.database-danger-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-.database-reset-warning { font-weight: 600; line-height: 1.6; }
-.database-reset-input { display: grid; gap: .6rem; margin: 1.25rem 0; }
+.settings-section.database-danger {
+  border-color: var(--rose-600);
+}
+.database-danger-button,
+.workspace-buttons .database-danger-button:first-child {
+  border: 1px solid var(--rose-600);
+  border-radius: 9px;
+  padding: 0.8rem 1rem;
+  min-height: 44px;
+  background: var(--rose-600);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+.database-danger-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.database-danger-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.database-reset-warning {
+  font-weight: 600;
+  line-height: 1.6;
+}
+.database-reset-input {
+  display: grid;
+  gap: 0.6rem;
+  margin: 1.25rem 0;
+}

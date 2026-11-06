@@ -1,4 +1,4 @@
-import { ICustomer } from './Customer';
+import { ICustomer } from "./Customer";
 
 export interface CustomerSummarySchema {
   id: string;
@@ -7,5 +7,8 @@ export interface CustomerSummarySchema {
   total: number;
 }
 export default class CustomerTransactionSummary {
-  constructor(public readonly data: CustomerSummarySchema, public readonly customer: ICustomer) {}
+  constructor(
+    public readonly data: CustomerSummarySchema,
+    public readonly customer: ICustomer,
+  ) {}
 }

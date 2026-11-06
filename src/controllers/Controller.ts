@@ -14,9 +14,11 @@ export interface IController<Schema, I, OS> {
   addMany: (models: I[]) => Promise<I[]>;
 }
 
-export default class Controller<Schema, I, OS extends ObjectStore<Schema, I>>
-  implements IController<Schema, I, OS>
-{
+export default class Controller<
+  Schema,
+  I,
+  OS extends ObjectStore<Schema, I>,
+> implements IController<Schema, I, OS> {
   protected objectStore: OS;
 
   constructor(objectStore: OS) {

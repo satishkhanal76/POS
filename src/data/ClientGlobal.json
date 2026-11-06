@@ -4,5 +4,6 @@
   "darkMode": false,
   "stockManagement": false,
   "forceStockAdherence": false,
-  "showSoftDeletedToggle": false
+  "showSoftDeletedToggle": false,
+  "purchasing": false
 }

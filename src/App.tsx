@@ -1,4 +1,8 @@
-import OverviewPage from './components/pages/OverviewPage';
+import DatabaseMaintenanceStatus from "./components/App/DatabaseMaintenanceStatus";
+import PurchasingPage from "./components/pages/PurchasingPage";
+import PurchasePage from "./components/pages/PurchasePage";
+import ContactPage from "./components/pages/ContactPage";
+import OverviewPage from "./components/pages/OverviewPage";
 import DashboardPage from "./components/pages/DashboardPage";
 import AppStatus from "./components/App/AppStatus";
 import PriceHistoryPage from "./components/pages/PriceHistoryPage";
@@ -10,7 +14,7 @@ import "./App.css";
 import NavBar from "./components/NavBar";
 import ItemsPage from "./components/pages/ItemsPage";
 import POSPage from "./components/pages/POSPage";
-import CustomersPage from "./components/pages/CustomersPage";
+import ContactsPage from "./components/pages/ContactsPage";
 import TransactionPage from "./components/pages/TransactionPage";
 import TransactionsPage from "./components/pages/TransactionsPage";
 import CustomersTransactionsPage from "./components/pages/CustomersTransactionsPage";
@@ -22,13 +26,18 @@ function App() {
     <div className="container App">
       <NavBar />
       <AppStatus />
+      <DatabaseMaintenanceStatus />
       <DemoBanner />
       <DemoWelcome />
       <Routes>
+        <Route path="/contacts" Component={ContactsPage} />
+        <Route path="/contact" Component={ContactPage} />
+        <Route path="/purchasing" Component={PurchasingPage} />
+        <Route path="/purchase" Component={PurchasePage} />
         <Route path="/dashboard" Component={DashboardPage} />
         <Route path="/overview" Component={OverviewPage} />
         <Route path="/" Component={() => <POSPage />}></Route>
-        <Route path="/customers" Component={() => <CustomersPage />}></Route>
+        <Route path="/customers" Component={() => <ContactsPage />}></Route>
         <Route path="/items" Component={() => <ItemsPage />}></Route>
         <Route
           path="/customers-transactions"
@@ -37,7 +46,10 @@ function App() {
         <Route path="/transaction" Component={() => <TransactionPage />} />
         <Route path="/price-history" Component={PriceHistoryPage} />
         <Route path="/transactions" Component={() => <TransactionsPage />} />
-        <Route path="/customer-transactions" Component={() => <CustomerTransactionsPage />} />
+        <Route
+          path="/customer-transactions"
+          Component={() => <CustomerTransactionsPage />}
+        />
         <Route path="/settings" Component={() => <SettingsPage />} />
       </Routes>
     </div>

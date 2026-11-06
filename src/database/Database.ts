@@ -1,4 +1,7 @@
-import { getLocaleText } from '../contexts/Locale';
+import { databaseBlocked, markListingsReady } from "./listing/maintenance";
+import { getLocaleText } from "../contexts/Locale";
+export const DATABASE_VERSION = 14;
+
 //Database Interface
 export interface IDB {
   /**
@@ -31,7 +34,11 @@ export interface IObjectStoreDB {
    */
   onObjectStoreCreation?: (objectStore: IDBObjectStore, db: IDB) => void;
 
-  onDatabaseUpgrade?: (database: IDBDatabase, transaction: IDBTransaction, oldVersion: number) => void;
+  onDatabaseUpgrade?: (
+    database: IDBDatabase,
+    transaction: IDBTransaction,
+    oldVersion: number,
+  ) => void;
 
   onDatabaseConnection?: (db: IDB) => void;
 
@@ -40,7 +47,6 @@ export interface IObjectStoreDB {
 
 export default class DB implements IDB {
   private static DB_NAME = "POS";
-  private static DB_VERSION = 5;
 
   private objectStoresMap: Map<string, IObjectStoreDB>;
 
@@ -54,26 +60,48 @@ export default class DB implements IDB {
 
   public async connectDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
-      const dbRequest = window.indexedDB.open(this.name, DB.DB_VERSION);
+      let fresh = false;
+      const dbRequest = window.indexedDB.open(this.name, DATABASE_VERSION);
       console.log("Connecting to database.");
       dbRequest.addEventListener("success", () => {
-        this.onSuccess(dbRequest.result);
-        resolve(dbRequest.result);
+        const database = dbRequest.result;
+        const missingStores = Array.from(this.objectStoresMap.keys()).filter(
+          (name) => !database.objectStoreNames.contains(name),
+        );
+        if (missingStores.length) {
+          database.close();
+          reject(new Error(getLocaleText("UI_DATABASE_SCHEMA_INCOMPLETE")));
+          return;
+        }
+        databaseBlocked(this.name, false);
+        if (fresh) markListingsReady(database);
+        this.onSuccess(database);
+        resolve(database);
       });
       dbRequest.addEventListener("upgradeneeded", (event) => {
+        fresh = event.oldVersion === 0;
+        databaseBlocked(this.name, false);
         // Add new stores in-place; existing stores and records are preserved.
         this.onUpgradeNeeded(dbRequest.result);
         for (const store of this.objectStoresMap.values()) {
-          store.onDatabaseUpgrade?.(dbRequest.result, dbRequest.transaction!, event.oldVersion);
+          store.onDatabaseUpgrade?.(
+            dbRequest.result,
+            dbRequest.transaction!,
+            event.oldVersion,
+          );
         }
       });
       dbRequest.addEventListener("blocked", () => {
+        databaseBlocked(this.name, true);
         console.warn("Close other POS tabs to finish updating the database.");
       });
 
       dbRequest.addEventListener("error", (eve) => {
         this.onError(eve);
-        reject(dbRequest.error || new Error(getLocaleText('UI_DATABASE_CONNECTION_FAILED')));
+        reject(
+          dbRequest.error ||
+            new Error(getLocaleText("UI_DATABASE_CONNECTION_FAILED")),
+        );
       });
     });
   }
@@ -113,17 +141,18 @@ export default class DB implements IDB {
    * @param database the databse
    */
   private onUpgradeNeeded(database: IDBDatabase) {
-    console.info(
-      "Creating database object stores."
-    );
+    console.info("Creating database object stores.");
 
     //create all object store
     for (const entry of this.objectStoresMap.entries()) {
       const objectStoreDB: IObjectStoreDB = entry[1];
-      if (database.objectStoreNames.contains(objectStoreDB.getObjectStoreName())) continue;
+      if (
+        database.objectStoreNames.contains(objectStoreDB.getObjectStoreName())
+      )
+        continue;
       const objectStore = database.createObjectStore(
         objectStoreDB.getObjectStoreName(),
-        objectStoreDB.getObjectSoreParams()
+        objectStoreDB.getObjectSoreParams(),
       );
       if (objectStoreDB.onObjectStoreCreation) {
         objectStoreDB.onObjectStoreCreation(objectStore, this);
@@ -141,7 +170,9 @@ export default class DB implements IDB {
   public addObjectStore(objectStore: IObjectStoreDB) {
     if (this.db)
       throw new Error(
-        getLocaleText('UI_DATABASE_IS_ALREADY_CREATED_BEFORE_ADDING_ALL_OBJECT_STORES')
+        getLocaleText(
+          "UI_DATABASE_IS_ALREADY_CREATED_BEFORE_ADDING_ALL_OBJECT_STORES",
+        ),
       );
 
     this.objectStoresMap.set(objectStore.getObjectStoreName(), objectStore);
@@ -150,13 +181,15 @@ export default class DB implements IDB {
   public async getDatabase() {
     if (this.db) return this.db;
     if (!this.connection) {
-      this.connection = this.connectDB().then(database => {
-        this.db = database;
-        return database;
-      }).catch(error => {
-        this.connection = undefined;
-        throw error;
-      });
+      this.connection = this.connectDB()
+        .then((database) => {
+          this.db = database;
+          return database;
+        })
+        .catch((error) => {
+          this.connection = undefined;
+          throw error;
+        });
     }
     return this.connection;
   }

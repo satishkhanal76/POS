@@ -7,11 +7,11 @@ const TransactionsPage = () => {
   const text = useLocale();
 
   return (
-      <>
-        <PageHeader title={text.TRANSACTIONS_TITLE} />
-        <TransactionsView />
-      </>
-    );
+    <>
+      <PageHeader title={text.TRANSACTIONS_TITLE} />
+      <TransactionsView />
+    </>
+  );
 };
 
 export default TransactionsPage;

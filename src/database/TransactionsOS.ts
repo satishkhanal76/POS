@@ -1,6 +1,11 @@
-import TransactionHistoryStore from './TransactionHistoryStore';
-import { loadSettings } from '../settings/settings';
-import { publishStockChange } from '../stock/events';
+import {
+  indexedHeader,
+  createListingIndexes,
+} from "./listing/metadata";
+import { validQuantity, roundQuantity } from "../validators/QuantityValidator";
+import TransactionHistoryStore from "./TransactionHistoryStore";
+import { loadSettings } from "../settings/settings";
+import { publishStockChange } from "../stock/events";
 import { getLocaleText } from "../localization/locale";
 import { PageOptions, requestValue } from "./Pagination";
 import { TransactionListEntry } from "../models/TransactionListEntry";
@@ -22,15 +27,22 @@ export interface TransactionsSchema {
   stockDeducted?: number;
   stockReversed?: number;
   kind?: "sale" | "payment";
+  listItemCount?: number;
+  listCustomerIds?: string[];
 }
 
-export interface ITransactionsOS
-  extends IObjectStore<TransactionsSchema, Transaction> {
-  getListEntries: (ids: string[]) => Promise<TransactionListEntry[]>;
+export interface ITransactionsOS extends IObjectStore<
+  TransactionsSchema,
+  Transaction
+> {
+  getListEntries: (
+    ids: string[],
+    headers?: TransactionsSchema[],
+  ) => Promise<TransactionListEntry[]>;
   getAllTransactionsByTimestamp: () => Promise<ITransaction[]>;
 
   getLatestTransaction: (
-    currenltyViewingTransaction?: ITransaction | null
+    currenltyViewingTransaction?: ITransaction | null,
   ) => Promise<Transaction | null>;
 
   postTransaction: (transaction: Transaction) => Promise<Transaction>;
@@ -46,7 +58,7 @@ export default class TransactionsOS
   constructor(
     db: IDB,
     transactionItemsOS: ITransactionProductsOS,
-    transactionDiscountsOS: ITransactionDiscountsOS
+    transactionDiscountsOS: ITransactionDiscountsOS,
   ) {
     super(db, TransactionsOS.OBJECT_STORE_NAME);
     this.transactionItemsOS = transactionItemsOS;
@@ -54,36 +66,61 @@ export default class TransactionsOS
   }
 
   public onObjectStoreCreation(objectStore: IDBObjectStore) {
+    createListingIndexes(objectStore);
     objectStore.createIndex("timestamp", "timestamp", { unique: true });
     objectStore.createIndex("id", "id", { unique: true });
+    objectStore.createIndex("deletedTimestamp", ["timestamp", "deletedAt"]);
+  }
+
+  public onDatabaseUpgrade(
+    database: IDBDatabase,
+    transaction: IDBTransaction,
+  ) {
+    const store = transaction.objectStore(TransactionsOS.OBJECT_STORE_NAME);
+    if (!store.indexNames.contains("deletedTimestamp"))
+      store.createIndex("deletedTimestamp", ["timestamp", "deletedAt"]);
+    createListingIndexes(store);
   }
 
   public getObjectAsSchema(object: ITransaction) {
-    return {
-      timestamp: object.getTimestamp(),
-      id: object.getId(),
-      total: object.getTotal(),
-      kind: object.getKind(),
-    };
+    return indexedHeader(
+      {
+        timestamp: object.getTimestamp(),
+        id: object.getId(),
+        total: object.getTotal(),
+        kind: object.getKind(),
+      },
+      object.getKind(),
+      [],
+      object.getAllTransactionProductItems().length +
+        object.getAllTransactionDiscountItems().length,
+    );
   }
 
   public async getSchemaAsObject(
-    schema: TransactionsSchema
+    schema: TransactionsSchema,
   ): Promise<Transaction> {
     let transactionProductItems, transactionDiscountItems;
-    const transaction = new Transaction(schema.id, schema.timestamp, schema.kind === "payment" ? -schema.total : undefined);
+    const transaction = new Transaction(
+      schema.id,
+      schema.timestamp,
+      schema.kind === "payment" ? -schema.total : undefined,
+    );
     try {
       transactionProductItems =
-        await this.transactionItemsOS.getAllByTransactionId(schema.id, schema.timestamp);
+        await this.transactionItemsOS.getAllByTransactionId(
+          schema.id,
+          schema.timestamp,
+        );
       transactionDiscountItems =
         await this.transactionDiscountsOS.getAllByTransactionId(schema.id);
 
       transactionProductItems.forEach((item) =>
-        transaction.addTransactionProductItem(item)
+        transaction.addTransactionProductItem(item),
       );
 
       transactionDiscountItems.forEach((item) =>
-        transaction.addTransactionDiscountItem(item)
+        transaction.addTransactionDiscountItem(item),
       );
     } catch (err) {
       const unknownError = err as ObjectRequestError;
@@ -102,23 +139,65 @@ export default class TransactionsOS
   }
 
   public async getPage(options: PageOptions) {
-    const result = await new TransactionHistoryStore(this.db).getPage(options, { start: 0, end: Number.MAX_SAFE_INTEGER, all: true });
-    return { ...result, rows: await this.getListEntries(result.rows.map(row => row.id)) };
+    const result = await new TransactionHistoryStore(this.db).getPage(options, {
+      start: 0,
+      end: Number.MAX_SAFE_INTEGER,
+      all: true,
+    });
+    return {
+      ...result,
+      rows: await this.getListEntries(
+        result.rows.map((row) => row.id),
+        result.rows,
+      ),
+    };
   }
 
   /** Load headers and indexed line counts only for the selected transaction IDs. */
-  public async getListEntries(ids: string[]): Promise<TransactionListEntry[]> {
+  public async getListEntries(
+    ids: string[],
+    headers?: TransactionsSchema[],
+  ): Promise<TransactionListEntry[]> {
     if (!ids.length) return [];
+    if (headers?.every((row) => row.listItemCount !== undefined))
+      return headers.map((row) => ({
+        id: row.id,
+        timestamp: row.timestamp,
+        total: row.total,
+        kind: row.kind,
+        deletedAt: row.deletedAt,
+        itemCount: row.listItemCount!,
+      }));
     const db = await this.db.getDatabase();
-    const transaction = db.transaction(['TRANSACTIONS', 'TRANSACTION_PRODUCTS', 'TRANSACTION_DISCOUNTS']);
-    const reads = ids.map(id => Promise.all([
-      requestValue(transaction.objectStore('TRANSACTIONS').get(id)) as Promise<TransactionsSchema | undefined>,
-      requestValue(transaction.objectStore('TRANSACTION_PRODUCTS').index('transactionId').count(id)),
-      requestValue(transaction.objectStore('TRANSACTION_DISCOUNTS').index('transactionId').count(id)),
-    ]).then(([sale, products, discounts]) => {
-      if (!sale) throw new Error(getLocaleText('PAGINATION_TRANSACTION_MISSING'));
-      return { ...sale, itemCount: products + discounts };
-    }));
+    const transaction = db.transaction([
+      "TRANSACTIONS",
+      "TRANSACTION_PRODUCTS",
+      "TRANSACTION_DISCOUNTS",
+    ]);
+    const supplied = new Map(headers?.map(row => [row.id, row]));
+    const reads = ids.map((id) =>
+      Promise.all([
+        headers ? Promise.resolve(supplied.get(id)) : requestValue(
+          transaction.objectStore("TRANSACTIONS").get(id),
+        ) as Promise<TransactionsSchema | undefined>,
+        requestValue(
+          transaction
+            .objectStore("TRANSACTION_PRODUCTS")
+            .index("transactionId")
+            .count(id),
+        ),
+        requestValue(
+          transaction
+            .objectStore("TRANSACTION_DISCOUNTS")
+            .index("transactionId")
+            .count(id),
+        ),
+      ]).then(([sale, products, discounts]) => {
+        if (!sale)
+          throw new Error(getLocaleText("PAGINATION_TRANSACTION_MISSING"));
+        return { ...sale, itemCount: products + discounts };
+      }),
+    );
     return Promise.all(reads);
   }
 
@@ -127,7 +206,7 @@ export default class TransactionsOS
   }
 
   public async getLatestTransaction(
-    currenltyViewingTransaction?: ITransaction | null
+    currenltyViewingTransaction?: ITransaction | null,
   ): Promise<Transaction | null> {
     const os = await this.getReadOnlyObjectStore();
     return new Promise<Transaction | null>((resolve, reject) => {
@@ -136,15 +215,18 @@ export default class TransactionsOS
         currenltyViewingTransaction
           ? IDBKeyRange.upperBound(
               currenltyViewingTransaction?.getTimestamp(),
-              true
+              true,
             )
           : null,
-        "prev"
+        "prev",
       );
 
       cursorReq.onsuccess = (event: Event) => {
         const cursor: IDBCursorWithValue = (event.target as IDBRequest).result;
-        if (cursor?.value.deletedAt) { cursor.continue(); return; }
+        if (cursor?.value.deletedAt) {
+          cursor.continue();
+          return;
+        }
         if (cursor) {
           resolve(this.getSchemaAsObject(cursor.value));
         } else {
@@ -161,8 +243,9 @@ export default class TransactionsOS
 
   /** Sale header, line items and stock changes commit together, or all roll back. */
   public async postTransaction(sale: Transaction) {
-    if (sale.getKind() === 'payment') throw new Error(getLocaleText('PAYMENT_CUSTOMER_REQUIRED'));
-    if (sale.isPosted()) throw new Error(getLocaleText('STOCK_ALREADY_POSTED'));
+    if (sale.getKind() === "payment")
+      throw new Error(getLocaleText("PAYMENT_CUSTOMER_REQUIRED"));
+    if (sale.isPosted()) throw new Error(getLocaleText("STOCK_ALREADY_POSTED"));
     const settings = loadSettings();
     const products = sale.getAllTransactionProductItems();
     const discounts = sale.getAllTransactionDiscountItems();
@@ -170,41 +253,90 @@ export default class TransactionsOS
     for (const line of products) {
       const id = line.getItem().getId();
       const quantity = (quantities.get(id)?.quantity ?? 0) + line.getQuantity();
-      if (!Number.isSafeInteger(quantity) || quantity < 1) throw new Error(getLocaleText('QUANTITY_INVALID'));
+      if (!validQuantity(quantity))
+        throw new Error(getLocaleText("QUANTITY_INVALID"));
       quantities.set(id, { quantity, name: line.getItem().getName() });
     }
     const warnings: string[] = [];
     const db = await this.db.getDatabase();
     await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(['TRANSACTIONS', 'TRANSACTION_PRODUCTS', 'TRANSACTION_DISCOUNTS', 'PRODUCTS', 'STOCK'], 'readwrite');
-      let message = getLocaleText('NOTIFICATION_POST_FAILED');
+      const transaction = db.transaction(
+        [
+          "TRANSACTIONS",
+          "TRANSACTION_PRODUCTS",
+          "TRANSACTION_DISCOUNTS",
+          "PRODUCTS",
+          "STOCK",
+        ],
+        "readwrite",
+      );
+      let message = getLocaleText("NOTIFICATION_POST_FAILED");
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(new Error(message));
       try {
-        transaction.objectStore('TRANSACTIONS').add({ ...this.getObjectAsSchema(sale), stockDeducted: settings.stockManagement ? 1 : 0 });
-        for (const line of products) transaction.objectStore('TRANSACTION_PRODUCTS').add(this.transactionItemsOS.getObjectAsSchema(line));
-        for (const line of discounts) transaction.objectStore('TRANSACTION_DISCOUNTS').add(this.transactionDiscountsOS.getObjectAsSchema(line));
+        transaction
+          .objectStore("TRANSACTIONS")
+          .add({
+            ...this.getObjectAsSchema(sale),
+            stockDeducted: settings.stockManagement ? 1 : 0,
+            ...indexedHeader(
+              this.getObjectAsSchema(sale),
+              "sale",
+              [],
+              products.length + discounts.length,
+            ),
+          });
+        for (const line of products)
+          transaction
+            .objectStore("TRANSACTION_PRODUCTS")
+            .add(this.transactionItemsOS.getObjectAsSchema(line));
+        for (const line of discounts)
+          transaction
+            .objectStore("TRANSACTION_DISCOUNTS")
+            .add(this.transactionDiscountsOS.getObjectAsSchema(line));
         for (const [id, item] of quantities) {
-          const product = transaction.objectStore('PRODUCTS').get(id);
+          const product = transaction.objectStore("PRODUCTS").get(id);
           product.onsuccess = () => {
-            if (!product.result || product.result.deletedAt) { message = getLocaleText('UI_UNAVAILABLE_ITEM'); transaction.abort(); return; }
+            if (
+              !product.result ||
+              product.result.deletedAt ||
+              product.result.canSell === 0
+            ) {
+              message = getLocaleText("UI_UNAVAILABLE_ITEM");
+              transaction.abort();
+              return;
+            }
             if (!settings.stockManagement) return;
-            const stock = transaction.objectStore('STOCK');
+            const stock = transaction.objectStore("STOCK");
             const count = stock.get(id);
             count.onsuccess = () => {
               const available = count.result?.count ?? 0;
               if (item.quantity > available) {
-                const warning = getLocaleText('STOCK_SHORTAGE', { item: item.name, available, requested: item.quantity });
-                if (settings.forceStockAdherence) { message = warning; transaction.abort(); return; }
+                const warning = getLocaleText("STOCK_SHORTAGE", {
+                  item: item.name,
+                  available,
+                  requested: item.quantity,
+                });
+                if (settings.forceStockAdherence) {
+                  message = warning;
+                  transaction.abort();
+                  return;
+                }
                 warnings.push(warning);
               }
-              const remaining = available - item.quantity;
-              if (!Number.isSafeInteger(remaining)) { message = getLocaleText('STOCK_INVALID'); transaction.abort(); return; }
+              const remaining = roundQuantity(available - item.quantity);
+              if (!validQuantity(Math.abs(remaining), true)) {
+                message = getLocaleText("STOCK_INVALID");
+                transaction.abort();
+                return;
+              }
               stock.put({ id, count: remaining });
             };
           };
         }
-      } catch { transaction.abort(); }
+      } catch {
+        transaction.abort();
+      }
     });
     sale.setIsPosted(true);
     if (settings.stockManagement) publishStockChange(warnings);

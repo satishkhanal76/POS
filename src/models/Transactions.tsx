@@ -22,7 +22,7 @@ export default class Transactions implements ITransactions {
     this.total = this.transactions.reduce(
       (accumulatedTotal, transaction) =>
         accumulatedTotal + transaction.getTotal(),
-      0
+      0,
     );
   }
 
@@ -42,7 +42,7 @@ export default class Transactions implements ITransactions {
 
   public removeTransaction(id: string) {
     const index = this.transactions.findIndex(
-      (transaction) => transaction.getId() === id
+      (transaction) => transaction.getId() === id,
     );
     if (index < 0) return null;
     const transaction = this.transactions.splice(index, 1)[0];

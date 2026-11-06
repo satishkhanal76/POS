@@ -5,8 +5,9 @@ interface IInputProps extends React.HTMLProps<HTMLInputElement> {
   label?: string;
   name: string;
 }
-interface ICustomForm<IFormDataType extends { [key: string]: any }>
-  extends HtmlHTMLAttributes<HTMLFormElement> {
+interface ICustomForm<
+  IFormDataType extends { [key: string]: any },
+> extends HtmlHTMLAttributes<HTMLFormElement> {
   inputsProps: IInputProps[];
   onFormSubmit: (formData: IFormDataType) => void;
   formTitle?: string;
@@ -20,7 +21,7 @@ function CustomForm<IFormDataType extends { [key: string]: any }>({
   ...otherprops
 }: ICustomForm<IFormDataType>) {
   const initialFormData = Object.fromEntries(
-    inputsProps.map((inputProp) => [inputProp.name, inputProp.value || ""])
+    inputsProps.map((inputProp) => [inputProp.name, inputProp.value || ""]),
   ) as IFormDataType;
   const firstInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<IFormDataType>(initialFormData);
@@ -48,9 +49,15 @@ function CustomForm<IFormDataType extends { [key: string]: any }>({
       <div className="input-container-wrapper">
         {inputsProps.map((inputProp: IInputProps, i: number) => {
           return (
-            <div className="input-container" key={inputProp.id || inputProp.name}>
+            <div
+              className="input-container"
+              key={inputProp.id || inputProp.name}
+            >
               {inputProp.label && (
-                <label className="input-label" htmlFor={inputProp.id || inputProp.name}>
+                <label
+                  className="input-label"
+                  htmlFor={inputProp.id || inputProp.name}
+                >
                   {inputProp.label}
                 </label>
               )}

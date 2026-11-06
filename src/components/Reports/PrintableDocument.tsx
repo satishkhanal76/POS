@@ -1,12 +1,30 @@
-import { PrintableReport } from '../../reports/types';
-import { useLocaleText } from '../../contexts/Locale';
-import './PrintReportButton.css';
+import { PrintableReport } from "../../reports/types";
+import { useLocaleText } from "../../contexts/Locale";
+import "./PrintReportButton.css";
 
-export default function PrintableDocument({ report, workspace, language }: { report: PrintableReport; workspace: string; language: string }) {
+export default function PrintableDocument({
+  report,
+  workspace,
+  language,
+}: {
+  report: PrintableReport;
+  workspace: string;
+  language: string;
+}) {
   const t = useLocaleText();
   const range = report.range;
-  const period = !range || range.all ? t('REPORT_ALL_TIME') : `${new Date(range.start).toLocaleDateString()} – ${new Date(range.end - 1).toLocaleDateString()}`;
-  return <html lang={language}><head><meta charSet="utf-8" /><title>{report.title} — {period}</title><style>{`
+  const period =
+    !range || range.all
+      ? t("REPORT_ALL_TIME")
+      : `${new Date(range.start).toLocaleDateString()} – ${new Date(range.end - 1).toLocaleDateString()}`;
+  return (
+    <html lang={language}>
+      <head>
+        <meta charSet="utf-8" />
+        <title>
+          {report.title} — {period}
+        </title>
+        <style>{`
     @page { size: A4; margin: 16mm 12mm; }
     * { box-sizing: border-box; }
     body { margin: 0; color: #17202b; background: white; font: 11px/1.5 Arial, sans-serif; }
@@ -23,18 +41,58 @@ export default function PrintableDocument({ report, workspace, language }: { rep
     a { color: inherit; text-decoration: none; }
     footer { margin-top: 28px; border-top: 1px solid #d8dee5; padding-top: 8px; color: #536171; }
     @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
-  `}</style></head><body>
-    <header><h1>{report.title}</h1><p>{t('DASH_PERIOD')}: {period}</p>
-      <p className="meta">{t('PRINT_WORKSPACE', { workspace })}</p>
-      <p className="meta">{t('PRINT_GENERATED', { date: new Date().toLocaleString() })}</p>
-      <p className="meta">{t(range?.includeDeleted ? 'PRINT_WITH_DELETED' : 'PRINT_ACTIVE_ONLY')}</p>
-      {report.note && <p>{report.note}</p>}
-    </header>
-    {report.sections.map((section, index) => <section key={index}><h2>{section.title}</h2>
-      <table><thead><tr>{section.columns.map((column, at) => <th key={at}>{column}</th>)}</tr></thead>
-        <tbody>{section.rows.length ? section.rows.map((row, at) => <tr key={at}>{row.map((cell, position) => <td key={position}>{cell}</td>)}</tr>) : <tr><td colSpan={section.columns.length}>{t('PRINT_EMPTY')}</td></tr>}</tbody>
-      </table>
-    </section>)}
-    <footer>{t('PRINT_FOOTER')}</footer>
-  </body></html>;
+  `}</style>
+      </head>
+      <body>
+        <header>
+          <h1>{report.title}</h1>
+          <p>
+            {t("DASH_PERIOD")}: {period}
+          </p>
+          <p className="meta">{t("PRINT_WORKSPACE", { workspace })}</p>
+          <p className="meta">
+            {t("PRINT_GENERATED", { date: new Date().toLocaleString() })}
+          </p>
+          <p className="meta">
+            {t(
+              range?.includeDeleted
+                ? "PRINT_WITH_DELETED"
+                : "PRINT_ACTIVE_ONLY",
+            )}
+          </p>
+          {report.note && <p>{report.note}</p>}
+        </header>
+        {report.sections.map((section, index) => (
+          <section key={index}>
+            <h2>{section.title}</h2>
+            <table>
+              <thead>
+                <tr>
+                  {section.columns.map((column, at) => (
+                    <th key={at}>{column}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {section.rows.length ? (
+                  section.rows.map((row, at) => (
+                    <tr key={at}>
+                      {row.map((cell, position) => (
+                        <td key={position}>{cell}</td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={section.columns.length}>{t("PRINT_EMPTY")}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </section>
+        ))}
+        <footer>{t("PRINT_FOOTER")}</footer>
+      </body>
+    </html>
+  );
 }

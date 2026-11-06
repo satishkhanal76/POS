@@ -14,12 +14,11 @@ import CustomerTransactions, {
 } from "../models/CustomerTransactions";
 import Transactions from "../models/Transactions";
 
-export interface ICustomersTransactionsController
-  extends IController<
-    CustomerTransactionsSchema,
-    CustomerTransaction,
-    CustomersTransactionsOS
-  > {
+export interface ICustomersTransactionsController extends IController<
+  CustomerTransactionsSchema,
+  CustomerTransaction,
+  CustomersTransactionsOS
+> {
   getAllItems: () => Promise<ICustomerTransactions[]>;
 }
 
@@ -36,7 +35,10 @@ export default class CustomersTransactionsController
   >
   implements ICustomersTransactionsController
 {
-  constructor(customersTransactionsOS: CustomersTransactionsOS, private readonly summaries?: CustomerTransactionSummariesOS) {
+  constructor(
+    customersTransactionsOS: CustomersTransactionsOS,
+    private readonly summaries?: CustomerTransactionSummariesOS,
+  ) {
     super(customersTransactionsOS);
   }
 
@@ -50,15 +52,24 @@ export default class CustomersTransactionsController
 
   /** Link an already posted sale without posting or changing its historical amounts. */
   public async linkTransaction(transaction: ITransaction, customer: ICustomer) {
-    if (!transaction.isPosted()) throw new Error(getLocaleText('TRANSACTION_LINK_REQUIRES_POSTED'));
-    return this.objectStore.addOne(new CustomerTransaction({
-      id: uuidv4(), timestamp: Date.now(), transaction, customer,
-    }));
+    if (!transaction.isPosted())
+      throw new Error(getLocaleText("TRANSACTION_LINK_REQUIRES_POSTED"));
+    return this.objectStore.addOne(
+      new CustomerTransaction({
+        id: uuidv4(),
+        timestamp: Date.now(),
+        transaction,
+        customer,
+      }),
+    );
   }
 
-  public async getPage(customerId: string, options: PageOptions) { return this.objectStore.getPage(customerId, options); }
+  public async getPage(customerId: string, options: PageOptions) {
+    return this.objectStore.getPage(customerId, options);
+  }
   public async getSummaryPage(options: PageOptions) {
-    if (!this.summaries) throw new Error(getLocaleText('PAGINATION_SUMMARIES_MISSING'));
+    if (!this.summaries)
+      throw new Error(getLocaleText("PAGINATION_SUMMARIES_MISSING"));
     return this.summaries.getPage(options);
   }
 
@@ -69,7 +80,7 @@ export default class CustomersTransactionsController
 
     customerTransactions.forEach((ct) => {
       const foundCT = customersTransactions.find(
-        (t) => t.getCustomer().getId() === ct.getCustomer().getId()
+        (t) => t.getCustomer().getId() === ct.getCustomer().getId(),
       );
       if (foundCT) {
         foundCT.getTransactions().addTransaction(ct.getTransaction());
@@ -77,8 +88,8 @@ export default class CustomersTransactionsController
         customersTransactions.push(
           new CustomerTransactions(
             ct.getCustomer(),
-            new Transactions([ct.getTransaction()])
-          )
+            new Transactions([ct.getTransaction()]),
+          ),
         );
       }
     });
@@ -86,9 +97,8 @@ export default class CustomersTransactionsController
     return customersTransactions;
     // return stuffs;
   }
-  
+
   public async getCustomerTransactions(customerId: string) {
     return this.objectStore.getCustomerTransactions(customerId);
-    
   }
 }

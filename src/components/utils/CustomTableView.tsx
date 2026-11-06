@@ -1,15 +1,15 @@
-import { isDeleted } from '../../deletion/state';
-import './DeletedVisibility.css';
-import { useLocaleText } from '../../contexts/Locale';
-import { ReactNode } from 'react';
-import './CustomTableView.css';
+import { isDeleted } from "../../deletion/state";
+import "./DeletedVisibility.css";
+import { useLocaleText } from "../../contexts/Locale";
+import { ReactNode } from "react";
+import "./CustomTableView.css";
 
 export interface CustomTableColumn<T> {
   key: string;
   header: string;
   render: (row: T) => ReactNode;
-  align?: 'left' | 'right' | 'center';
-  variant?: 'default' | 'numeric' | 'actions';
+  align?: "left" | "right" | "center";
+  variant?: "default" | "numeric" | "actions";
 }
 
 export interface CustomTableProps<T> {
@@ -24,50 +24,149 @@ export interface CustomTableProps<T> {
 
 /** Shared table presentation; columns and domain operations belong to each view. */
 export default function CustomTableView<T>({
-  data, columns, rowKey, onRowClick, label: providedLabel,
-  emptyTitle: providedEmptyTitle, emptyDescription: providedEmptyDescription,
+  data,
+  columns,
+  rowKey,
+  onRowClick,
+  label: providedLabel,
+  emptyTitle: providedEmptyTitle,
+  emptyDescription: providedEmptyDescription,
 }: CustomTableProps<T>) {
   const t = useLocaleText();
   const label = providedLabel ?? t("UI_RECORDS_2");
   const emptyTitle = providedEmptyTitle ?? t("UI_NO_RECORDS_YET");
-  const emptyDescription = providedEmptyDescription ?? t("UI_RECORDS_WILL_APPEAR_HERE_WHEN_YOU_ADD_THEM");
-  const isInteractiveTarget = (target: EventTarget | null) => target instanceof Element
-    && !!target.closest('a, button, input, select, textarea, [role="button"]');
+  const emptyDescription =
+    providedEmptyDescription ??
+    t("UI_RECORDS_WILL_APPEAR_HERE_WHEN_YOU_ADD_THEM");
+  const isInteractiveTarget = (target: EventTarget | null) =>
+    target instanceof Element &&
+    !!target.closest('a, button, input, select, textarea, [role="button"]');
 
   return (
     <div className="table-card">
-      <div className="table-scroll" role="region" aria-label={t('UI_VALUE_TABLE', { value0: label })} tabIndex={0}>
+      <div
+        className="table-scroll"
+        role="region"
+        aria-label={t("UI_VALUE_TABLE", { value0: label })}
+        tabIndex={0}
+      >
         <table role="table" className="custom-table" aria-label={label}>
-          <thead role="rowgroup"><tr role="row">{columns.map(column => (
-            <th role="columnheader" key={column.key} scope="col" data-align={column.align || (column.variant === 'numeric' || column.variant === 'actions' ? 'right' : 'left')}>
-              {column.header || (column.variant === 'actions' ? t('UI_ACTIONS') : '')}
-            </th>
-          ))}</tr></thead>
-          <tbody role="rowgroup">
-            {data.map(row => (
-              <tr role="row" data-deleted={isDeleted(row) || isDeleted((row as { customer?: unknown }).customer) || undefined} key={rowKey(row)} className={onRowClick ? 'table-row-clickable' : undefined}
-                tabIndex={onRowClick ? 0 : undefined}
-                aria-label={onRowClick ? t('UI_OPEN_VALUE_RECORD_VALUE', { value0: label.toLowerCase(), value1: rowKey(row) }) : undefined}
-                onClick={event => { if (!isInteractiveTarget(event.target)) onRowClick?.(row); }}
-                onKeyDown={event => {
-                  if (event.target === event.currentTarget && onRowClick && (event.key === 'Enter' || event.key === ' ')) {
-                    event.preventDefault(); onRowClick(row);
+          <thead role="rowgroup">
+            <tr role="row">
+              {columns.map((column) => (
+                <th
+                  role="columnheader"
+                  key={column.key}
+                  scope="col"
+                  data-align={
+                    column.align ||
+                    (column.variant === "numeric" ||
+                    column.variant === "actions"
+                      ? "right"
+                      : "left")
                   }
-                }}>
+                >
+                  {column.header ||
+                    (column.variant === "actions" ? t("UI_ACTIONS") : "")}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody role="rowgroup">
+            {data.map((row) => (
+              <tr
+                role="row"
+                data-deleted={
+                  isDeleted(row) ||
+                  isDeleted((row as { customer?: unknown }).customer) ||
+                  undefined
+                }
+                key={rowKey(row)}
+                className={onRowClick ? "table-row-clickable" : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+                aria-label={
+                  onRowClick
+                    ? t("UI_OPEN_VALUE_RECORD_VALUE", {
+                        value0: label.toLowerCase(),
+                        value1: rowKey(row),
+                      })
+                    : undefined
+                }
+                onClick={(event) => {
+                  if (!isInteractiveTarget(event.target)) onRowClick?.(row);
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    event.target === event.currentTarget &&
+                    onRowClick &&
+                    (event.key === "Enter" || event.key === " ")
+                  ) {
+                    event.preventDefault();
+                    onRowClick(row);
+                  }
+                }}
+              >
                 {columns.map((column, columnIndex) => (
-                  <td role="cell" data-label={column.header} key={column.key} data-align={column.align || (column.variant === 'numeric' || column.variant === 'actions' ? 'right' : 'left')} data-variant={column.variant || 'default'}>
-                    <span className="table-cell-value">{column.render(row)}{columnIndex === 0 && (isDeleted(row) || isDeleted((row as { customer?: unknown }).customer)) && <span className="deleted-badge">{t('DELETED_BADGE')}</span>}</span>
+                  <td
+                    role="cell"
+                    data-label={column.header}
+                    key={column.key}
+                    data-align={
+                      column.align ||
+                      (column.variant === "numeric" ||
+                      column.variant === "actions"
+                        ? "right"
+                        : "left")
+                    }
+                    data-variant={column.variant || "default"}
+                  >
+                    <span className="table-cell-value">
+                      {column.render(row)}
+                      {columnIndex === 0 &&
+                        (isDeleted(row) ||
+                          isDeleted(
+                            (row as { customer?: unknown }).customer,
+                          )) && (
+                          <span className="deleted-badge">
+                            {t("DELETED_BADGE")}
+                          </span>
+                        )}
+                    </span>
                   </td>
                 ))}
               </tr>
             ))}
-            {!data.length && <tr role="row"><td role="cell" colSpan={columns.length} className="table-empty">
-              <div className="table-empty-icon" aria-hidden="true">≡</div><h3>{emptyTitle}</h3><p>{emptyDescription}</p>
-            </td></tr>}
+            {!data.length && (
+              <tr role="row">
+                <td
+                  role="cell"
+                  colSpan={columns.length}
+                  className="table-empty"
+                >
+                  <div className="table-empty-icon" aria-hidden="true">
+                    ≡
+                  </div>
+                  <h3>{emptyTitle}</h3>
+                  <p>{emptyDescription}</p>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-      <footer className="table-footer"><span>{t(data.length === 1 ? 'TABLE_RECORD_COUNT_ONE' : 'TABLE_RECORD_COUNT_OTHER', { count: data.length })}</span>{onRowClick && data.length > 0 && <span>{t('UI_SELECT_A_ROW_TO_VIEW_DETAILS')}</span>}</footer>
+      <footer className="table-footer">
+        <span>
+          {t(
+            data.length === 1
+              ? "TABLE_RECORD_COUNT_ONE"
+              : "TABLE_RECORD_COUNT_OTHER",
+            { count: data.length },
+          )}
+        </span>
+        {onRowClick && data.length > 0 && (
+          <span>{t("UI_SELECT_A_ROW_TO_VIEW_DETAILS")}</span>
+        )}
+      </footer>
     </div>
   );
 }

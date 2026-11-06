@@ -18,10 +18,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
         <ClientGlobalProvider>
           <DatabaseProvider>
-            <PwaProvider><NotificationProvider><App /></NotificationProvider></PwaProvider>
+            <PwaProvider>
+              <NotificationProvider>
+                <App />
+              </NotificationProvider>
+            </PwaProvider>
           </DatabaseProvider>
         </ClientGlobalProvider>
       </BrowserRouter>
     </LocaleProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

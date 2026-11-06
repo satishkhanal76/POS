@@ -50,7 +50,6 @@ Core tests check deployment paths, identity, asset dimensions, opaque maskable b
 
 These automated checks use Chromium/Chrome. Native Apple home-screen installation and splash selection should also be reviewed on physical target devices; a desktop emulator does not prove those OS behaviors.
 
-
 ## Local Development and Safari Dock Installs
 
 The development server serves a real manifest with `Cache-Control: no-store`, without enabling a service worker for Vite/HMR files. Branding metadata is injected after Vite's own URL rewrite so a deployment prefix such as `/pos/` is applied exactly once. Development icon and Apple launch-image URLs carry a content revision derived from the icon files; regenerating artwork changes those URLs for the next page load, avoiding reuse of an older native-install icon URL. Production keeps its scoped manifest and offline cache unchanged.

@@ -9,10 +9,10 @@ interface TransactionProps {
   transaction: ITransaction;
   activeTransactionItem: IProductTransactionItem | IDiscountTransactionItem;
   handleChangeQuantity: (
-    item: IProductTransactionItem | IDiscountTransactionItem
+    item: IProductTransactionItem | IDiscountTransactionItem,
   ) => void;
   onClick: (
-    transactionItem: IProductTransactionItem | IDiscountTransactionItem
+    transactionItem: IProductTransactionItem | IDiscountTransactionItem,
   ) => void;
 }
 

@@ -1,37 +1,6 @@
-export interface ICustomer {
-  deletedAt?: number;
-  getId: () => string;
-  getName: () => string;
-  getPhoneNumber: () => string;
-}
-
-export interface CustomerParams {
-  id: string;
-  name: string;
-  phoneNumber: string;
-}
-
-export default class Customer implements ICustomer {
-  public deletedAt?: number;
-  private id: string;
-  private name: string;
-  private phoneNumber: string;
-
-  constructor({ id, name, phoneNumber }: CustomerParams) {
-    this.id = id;
-    this.name = name;
-    this.phoneNumber = phoneNumber;
-  }
-
-  public getId() {
-    return this.id;
-  }
-
-  public getName() {
-    return this.name;
-  }
-
-  public getPhoneNumber() {
-    return this.phoneNumber;
-  }
-}
+/** Compatibility aliases for the sales-role API; all identities are Contacts. */
+export { default } from "./Contact";
+export type {
+  IContact as ICustomer,
+  ContactParams as CustomerParams,
+} from "./Contact";

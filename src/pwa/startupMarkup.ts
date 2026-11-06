@@ -1,11 +1,18 @@
-import { SETTINGS_STORAGE_KEY } from '../settings/storage';
-import english from '../data/Text_EN.json';
-import { appBranding, startupAssets } from '../config/appBranding';
+import { SETTINGS_STORAGE_KEY } from "../settings/storage";
+import english from "../data/Text_EN.json";
+import { appBranding, startupAssets } from "../config/appBranding";
 
-export const escapeHtml = (value: string) => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
+export const escapeHtml = (value: string) =>
+  value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        character
+      ]!,
+  );
 
-export function installMetadata(base: string, revision = '') {
-  const version = revision ? `?v=${encodeURIComponent(revision)}` : '';
+export function installMetadata(base: string, revision = "") {
+  const version = revision ? `?v=${encodeURIComponent(revision)}` : "";
   return `
     <meta name="description" content="${escapeHtml(appBranding.description)}">
     <meta name="application-name" content="${escapeHtml(appBranding.shortName)}">
@@ -17,7 +24,12 @@ export function installMetadata(base: string, revision = '') {
     <link rel="icon" type="image/svg+xml" href="${base}icons/app-icon.svg${version}">
     <link rel="icon" type="image/png" sizes="32x32" href="${base}icons/favicon-32.png${version}">
     <link rel="apple-touch-icon" sizes="180x180" href="${base}icons/apple-touch-icon.png${version}">
-    ${startupAssets().map(asset => `<link rel="apple-touch-startup-image" href="${base}${asset.file}${version}" media="${asset.media}">`).join('\n    ')}`;
+    ${startupAssets()
+      .map(
+        (asset) =>
+          `<link rel="apple-touch-startup-image" href="${base}${asset.file}${version}" media="${asset.media}">`,
+      )
+      .join("\n    ")}`;
 }
 export function startupMarkup(base: string) {
   return `<div class="app-boot" role="status" aria-live="polite">
@@ -30,7 +42,6 @@ export function startupMarkup(base: string) {
     <noscript><p>${escapeHtml(english.PWA_NOSCRIPT)}</p></noscript>
   </div>`;
 }
-
 
 /** Runs before module downloads, so a failed application bundle still offers recovery. */
 export const startupRecoveryScript = `
@@ -51,7 +62,6 @@ export const startupRecoveryScript = `
     if (retry) retry.hidden = false;
   }, true);
 `;
-
 
 /** Apply the saved appearance before first paint, without waiting for JavaScript bundles. */
 export const startupThemeScript = `

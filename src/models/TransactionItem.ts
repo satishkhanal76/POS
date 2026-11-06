@@ -19,9 +19,9 @@ export interface TransactionItemParams<G> {
   isQuantityChangable?: boolean;
 }
 
-export default class TransactionItem<G extends Item>
-  implements ITransactionItem<G>
-{
+export default class TransactionItem<
+  G extends Item,
+> implements ITransactionItem<G> {
   protected id: string;
   protected quantity: number;
   protected isQuantityChangable: boolean;

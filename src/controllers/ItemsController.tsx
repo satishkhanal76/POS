@@ -1,4 +1,4 @@
-import { getLocaleText } from '../contexts/Locale';
+import { getLocaleText } from "../contexts/Locale";
 import ProductOS, { ProductSchema } from "../database/ProductOS";
 import { v4 as uuidv4 } from "uuid";
 import Controller, { IController } from "./Controller";
@@ -23,6 +23,8 @@ export interface IItemsController<S, I, OS> extends IController<S, I, OS> {
 export interface IItemFormData {
   name: string;
   price: number;
+  canSell?: boolean;
+  canPurchase?: boolean;
 }
 
 export default class ItemsController
@@ -37,28 +39,49 @@ export default class ItemsController
     this.items = new CustomSet<ProductItem>();
   }
 
-  public async handleFormSubmit({ name, price }: IItemFormData) {
-    if (name === "" || price == 0) return null;
+  public async handleFormSubmit({
+    name,
+    price,
+    canSell = true,
+    canPurchase = true,
+  }: IItemFormData) {
+    if (
+      !name.trim() ||
+      (!canSell && !canPurchase) ||
+      !Number.isFinite(Number(price)) ||
+      Number(price) < 0
+    )
+      throw new Error(getLocaleText("BUY_INVALID"));
     const item = new ProductItem({
       id: uuidv4(),
       name,
-      amount: price,
+      amount: Number(price),
+      canSell: canSell ? 1 : 0,
+      canPurchase: canPurchase ? 1 : 0,
     } as ProductItemParams);
     this.items.add(item);
     return this.addOne(item);
   }
 
-  public async getAllItems() { return this.getAll(); }
+  public async getAllItems() {
+    return this.getAll();
+  }
 
-  public async updateItem(id: string, name: string, price: number): Promise<void> {
-    if (!name.trim()) throw new Error(getLocaleText('UI_ENTER_AN_ITEM_NAME'));
-    if (!Number.isFinite(price) || price < 0) throw new Error(getLocaleText('UI_ENTER_A_VALID_PRICE_OF_ZERO_OR_MORE'));
-    await this.objectStore.updateDetails(id, name.trim(), price);
+  public async updateItem(
+    id: string,
+    name: string,
+    price: number,
+    eligibility?: { canSell: number; canPurchase: number },
+  ): Promise<void> {
+    if (!name.trim()) throw new Error(getLocaleText("UI_ENTER_AN_ITEM_NAME"));
+    if (!Number.isFinite(price) || price < 0)
+      throw new Error(getLocaleText("UI_ENTER_A_VALID_PRICE_OF_ZERO_OR_MORE"));
+    await this.objectStore.updateDetails(id, name.trim(), price, eligibility);
   }
 
   public async deleteItem(item: IProductItem) {
     const deleted = await this.deleteOne(item.getId());
-    
+
     if (deleted) {
       this.items.delete(deleted);
       return deleted;

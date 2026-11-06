@@ -427,6 +427,7 @@ The database layer can be viewed as three distinct responsibilities:
 The result is a native IndexedDB implementation that is hidden behind a strongly typed application-level interface.
 
 That abstraction is arguably the most technically significant part of the POS project: instead of depending on a library to make IndexedDB easier to use, the project builds the layer needed to make IndexedDB fit the application's architecture.
+
 ## Stock (Version 4)
 
 STOCK stores one current `{ id: productId, count }` record per product. Missing counts are zero. Manual counts are absolute nonnegative safe integers; advisory stock deductions can leave a negative count. No historical stock ledger is maintained. Master and adherence settings live in browser preferences, separately from database records. Sales update current stock atomically with their saved header and lines only while stock management is enabled. Payment transactions and later customer assignment have no inventory effect.
@@ -434,3 +435,45 @@ STOCK stores one current `{ id: productId, count }` record per product. Missing 
 ## Soft Deletion (Version 5)
 
 PRODUCTS, CUSTOMER and TRANSACTIONS support an optional positive deletedAt timestamp; absent means active. Data remains physically present after ordinary deletion. Historical line reconstruction opts into deleted product reads and continues to use effective prices. Generic store reads exclude deleted records by default and accept explicit inclusion. Canonical customer summaries exclude deleted transactions; inclusive history views derive alternate summaries without changing canonical data. Hard deletion requires prior soft deletion and explicitly confirmed cascades, as described in architecture.md.
+
+## Contacts and Purchasing (Version 6)
+
+The CUSTOMER physical store now represents shared Contacts; IDs and existing sales links are retained. New stores: PURCHASES (id, contactId, contactName snapshot, timestamp, reference, total, stockApplied, optional deletedAt/stockReversed); PURCHASE_LINES (id, purchaseId, productId, name snapshot, quantity, unitCost, total); SUPPLIER_PAYMENTS (id, contactId, contactName snapshot, timestamp, reference, amount, optional deletedAt). Header stores index timestamp/contactId; lines index purchaseId/productId. One received purchase and its optional stock increase commit atomically. Receivables and payables are independent account projections. Quantities may have three decimal places.
+
+### Version 7: repair incomplete schemas
+
+Version 7 creates any missing registered stores in place, including purchasing stores on an incomplete version-6 database. Existing stores and records remain intact in both workspaces. Connections are checked for every registered store before use. Backup versions 1–7 are accepted and normalized to version 7 for restore.
+
+### Version 8: editable purchase invoice numbers
+
+Purchase drafts generate a `PUR-YYYYMMDD-XXXXXXXX` invoice number, editable in Invoice / Reference. Posting trims the value and generates one if blank. A non-unique reference index supports an atomic duplicate check and insert, preventing new duplicate invoice numbers even across tabs (including soft-deleted purchases). The index remains non-unique to preserve older records and backups that reused supplier references. Version 8 adds the index in place; versions 1–8 of backups remain supported. Permanent relationship IDs are unchanged. Purchase lists, detail pages, print reports, and deletion prompts display the invoice, with a stable short label for older purchases without a reference. A successful post or void generates a new number; a failed post retains the draft and its number.
+
+Purchase invoice numbers are now read-only in the order UI. The purchase date remains editable. Pay Supplier on purchase details opens the shared supplier payment form with the contact, invoice reference, and full purchase total prefilled; those payment fields remain editable. Payments continue to reduce the selected supplier’s account balance and are not allocated to individual invoices.
+
+### Version 9: mandatory unique purchase invoices
+
+Upgrade preserves distinct invoice numbers, trims surrounding spaces, and assigns generated invoices to legacy blanks or repeated references, including soft-deleted purchases. The reference index is now unique. New purchase commands generate a number if omitted. Current backups must contain distinct non-empty trimmed purchase invoices; older backups are normalized before restore. Supplier payment references remain editable and may repeat because several payments can reference one invoice.
+
+### Version 10: indexed date pagination
+
+Transactions add a sparse deletedTimestamp index on [timestamp, deletedAt]. Unfiltered newest/oldest history uses index counts for exact live totals and traverses timestamp keys, reading only the requested page’s headers. Later pages skip keys without reading skipped headers. Deleted rows are checked through the sparse index; date boundaries remain start-inclusive/end-exclusive. The index is maintained automatically by soft/hard deletion and restore, without changing record fields. Type/customer filters and amount/item sorts retain their filtering/sorting paths. Backups through version 10 remain supported.
+
+### Version 13: indexed listing projections
+
+Version 13 adds derived multi-entry date/amount/item-count indexes for transactions, purchases, supplier payments and customer summaries, a normalized catalog search index, an active-link key index, and price-history date keys. Each key carries scope and deletion visibility, plus compact values needed for ordering and balance projections. Header item counts include product and discount lines, matching the existing transaction list. Active customer IDs come from active links, preserving original transaction timestamps when a customer is linked later.
+
+All-time queries use index counts plus key cursors, skipping earlier pages without reading their records. Ranged amount/item rankings scan only keys in that date range, keep the needed ordered prefix and hydrate the final page. Purchasing merges purchase/payment keys before fetching values. Search counts inspect name/phone keys; catalog records and current prices are loaded only for the selected page. Price history derives each visible row’s previous price from the preceding event, including events outside the displayed page.
+
+Updates keep keys consistent with canonical records. Upgrade backfills existing data without clearing stores; restore regenerates projections from validated canonical rows in existing bounded write batches. Exports strip projection fields to keep archives portable and avoid duplicating internal indexes. Backups from versions 1–13 are supported. Earlier development versions 11–12 are also rebuilt during upgrade.
+
+Customer balance lists inspect summary/catalog keys because their headline totals span the whole workspace. Historical inclusion additionally inspects transaction amount and active-link keys, without loading whole transaction records. Dashboard aggregates likewise still process the full selected period, but read minimal header keys, reuse product/price lookups, and bound pending record requests.
+
+### Version 14: non-blocking, resumable preparation
+
+The version-13 JavaScript backfill held the entire database upgrade open while rebuilding every transaction. On the five-year stress dataset this prevented even Items and Contacts from opening. Version 14 limits the blocking upgrade to schema/index definitions (retaining the older essential invoice/summary migrations for their original schema versions). Existing records are not cleared.
+
+The ordinary newest/oldest transaction page now uses the original timestamp index immediately, with index counts and the existing sparse deletedTimestamp index for exact totals and visibility. It reads only the selected headers, and counts product/discount lines only for those selected legacy headers. No transaction preparation is required for this path.
+
+Complex queries call ensureListings before creating their read transaction. Each requested table is prepared independently in 100-record write batches; locks are released and the UI yields between batches. Completed checkpoints store generation, last primary key, and completed count per workspace/table in localStorage. Interrupted work resumes safely; no canonical prices, stock, links or totals are changed by preparation. New writes and restored/demo records already carry current-generation keys. Unknown legacy sale item counts remain unprepared until they are actually counted, including after linking/unlinking/deletion.
+
+Backup export and ordinary catalog pages remain available during history preparation. Successful restore/reset/demo replacement marks its normalized tables ready. Development hot reload retains running jobs and progress; blocked upgrades display an actionable message instead of only logging a warning. Preparation failures leave completed batches/checkpoints intact and retain original records. Downloaded backups omit internal keys and generation markers; backup versions 1–14 are accepted.

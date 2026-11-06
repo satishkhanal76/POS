@@ -4,11 +4,9 @@ import TransactionItem, {
   TransactionItemParams,
 } from "./TransactionItem";
 
-export interface IProductTransactionItem
-  extends ITransactionItem<ProductItem> {}
+export interface IProductTransactionItem extends ITransactionItem<ProductItem> {}
 
-export interface ProductTransactionItemParams
-  extends TransactionItemParams<ProductItem> {}
+export interface ProductTransactionItemParams extends TransactionItemParams<ProductItem> {}
 
 export default class ProductTransactionItem
   extends TransactionItem<ProductItem>

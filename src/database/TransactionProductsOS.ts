@@ -11,10 +11,13 @@ export interface TransactionProductSchema {
   quantity: number;
 }
 
-export interface ITransactionProductsOS
-  extends IObjectStore<TransactionProductSchema, ProductTransactionItem> {
+export interface ITransactionProductsOS extends IObjectStore<
+  TransactionProductSchema,
+  ProductTransactionItem
+> {
   getAllByTransactionId: (
-    transactionId: string, timestamp?: number
+    transactionId: string,
+    timestamp?: number,
   ) => Promise<ProductTransactionItem[]>;
 }
 
@@ -47,15 +50,29 @@ export default class TransactionProductsOS
     } as TransactionProductSchema;
   }
 
-  public async getAllByTransactionId(transactionId: string, timestamp?: number): Promise<ProductTransactionItem[]> {
-    if (timestamp === undefined) return this.getAllByIndexName("transactionId", transactionId);
+  public async getAllByTransactionId(
+    transactionId: string,
+    timestamp?: number,
+  ): Promise<ProductTransactionItem[]> {
+    if (timestamp === undefined)
+      return this.getAllByIndexName("transactionId", transactionId);
     const store = await this.getReadOnlyObjectStore();
-    const schemas = await new Promise<TransactionProductSchema[]>((resolve, reject) => {
-      const request = store.index('transactionId').getAll(transactionId);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    return Promise.all(schemas.map(async schema => new ProductTransactionItem({ ...schema, item: await this.itemOS.getAtTimestamp(schema.productId, timestamp) })));
+    const schemas = await new Promise<TransactionProductSchema[]>(
+      (resolve, reject) => {
+        const request = store.index("transactionId").getAll(transactionId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      },
+    );
+    return Promise.all(
+      schemas.map(
+        async (schema) =>
+          new ProductTransactionItem({
+            ...schema,
+            item: await this.itemOS.getAtTimestamp(schema.productId, timestamp),
+          }),
+      ),
+    );
   }
 
   public async getSchemaAsObject(schema: TransactionProductSchema) {

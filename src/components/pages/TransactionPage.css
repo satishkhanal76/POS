@@ -1,16 +1,96 @@
-.transaction-page { margin: 1rem 0 4rem; }
+.transaction-page {
+  margin: 1rem 0 4rem;
+}
 
-.transaction-customer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1rem 1.25rem; margin-bottom: 1rem; border: 1px solid var(--color-slate600); border-radius: 12px; }
-.transaction-customer-label { color: var(--color-slate400); font-size: .875rem; }
-.transaction-customer p { margin: .35rem 0 0; }
-.transaction-customer button { min-height: 44px; padding: .75rem 1rem; border: 1px solid var(--color-slate100); border-radius: 9px; background: var(--color-slate100); color: var(--bg-primary); cursor: pointer; }
-.transaction-customer button:disabled { opacity: .5; cursor: wait; }
-.transaction-customer :is(button, a):focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-@media (max-width: 600px) { .transaction-customer { align-items: stretch; flex-direction: column; padding: 1rem; } .transaction-customer button { width: 100%; } }
-.transaction-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .85rem; margin-bottom: 1.5rem; }
-.transaction-toolbar-actions { display: flex; align-items: center; gap: .75rem; margin-left: auto; }
-@media(max-width: 600px) { .transaction-toolbar { align-items: stretch; } .transaction-toolbar > .page-back-link { flex: 1 1 100%; } .transaction-toolbar-actions { width: 100%; justify-content: flex-end; } }
+.transaction-customer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--color-slate600);
+  border-radius: 12px;
+}
+.transaction-customer-label {
+  color: var(--color-slate400);
+  font-size: 0.875rem;
+}
+.transaction-customer p {
+  margin: 0.35rem 0 0;
+}
+.transaction-customer button {
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-slate100);
+  border-radius: 9px;
+  background: var(--color-slate100);
+  color: var(--bg-primary);
+  cursor: pointer;
+}
+.transaction-customer button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.transaction-customer :is(button, a):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .transaction-customer {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 1rem;
+  }
+  .transaction-customer button {
+    width: 100%;
+  }
+}
+.transaction-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+.transaction-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+@media (max-width: 600px) {
+  .transaction-toolbar {
+    align-items: stretch;
+  }
+  .transaction-toolbar > .page-back-link {
+    flex: 1 1 100%;
+  }
+  .transaction-toolbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
 
-.transaction-customer .unlink-customer-button { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; border-color: var(--color-slate500); background: transparent; color: var(--color-slate200); font: inherit; font-size: .95rem; }
-.transaction-customer .unlink-customer-button:hover { border-color: var(--color-slate300); background: color-mix(in srgb, var(--color-slate500) 12%, transparent); }
-.unlink-customer-button svg { width: 20px; height: 20px; flex-shrink: 0; }
+.transaction-customer .unlink-customer-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-color: var(--color-slate500);
+  background: transparent;
+  color: var(--color-slate200);
+  font: inherit;
+  font-size: 0.95rem;
+}
+.transaction-customer .unlink-customer-button:hover {
+  border-color: var(--color-slate300);
+  background: color-mix(in srgb, var(--color-slate500) 12%, transparent);
+}
+.unlink-customer-button svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}

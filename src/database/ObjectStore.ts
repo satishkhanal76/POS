@@ -1,7 +1,7 @@
-import { isDeleted } from '../deletion/state';
-import DeletionStore from './DeletionStore';
-import { requestValue } from './Pagination';
-import { getLocaleText } from '../contexts/Locale';
+import { isDeleted } from "../deletion/state";
+import DeletionStore from "./DeletionStore";
+import { requestValue } from "./Pagination";
+import { getLocaleText } from "../contexts/Locale";
 import { IDB, IObjectStoreDB } from "./Database";
 
 export enum ObjectRequestErrorsTypes {
@@ -40,8 +40,16 @@ export interface IObjectStore<G, I> {
 
   getDb: () => Promise<IDB>;
 
-  getAllByIndexName: (indexName: string, id?: string, includeDeleted?: boolean) => Promise<I[]>;
-  geOneByIndexName: (indexName: string, id: string, includeDeleted?: boolean) => Promise<I>;
+  getAllByIndexName: (
+    indexName: string,
+    id?: string,
+    includeDeleted?: boolean,
+  ) => Promise<I[]>;
+  geOneByIndexName: (
+    indexName: string,
+    id: string,
+    includeDeleted?: boolean,
+  ) => Promise<I>;
 
   getAllAsJSONString: () => Promise<string>;
 
@@ -62,7 +70,7 @@ export default class ObjectStore<G, I>
   constructor(
     db: IDB,
     objecStoreName: string,
-    objectStoreParams?: IDBObjectStoreParameters
+    objectStoreParams?: IDBObjectStoreParameters,
   ) {
     this.db = db;
     this.objectStoreName = objecStoreName;
@@ -78,11 +86,11 @@ export default class ObjectStore<G, I>
       const schemas: G[] = JSON.parse(json.toString());
 
       const models = await Promise.all(
-        schemas.map((schema) => this.getSchemaAsObject(schema))
+        schemas.map((schema) => this.getSchemaAsObject(schema)),
       );
       return await this.addMany(models);
     } catch (err) {
-      throw new Error(getLocaleText('UI_ITEM_IMPORT_FAILED'));
+      throw new Error(getLocaleText("UI_ITEM_IMPORT_FAILED"));
     }
   }
 
@@ -113,13 +121,24 @@ export default class ObjectStore<G, I>
   public async getAll(id?: string, includeDeleted = false): Promise<I[]> {
     const store = await this.getReadOnlyObjectStore();
     const rows = await requestValue(store.getAll(id));
-    return Promise.all(rows.filter(row => includeDeleted || !isDeleted(row)).map(row => this.getSchemaAsObject(row)));
+    return Promise.all(
+      rows
+        .filter((row) => includeDeleted || !isDeleted(row))
+        .map((row) => this.getSchemaAsObject(row)),
+    );
   }
 
   public async getOne(id: string, includeDeleted = false): Promise<I> {
     const store = await this.getReadOnlyObjectStore();
     const row = await requestValue(store.get(id));
-    if (!row || (!includeDeleted && isDeleted(row))) throw { type: ObjectRequestErrorsTypes.EMPTY_RESPONSE, defaultMessage: getLocaleText('UI_RECORD_WITH_THE_ID_OF_VALUE_ON_VALUE_WAS', { value0: id, value1: this.objectStoreName }) };
+    if (!row || (!includeDeleted && isDeleted(row)))
+      throw {
+        type: ObjectRequestErrorsTypes.EMPTY_RESPONSE,
+        defaultMessage: getLocaleText(
+          "UI_RECORD_WITH_THE_ID_OF_VALUE_ON_VALUE_WAS",
+          { value0: id, value1: this.objectStoreName },
+        ),
+      };
     return this.getSchemaAsObject(row);
   }
 
@@ -129,16 +148,28 @@ export default class ObjectStore<G, I>
     return model;
   }
 
-  public async getAllByIndexName(indexName: string, id?: string, includeDeleted = false): Promise<I[]> {
+  public async getAllByIndexName(
+    indexName: string,
+    id?: string,
+    includeDeleted = false,
+  ): Promise<I[]> {
     const index = (await this.getReadOnlyObjectStore()).index(indexName);
     const rows = await requestValue(id ? index.getAll(id) : index.getAll());
-    return Promise.all(rows.filter(row => includeDeleted || !isDeleted(row)).map(row => this.getSchemaAsObject(row)));
+    return Promise.all(
+      rows
+        .filter((row) => includeDeleted || !isDeleted(row))
+        .map((row) => this.getSchemaAsObject(row)),
+    );
   }
 
-  public async geOneByIndexName(indexName: string, id: string, includeDeleted = false): Promise<I> {
+  public async geOneByIndexName(
+    indexName: string,
+    id: string,
+    includeDeleted = false,
+  ): Promise<I> {
     const index = (await this.getReadOnlyObjectStore()).index(indexName);
     const rows = await requestValue(index.getAll(id));
-    const row = rows.find(record => includeDeleted || !isDeleted(record));
+    const row = rows.find((record) => includeDeleted || !isDeleted(record));
     if (!row) throw { type: ObjectRequestErrorsTypes.EMPTY_RESPONSE };
     return this.getSchemaAsObject(row);
   }
@@ -153,7 +184,7 @@ export default class ObjectStore<G, I>
 
   public getObjectAsSchema(object: I) {
     console.trace(object);
-    throw new Error(getLocaleText('UI_NOT_IMPLEMENTED'));
+    throw new Error(getLocaleText("UI_NOT_IMPLEMENTED"));
     return {} as G;
   }
 
@@ -187,7 +218,7 @@ export default class ObjectStore<G, I>
   public async getSchemaAsObject(schema: G): Promise<I> {
     return new Promise((resolve, reject) => {
       reject("Unemplemented");
-      throw new Error(getLocaleText('UI_UNIMPLEMENTED'));
+      throw new Error(getLocaleText("UI_UNIMPLEMENTED"));
     });
   }
   public async getAllAsJSONString(): Promise<string> {
