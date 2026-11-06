@@ -31,7 +31,7 @@ export default function BackupSettings() {
         <button type="button" disabled={busy || restored} onClick={() => void run(async () => { await controller.download(); setStatus(t('UI_BACKUP_DOWNLOAD_STARTED')); })}>{t('UI_DOWNLOAD_FULL_BACKUP')}</button>
         <button type="button" disabled={busy || restored} onClick={() => input.current?.click()}>{t('UI_CHOOSE_BACKUP_TO_RESTORE')}</button>
       </div>
-      <input ref={input} type="file" accept=".json,application/json" aria-label={t('UI_CHOOSE_DATABASE_BACKUP')} hidden onChange={event => {
+      <input ref={input} type="file" accept=".zip,application/zip,application/x-zip-compressed" aria-label={t('UI_CHOOSE_DATABASE_BACKUP')} hidden onChange={event => {
         const file = event.target.files?.[0];
         event.target.value = '';
         setBackup(null);

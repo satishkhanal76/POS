@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chromium, Browser, BrowserContext, Page, Download } from 'playwright';
 import { createServer, ViteDevServer } from 'vite';
 import english from '../../src/data/Text_EN.json';
-import { DatabaseBackup } from '../../src/database/DatabaseBackup';
+import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -76,12 +76,15 @@ async function go(path: string) { await page.goto(`${base}${path}`); await page.
 async function rowCount(count: number) {
   await page.waitForFunction(expected => document.querySelectorAll('.custom-table tbody tr').length === expected, count);
 }
-async function downloadedJson(download: Download): Promise<unknown> {
+async function downloadedBytes(download: Download): Promise<Buffer> {
   const stream = await download.createReadStream();
   assert.ok(stream);
   const chunks: Buffer[] = [];
   for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-  return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  return Buffer.concat(chunks);
+}
+async function downloadedJson(download: Download): Promise<unknown> {
+  return JSON.parse((await downloadedBytes(download)).toString('utf8'));
 }
 
 test('pagination controls query pages and preserve list state through detail/back navigation', async () => {
@@ -186,11 +189,17 @@ test('settings download the English template, accept custom text, and persist Ne
 test('backup controls download the full database and restore a reviewed file', async () => {
   await go('settings');
   const pending = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download full backup', exact: true }).click();
-  const backup = await downloadedJson(await pending) as DatabaseBackup;
-  assert.equal(backup.tables.TRANSACTIONS.length, 35);
-  backup.tables.PRODUCTS[0].name = 'Restored Coffee';
-  await page.getByLabel('Choose database backup', { exact: true }).setInputFiles({ name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
+  await page.getByRole('button', { name: english.UI_DOWNLOAD_FULL_BACKUP, exact: true }).click();
+  const download = await pending;
+  assert.match(download.suggestedFilename(), /\.zip$/);
+  const files = unzipSync(await downloadedBytes(download));
+  const manifest = JSON.parse(strFromU8(files['manifest.json'])) as { tables: Record<string, { file: string; count: number }[]> };
+  assert.equal(manifest.tables.TRANSACTIONS.reduce((count, part) => count + part.count, 0), 35);
+  const productPath = manifest.tables.PRODUCTS[0].file;
+  const products = JSON.parse(strFromU8(files[productPath])) as { name: string }[];
+  products[0].name = 'Restored Coffee';
+  files[productPath] = strToU8(JSON.stringify(products));
+  await page.getByLabel('Choose database backup', { exact: true }).setInputFiles({ name: 'backup.zip', mimeType: 'application/zip', buffer: Buffer.from(zipSync(files)) });
   page.once('dialog', dialog => { void dialog.accept(); });
   await page.getByRole('button', { name: 'Replace demo workspace', exact: true }).click();
   await page.getByRole('button', { name: 'Reload app', exact: true }).waitFor();

@@ -117,19 +117,43 @@ export function validateBackup(value: unknown): DatabaseBackup {
 export default class DatabaseBackupStore {
   constructor(private readonly database: IDB) {}
 
-  public async export(): Promise<DatabaseBackup> {
+  /** One consistent snapshot, emitted as bounded per-table JSON parts. No full database clone. */
+  public async exportParts(write: (table: string, part: number, json: string, count: number) => void) {
     const db = await this.database.getDatabase();
     const names = Array.from(db.objectStoreNames);
-    return new Promise((resolve, reject) => {
+    return new Promise<{ databaseVersion: number; sourceDatabase: string; createdAt: string }>((resolve, reject) => {
       const transaction = db.transaction(names, 'readonly');
-      const tables: Record<string, BackupRow[]> = {};
+      let failure: unknown;
+      transaction.oncomplete = () => resolve({ databaseVersion: db.version, sourceDatabase: db.name, createdAt: new Date().toISOString() });
+      transaction.onabort = () => reject(failure || new Error(getLocaleText('UI_UNABLE_TO_READ_THE_DATABASE_BACKUP')));
       for (const name of names) {
-        const request = transaction.objectStore(name).getAll();
-        request.onsuccess = () => { tables[name] = request.result; };
+        let rows: string[] = [], bytes = 2, part = 0;
+        const encoder = new TextEncoder();
+        const flush = () => { write(name, ++part, `[${rows.join(',')}]`, rows.length); rows = []; bytes = 2; };
+        const cursor = transaction.objectStore(name).openCursor();
+        cursor.onsuccess = () => {
+          try {
+            const entry = cursor.result;
+            if (!entry) { if (rows.length || !part) flush(); return; }
+            const json = JSON.stringify(entry.value);
+            const size = encoder.encode(json).byteLength + 1;
+            if (rows.length && (rows.length >= 1000 || bytes + size > 1024 * 1024)) flush();
+            rows.push(json); bytes += size;
+            entry.continue();
+          } catch (error) { failure = error; transaction.abort(); }
+        };
       }
-      transaction.oncomplete = () => resolve({ format: 'pos-database-backup', formatVersion: 1, databaseVersion: db.version, sourceDatabase: db.name, createdAt: new Date().toISOString(), tables });
-      transaction.onabort = () => reject(new Error(getLocaleText('UI_UNABLE_TO_READ_THE_DATABASE_BACKUP')));
     });
+  }
+
+  /** In-memory snapshot for internal consumers; downloadable backups use ZIP parts. */
+  public async export(): Promise<DatabaseBackup> {
+    const tables: DatabaseBackup['tables'] = {};
+    const metadata = await this.exportParts((table, _part, json) => {
+      const rows = tables[table] ??= [];
+      for (const row of JSON.parse(json) as BackupRow[]) rows.push(row);
+    });
+    return { format: 'pos-database-backup', formatVersion: 1, ...metadata, tables };
   }
 
   public async restore(value: unknown): Promise<void> {

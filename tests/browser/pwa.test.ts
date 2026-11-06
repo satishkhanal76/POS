@@ -109,8 +109,10 @@ test('a waiting update asks before reloading an unposted sale', async () => {
   await page.evaluate(async () => { await (await navigator.serviceWorker.getRegistration())?.update(); });
   await page.getByRole('button', { name: english.PWA_UPDATE_ACTION, exact: true }).waitFor();
   assert.equal(await page.evaluate(() => performance.timeOrigin), before);
-  page.once('dialog', dialog => { void dialog.dismiss(); });
   await page.getByRole('button', { name: english.PWA_UPDATE_ACTION, exact: true }).click();
+  await page.getByRole('dialog').getByText(english.PWA_BACKUP_RECOMMENDATION, { exact: true }).waitFor();
+  await page.getByRole('dialog').getByRole('button', { name: english.UI_DOWNLOAD_FULL_BACKUP, exact: true }).waitFor();
+  await page.getByRole('dialog').getByRole('button', { name: english.PWA_UPDATE_LATER, exact: true }).click();
   assert.equal(await page.evaluate(() => performance.timeOrigin), before);
   await page.locator('.transaction-details').getByText('$5.00', { exact: true }).waitFor();
 });

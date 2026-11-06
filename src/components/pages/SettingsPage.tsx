@@ -1,3 +1,4 @@
+import DatabaseResetSettings from '../Settings/DatabaseResetSettings';
 import LanguageSettings from '../Settings/LanguageSettings';
 import { LocaleSelection, selectLocale } from '../../localization/locale';
 import InstallationSettings from "../Settings/InstallationSettings";
@@ -101,6 +102,7 @@ export default function SettingsPage() {
       <LocaleSettings />
       <BackupSettings />
       <DemoSettings />
+      <DatabaseResetSettings />
     </main>
   );
 }

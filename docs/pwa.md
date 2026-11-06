@@ -56,3 +56,7 @@ These automated checks use Chromium/Chrome. Native Apple home-screen installatio
 The development server serves a real manifest with `Cache-Control: no-store`, without enabling a service worker for Vite/HMR files. Branding metadata is injected after Vite's own URL rewrite so a deployment prefix such as `/pos/` is applied exactly once. Development icon and Apple launch-image URLs carry a content revision derived from the icon files; regenerating artwork changes those URLs for the next page load, avoiding reuse of an older native-install icon URL. Production keeps its scoped manifest and offline cache unchanged.
 
 When checking a Dock install, reload the site in Safari before adding it. An existing Dock app can retain OS-managed branding separately from page assets. Avoid clearing website storage as a cache troubleshooting step: the site's IndexedDB contains the POS records. Native web-app name/icon settings are separate from the app's stored data.
+
+## Backup before updating
+
+The waiting-update action opens `components/App/UpdateDialog` instead of immediately activating the worker. It recommends a backup, identifies the current workspace, and offers ZIP download, Update App, and Not Now. Download uses the same BackupController as Settings and does not activate the update; users are asked to confirm their ZIP was saved before continuing. Backup is recommended rather than mandatory. In-flight downloads/activation disable repeated actions. Update App is the only action that calls updateServiceWorker(true).

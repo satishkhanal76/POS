@@ -1,17 +1,17 @@
-import { getLocaleText } from '../contexts/Locale';
+import { createBackupArchive, readBackupArchive } from '../backup/BackupArchive';
 import { IDB } from '../database/Database';
-import DatabaseBackupStore, { DatabaseBackup, validateBackup } from '../database/DatabaseBackup';
+import DatabaseBackupStore, { DatabaseBackup } from '../database/DatabaseBackup';
 
 export default class BackupController {
   private readonly store: DatabaseBackupStore;
   constructor(database: IDB) { this.store = new DatabaseBackupStore(database); }
 
   public async download(): Promise<void> {
-    const backup = await this.store.export();
-    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+    const backup = await createBackupArchive(this.store);
+    const url = URL.createObjectURL(backup.blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${backup.sourceDatabase}-backup-${backup.createdAt.replace(/[:.]/g, '-')}.json`;
+    link.download = `${backup.sourceDatabase}-backup-${backup.createdAt.replace(/[:.]/g, '-')}.zip`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -19,10 +19,7 @@ export default class BackupController {
   }
 
   public async inspect(file: File): Promise<DatabaseBackup> {
-    let value: unknown;
-    try { value = JSON.parse(await file.text()); }
-    catch { throw new Error(getLocaleText('UI_CHOOSE_A_VALID_JSON_BACKUP_FILE')); }
-    return validateBackup(value);
+    return readBackupArchive(file);
   }
 
   public async restore(backup: DatabaseBackup): Promise<void> { await this.store.restore(backup); }
