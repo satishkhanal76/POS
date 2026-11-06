@@ -1,3 +1,6 @@
+import ReportToolbar from '../Reports/ReportToolbar';
+import PrintReportButton from '../Reports/PrintReportButton';
+import printTable from '../Reports/printTable';
 import DeleteRecordButton from '../utils/DeleteRecordButton';
 import useDeletionRevision from '../../hooks/useDeletionRevision';
 import { useCallback, useMemo } from 'react';
@@ -17,8 +20,8 @@ import Price from '../Items/Price';
 import CustomTableView, { CustomTableColumn } from '../utils/CustomTableView';
 import PaginationControls from '../utils/PaginationControls';
 
-export default function TransactionsView({ customerId, range: fixedRange, kind, scope = '', refresh = 0 }: {
-  customerId?: string; range?: DashboardRange; kind?: TransactionKindFilter; scope?: string; refresh?: number;
+export default function TransactionsView({ customerId, range: fixedRange, kind, scope = '', refresh = 0, customerName }: {
+  customerId?: string; customerName?: string; range?: DashboardRange; kind?: TransactionKindFilter; scope?: string; refresh?: number;
 }) {
   const t = useLocaleText();
   const revision = useDeletionRevision();
@@ -44,7 +47,13 @@ export default function TransactionsView({ customerId, range: fixedRange, kind, 
   return <>
     {!fixedRange && <DashboardFilters {...period} />}
     {!range ? <p role="alert">{t('DASH_INVALID')}</p> : <>
+    <ReportToolbar actions={<PrintReportButton disabled={!range} createReport={async () => {
+      const result = await query({ page: 1, pageSize: 0, sort: pagination.sort });
+      const title = customerName ? t('CUSTOMER_TRANSACTIONS_TITLE', { CUSTOMER_NAME: customerName }) : t(kind === 'payment' ? 'REPORT_PAYMENTS' : 'TRANSACTIONS_TITLE');
+      return { title, range, sections: [printTable(title, result.rows, columns), { title: t('TOTAL'), columns: [t('PRINT_METRIC'), t('PRINT_VALUE')], rows: [[t(kind === 'payment' ? 'DASH_PAYMENT_COUNT' : 'CUSTOMERS_TRANSACTIONS_NUM_OF_TRANS'), result.rows.length], [t(kind === 'payment' ? 'DASH_PAYMENTS' : 'TOTAL'), <Price price={result.rows.reduce((sum, row) => sum + (kind === 'payment' ? -row.total : row.total), 0)} />]] }] };
+    }} />}>
     <PaginationControls page={pagination.page} pageSize={pagination.pageSize} sort={pagination.sort} total={pagination.result?.total ?? 0} busy={pagination.loading} onChange={pagination.change} />
+    </ReportToolbar>
     {pagination.error ? <p role="alert">{t('PAGINATION_ERROR')}</p> : pagination.loading ? <p role="status">{t('PAGINATION_LOADING')}</p> :
       <CustomTableView label={t(kind === 'payment' ? 'REPORT_PAYMENTS' : 'TRANSACTIONS_TITLE')} emptyTitle={t(kind === 'payment' ? 'REPORT_NO_PAYMENTS' : 'UI_NO_TRANSACTIONS_YET')} emptyDescription={kind === 'payment' ? undefined : t('UI_POSTED_SALES_WILL_APPEAR_HERE_CREATE_A_SALE_FROM')}
         data={pagination.result?.rows ?? []} columns={columns} rowKey={row => row.id}

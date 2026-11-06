@@ -1,3 +1,6 @@
+import ReportToolbar from '../Reports/ReportToolbar';
+import PrintReportButton from '../Reports/PrintReportButton';
+import printTable from '../Reports/printTable';
 import useDeletedVisibility from '../../hooks/useDeletedVisibility';
 import useDeletionRevision from '../../hooks/useDeletionRevision';
 import Select from '../Forms/Select';
@@ -46,6 +49,11 @@ export default function CustomerBalances({ refresh = 0, embedded = false }: { re
     {!busy && !error && result && <div className="dashboard-balance-totals">
       <p>{t('DASH_OUTSTANDING')}: <Price price={result.outstanding} /></p><p>{t('DASH_OWING_COUNT')}: {result.owingCount}</p><p>{t('DASH_CREDIT_TOTAL')}: <Price price={result.credit} /></p>
     </div>}
+    <ReportToolbar actions={<PrintReportButton disabled={busy || error} createReport={async () => {
+      const report = await store.getPage({ filter, search, page: 1, pageSize: 0, includeDeleted });
+      const status = t(filter === 'owing' ? 'DASH_OWING' : filter === 'credit' ? 'DASH_CREDIT' : filter === 'settled' ? 'DASH_SETTLED' : 'DASH_ALL_CUSTOMERS');
+      return { title: t('DASH_BALANCES'), range: { start: 0, end: 0, all: true, includeDeleted }, note: t('PRINT_BALANCE_FILTERS', { status, search: search.trim() || t('PRINT_NO_SEARCH') }), sections: [printTable(t('DASH_BALANCES'), report.rows, columns)] };
+    }} />}>
     <div className="dashboard-filters">
       <label>{t('DASH_STATUS')}<Select value={filter} onChange={value => { setFilter(value as BalanceFilter); setPage(1); }}>
         <option value="owing">{t('DASH_OWING')}</option><option value="settled">{t('DASH_SETTLED')}</option><option value="credit">{t('DASH_CREDIT')}</option><option value="all">{t('DASH_ALL_CUSTOMERS')}</option>
@@ -53,6 +61,7 @@ export default function CustomerBalances({ refresh = 0, embedded = false }: { re
       <label>{t('DASH_SEARCH_CUSTOMERS')}<input type="search" value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} /></label>
       <label>{t('DASH_PAGE_SIZE')}<Select value={pageSize} onChange={value => { setPageSize(Number(value)); setPage(1); }}><option value={0}>{t('REPORT_ALL')}</option>{[10, 25, 50, 100].map(size => <option key={size}>{size}</option>)}</Select></label>
     </div>
+    </ReportToolbar>
     {busy ? <p role="status">{t('DASH_LOADING')}</p> : error ? <p role="alert">{t('DASH_ERROR')}</p> : result && <>
       <CustomTableView label={t('DASH_BALANCES')} emptyTitle={t('DASH_NO_CUSTOMERS')} data={result.rows} columns={columns} rowKey={row => row.id} onRowClick={row => navigate(`/customer-transactions?id=${encodeURIComponent(row.id)}${includeDeleted ? '&deleted=1' : ''}`)} />
       <div className="dashboard-pagination"><button type="button" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)}>{t('DASH_PREVIOUS')}</button>

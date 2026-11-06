@@ -1,10 +1,12 @@
-import DashboardOS from '../database/DashboardOS';
+import DashboardOS, { DashboardEntry } from '../database/DashboardOS';
 import { DashboardRange, dateInput } from '../dashboard/period';
 
 export default class DashboardController {
   constructor(private readonly store: DashboardOS) {}
   async getSummary(range: DashboardRange) {
-    const entries = await this.store.getEntries(range);
+    return this.summarize(await this.store.getEntries(range), range);
+  }
+  public summarize(entries: DashboardEntry[], range: DashboardRange) {
     const first = entries[0]?.timestamp ?? Date.now();
     const last = entries[entries.length - 1]?.timestamp ?? first;
     const bucketRange = range.all ? { start: first, end: last + 1 } : range;

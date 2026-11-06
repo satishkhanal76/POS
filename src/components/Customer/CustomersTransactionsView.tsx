@@ -1,3 +1,6 @@
+import ReportToolbar from '../Reports/ReportToolbar';
+import PrintReportButton from '../Reports/PrintReportButton';
+import printTable from '../Reports/printTable';
 import DeletedVisibility from '../utils/DeletedVisibility';
 import useDeletedVisibility from '../../hooks/useDeletedVisibility';
 import useDeletionRevision from '../../hooks/useDeletionRevision';
@@ -32,7 +35,12 @@ export default function CustomersTransactionsView() {
   ];
   return <>
     <DeletedVisibility />
+    <ReportToolbar actions={<PrintReportButton createReport={async () => {
+      const report = await query({ page: 1, pageSize: 0, sort: pagination.sort });
+      return { title: t('CUSTOMERS_TRANSACTIONS_TITLE'), range: { start: 0, end: 0, all: true, includeDeleted }, sections: [printTable(t('CUSTOMERS_TRANSACTIONS_TITLE'), report.rows, columns)] };
+    }} />}>
     <PaginationControls page={pagination.page} pageSize={pagination.pageSize} sort={pagination.sort} total={pagination.result?.total ?? 0} busy={pagination.loading} onChange={pagination.change} />
+    </ReportToolbar>
     {pagination.error ? <p role="alert">{t('PAGINATION_ERROR')}</p> : pagination.loading ? <p role="status">{t('PAGINATION_LOADING')}</p> :
       <CustomTableView label={t('UI_CUSTOMER_TRANSACTIONS')} emptyTitle={t('UI_NO_CUSTOMER_SALES_YET')} emptyDescription={t('UI_SALES_SAVED_AGAINST_A_CUSTOMER_WILL_APPEAR_HERE')}
         data={pagination.result?.rows ?? []} columns={columns} rowKey={row => row.data.id}

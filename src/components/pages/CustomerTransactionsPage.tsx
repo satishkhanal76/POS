@@ -39,6 +39,6 @@ export default function CustomerTransactionsPage() {
     <PageHeader title={current?.customer ? t('CUSTOMER_TRANSACTIONS_TITLE', { CUSTOMER_NAME: current.customer.getName() }) : t('CUSTOMERS_TRANSACTIONS_TITLE')} />
     {current?.customer && balance?.id === id && <div className="transaction-customer"><span>{t('PAYMENT_BALANCE')}</span><Price price={balance.total} /></div>}
     {!current ? <p role="status">{t('UI_LOADING_CUSTOMER_TRANSACTIONS')}</p> : current.customer && id
-      ? <TransactionsView customerId={id} /> : <p role="alert">{t('PAGINATION_CUSTOMER_MISSING')}</p>}
+      ? <TransactionsView customerId={id} customerName={current.customer.getName()} /> : <p role="alert">{t('PAGINATION_CUSTOMER_MISSING')}</p>}
   </main>;
 }
