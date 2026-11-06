@@ -8,3 +8,6 @@
 .custom-form input[type=submit] { width: 100%; min-height: 46px; padding: .8rem 1rem; margin-top: .25rem; border: 1px solid var(--color-slate100); border-radius: 9px; background: var(--color-slate100); color: var(--bg-primary); font: inherit; font-weight: 600; cursor: pointer; }
 .custom-form input[type=submit]:hover { opacity: .85; }
 .custom-form input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+.form-preview { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .75rem; padding: 1rem; border: 1px solid var(--color-slate600); border-radius: 9px; font-size: var(--text-small); }
+.form-preview output { font-weight: 600; color: var(--accent); }

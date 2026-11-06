@@ -1,3 +1,4 @@
+import NotificationProvider from "./components/Notifications/NotificationProvider";
 import { PwaProvider } from "./pwa/PwaProvider";
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -16,7 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <BrowserRouter basename={import.meta.env.BASE_URL || "/"}>
         <ClientGlobalProvider>
           <DatabaseProvider>
-            <PwaProvider><App /></PwaProvider>
+            <PwaProvider><NotificationProvider><App /></NotificationProvider></PwaProvider>
           </DatabaseProvider>
         </ClientGlobalProvider>
       </BrowserRouter>

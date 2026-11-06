@@ -387,3 +387,11 @@ Settings also offers Switch to Demo while in the real workspace. WorkspaceContro
 
 
 Fresh demo data is described by `data/demoData.ts` and built by DemoDataController through existing domain models and schema converters. The seed contains six products, three customers, 24 posted sales over the preceding 12 days, 18 customer links, two discount definitions, six price changes, and complete customer summaries. Sale products resolve their effective historical price before totals are calculated. All records are prepared before the reset transaction starts, then every table is cleared and refilled atomically. Both asynchronous IndexedDB errors and synchronous write failures roll back the reset. Switching to an existing demo continues to preserve it; expanded fixtures apply only to explicit fresh starts/restarts.
+
+## Notifications and Quantity Editing
+
+NotificationProvider supplies the shared `useNotifications().notify(message, tone)` API. It renders up to three themed, non-modal pill notifications in a fixed, safe-area-aware stack. Success/info messages expire after 4.5 seconds; errors expire after 6.5 seconds. Hover or keyboard focus pauses expiration, and an optional close control allows early dismissal. Live-region roles announce messages without moving focus. All labels and message templates live in Text_EN.json.
+
+POS success feedback for posting, customer linking, quantity changes, discounts, and clearing an order uses this provider. Save failures retain the current order and display an error pill. A save-in-flight guard prevents duplicate submission. If posting succeeds but customer linking fails, the order is marked posted and can retry only the customer link, avoiding a duplicate sale.
+
+QuantityForm uses the shared FullScreenModal and form styling, with the current quantity prefilled and a line-total preview. QuantityValidator accepts safe, positive whole numbers without silently truncating fractional input. Validation stays inline; Save mutates the existing in-memory transaction model and the values persist when the sale is posted. Cancel/Escape leave quantities unchanged. Discount lines keep fixed quantities, and posted transactions cannot be edited. Browser-native alerts and quantity prompts are no longer used for POS feedback; explicit destructive confirmations remain separate decisions.

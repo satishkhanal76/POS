@@ -357,5 +357,20 @@
   "PWA_SETUP_FAILED": "Offline setup could not finish. Reopen the app while online to try again.",
   "PWA_UPDATING": "Updating…",
   "PWA_SCREENSHOT_WIDE": "Create and manage sales in your POS workspace.",
-  "PWA_SCREENSHOT_NARROW": "Manage your items on your phone."
+  "PWA_SCREENSHOT_NARROW": "Manage your items on your phone.",
+  "NOTIFICATION_REGION": "Notifications",
+  "NOTIFICATION_DISMISS": "Dismiss notification",
+  "NOTIFICATION_POSTED": "Transaction posted.",
+  "NOTIFICATION_POST_FAILED": "The transaction could not be saved. Your order is still open.",
+  "NOTIFICATION_CUSTOMER_LINK_FAILED": "The sale was saved, but could not be linked to the customer. Try Add to Customer again.",
+  "NOTIFICATION_DISCOUNT_APPLIED": "Discount applied.",
+  "NOTIFICATION_VOIDED": "Order cleared.",
+  "QUANTITY_TITLE": "Change Quantity",
+  "QUANTITY_LABEL": "Quantity",
+  "QUANTITY_DESCRIPTION": "Update the quantity for ${item}.",
+  "QUANTITY_HELP": "Enter a whole number of at least 1. Use Remove to delete the item.",
+  "QUANTITY_INVALID": "Enter a whole number between 1 and 9,007,199,254,740,991.",
+  "QUANTITY_LINE_TOTAL": "Line total",
+  "QUANTITY_APPLY": "Update Quantity",
+  "QUANTITY_UPDATED": "Quantity updated for ${item}."
 }

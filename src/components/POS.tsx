@@ -1,20 +1,21 @@
+import QuantityForm from "./Transaction/QuantityForm";
+import { useNotifications } from "../contexts/Notifications";
 import DiscountForm from "./Discount/DiscountForm";
 import { useLocaleText } from '../contexts/Locale';
 import PageHeader from "./Layout/PageHeader";
 import "../styles/POS.css";
 import Price from "./Items/Price";
 import { MdOutlineShoppingBag } from "react-icons/md";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { v4 as uuidv4 } from "uuid";
 import TransactionController, {
   ITransactionController,
 } from "../controllers/TransactionController";
 import { ICustomer } from "../models/Customer";
-import { rt, useLocale } from "../contexts/Locale";
+import { useLocale } from "../contexts/Locale";
 import { useDatabase } from "../contexts/DatabaseContext";
 import CustomerController from "../controllers/CustomerController";
-import IntegerValidator from "../validators/IntegerValidator";
 import CustomerTransaction from "../models/CustomerTransaction";
 import { IButtonProps } from "./Button";
 import TransactionButtons from "./Transaction/TransactionButtons";
@@ -40,6 +41,10 @@ export interface ITransactionState {
 
 const POS = () => {
   const t = useLocaleText();
+  const { notify } = useNotifications();
+  const [quantityItem, setQuantityItem] = useState<IProductTransactionItem | IDiscountTransactionItem | null>(null);
+  const [saving, setSaving] = useState(false);
+  const saveInFlight = useRef(false);
   const text = useLocale();
   const [isDiscountModalOpen, setDiscountModalOpen] = useState(false);
 
@@ -119,39 +124,9 @@ const POS = () => {
     }));
   };
 
-  const handleChangeQuantity = () => {
-    if (!transaction || !transactionState.activeTransactionItem) return;
-    if (transaction.isPosted()) return;
-
-    const activeItem = transactionState.activeTransactionItem;
-
-    if (!activeItem?.getIsQuantityChangable()) return;
-
-    let itemQuantity: IntegerValidator;
-
-    do {
-      itemQuantity = new IntegerValidator(
-        prompt(
-          rt(text.PROMPT_CHANGE_QUANTITY, {
-            ITEM_NAME: activeItem.getItem().getName(),
-          }),
-          activeItem.getQuantity().toString()
-        ),
-        { minValue: 1 }
-      );
-      if (itemQuantity.isValueNull()) return; //user doesnot want to change the quantitiy
-    } while (!itemQuantity.isValueValid()); //if user provides string
-
-    if (itemQuantity.getSerializedValue() <= 0) {
-      transaction.removeTransactionItem(activeItem.getItem().getId());
-    } else {
-      transaction.changeTransactionItemQuantity(
-        activeItem.getItem().getId(),
-        itemQuantity.getSerializedValue()
-      );
-    }
-
-    setTransactionState((t) => ({ ...t }));
+  const handleChangeQuantity = (item = transactionState.activeTransactionItem) => {
+    if (!transaction || transaction.isPosted() || !item?.getIsQuantityChangable() || saving) return;
+    setQuantityItem(item);
   };
 
   const handleCreateNewTransaction = async (item?: ProductItem) => {
@@ -188,17 +163,20 @@ const POS = () => {
   };
 
   const handlePostTransaction = async () => {
-    if (!transaction || transaction.isPosted()) return;
-
-    await transactionController.postTransaction(transaction);
-    setTransactionState((t) => ({
-      ...t,
-      transaction: null,
-      activeTransactionItem: null,
-    }));
+    if (!transaction || transaction.isPosted() || saveInFlight.current) return;
+    saveInFlight.current = true; setSaving(true);
+    try {
+      const posted = await transactionController.postTransaction(transaction);
+      if (!posted) throw new Error(t('NOTIFICATION_POST_FAILED'));
+      transaction.setIsPosted(true);
+      setTransactionState(current => ({ ...current, transaction: null, activeTransactionItem: null }));
+      notify(t('NOTIFICATION_POSTED'));
+    } catch { notify(t('NOTIFICATION_POST_FAILED'), 'error'); }
+    finally { saveInFlight.current = false; setSaving(false); }
   };
 
   const handleVoidTransaction = () => {
+    notify(t("NOTIFICATION_VOIDED"), "info");
     setTransactionState((t) => ({
       ...t,
       transaction: null,
@@ -219,35 +197,24 @@ const POS = () => {
   };
 
   const handleAddCustomer = async (customer: ICustomer | null) => {
-    const transaction = transactionState.transaction;
-    if (!transaction) return;
-
-    await transactionController.postTransaction(transaction);
-    if (!customer) return;
-    if (!transaction) return;
-
-    const customerTransaction = new CustomerTransaction({
-      id: uuidv4(),
-      timestamp: Date.now(),
-      customer,
-      transaction,
-    });
-
-    await cutomersTransactionsOS.addOne(customerTransaction);
-
-    alert(
-      rt(text.TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS, {
-        CUSTOMER_NAME: customer.getName(),
-      })
-    );
-
-    handleCreateNewTransaction();
-    setTransactionState((t) => ({
-      ...t,
-      transaction: null,
-      activeTransactionItem: null,
-      isCustomerModalOpen: false,
-    }));
+    if (!transaction || !customer || saveInFlight.current) return;
+    saveInFlight.current = true; setSaving(true);
+    setTransactionState(current => ({ ...current, isCustomerModalOpen: false }));
+    try {
+      if (!transaction.isPosted()) {
+        const posted = await transactionController.postTransaction(transaction);
+        if (!posted) throw new Error(t('NOTIFICATION_POST_FAILED'));
+        transaction.setIsPosted(true);
+      }
+      await cutomersTransactionsOS.addOne(new CustomerTransaction({
+        id: uuidv4(), timestamp: Date.now(), customer, transaction,
+      }));
+      setTransactionState(current => ({ ...current, transaction: null, activeTransactionItem: null }));
+      notify(t('TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS', { CUSTOMER_NAME: customer.getName() }));
+    } catch {
+      notify(t(transaction.isPosted() ? 'NOTIFICATION_CUSTOMER_LINK_FAILED' : 'NOTIFICATION_POST_FAILED'), 'error');
+      setTransactionState(current => ({ ...current }));
+    } finally { saveInFlight.current = false; setSaving(false); }
   };
 
   const buttonsProps: IButtonProps[] = [
@@ -268,10 +235,10 @@ const POS = () => {
     {
       children: text.BUTTON_CHANGE_QUANTITY,
       disabled:
-        transaction?.isPosted() || !transactionState.activeTransactionItem
+        transaction?.isPosted() || !transactionState.activeTransactionItem?.getIsQuantityChangable()
           ? true
           : false,
-      onClick: handleChangeQuantity,
+      onClick: () => handleChangeQuantity(),
     },
     {
       children: text.BUTTON_POST_TRANSACTION,
@@ -304,11 +271,19 @@ const POS = () => {
 
   return (
     <>
+      {quantityItem && transaction && <QuantityForm item={quantityItem} onClose={() => setQuantityItem(null)} onApply={quantity => {
+        if (transaction.isPosted()) return;
+        transaction.changeTransactionItemQuantity(quantityItem.getItem().getId(), quantity);
+        setTransactionState(current => ({ ...current, activeTransactionItem: quantityItem }));
+        setQuantityItem(null);
+        notify(t('QUANTITY_UPDATED', { item: quantityItem.getItem().getName() }));
+      }} />}
       {isDiscountModalOpen && transaction && <DiscountForm transaction={transaction}
         onClose={() => setDiscountModalOpen(false)}
         onApplied={item => {
           setTransactionState(current => ({ ...current, activeTransactionItem: item }));
           setDiscountModalOpen(false);
+          notify(t('NOTIFICATION_DISCOUNT_APPLIED'));
         }} />}
       <ItemSelectionModal
         onClose={() => {
@@ -351,7 +326,7 @@ const POS = () => {
                   <span className="pos-empty-icon"><MdOutlineShoppingBag aria-hidden="true" /></span>
                   <h3>{t('UI_START_YOUR_NEXT_SALE')}</h3>
                   <p>{t('UI_CHOOSE_AN_ITEM_TO_BUILD_AN_ORDER_YOU_CAN')}</p>
-                  <button type="button" className="pos-start-button" onClick={handleAddBtnClick}>{t('UI_ADD_YOUR_FIRST_ITEM')}</button>
+                  <button type="button" className="pos-start-button" disabled={saving} onClick={handleAddBtnClick}>{t('UI_ADD_YOUR_FIRST_ITEM')}</button>
                 </div>
                 <footer className="transaction-details"><span>{text.TOTAL}</span><Price price={0} /></footer>
               </div>
@@ -363,7 +338,7 @@ const POS = () => {
             <TransactionButtons
               buttonsClassName="pos-action"
               buttonsClassNameWhenActive="pos-action"
-              buttonsProps={buttonsProps}
+              buttonsProps={buttonsProps.map(button => ({ ...button, disabled: saving || button.disabled }))}
             />
             <div className="pos-actions-note">{transaction?.isPosted() ? t('UI_POSTED_SALES_ARE_AVAILABLE_IN_HISTORY') : t('UI_POST_SAVES_THE_SALE_ADD_TO_CUSTOMER_SAVES_IT')}</div>
           </aside>

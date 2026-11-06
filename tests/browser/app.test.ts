@@ -265,3 +265,76 @@ test('development installs expose a real manifest and correctly scoped Apple ico
     assert.ok(response.headers()['content-type'].startsWith('image/png'), `Image URL must return PNG rather than an HTML fallback: ${url.href}`);
   }
 });
+
+test('quantity uses a validated dialog and notification pills pause on hover then disappear', async () => {
+  await page.clock.install();
+  const dialogs: string[] = [];
+  page.on('dialog', dialog => { dialogs.push(dialog.type()); void dialog.dismiss(); });
+  await go('');
+  await page.getByRole('button', { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true }).click();
+  await page.locator('.modal-item').first().click();
+  await page.getByRole('button', { name: english.BUTTON_CHANGE_QUANTITY, exact: true }).click();
+  await page.getByLabel(english.QUANTITY_LABEL, { exact: true }).fill('2.5');
+  await page.getByRole('button', { name: english.QUANTITY_APPLY, exact: true }).click();
+  await page.getByText(english.QUANTITY_INVALID, { exact: true }).waitFor();
+  await page.getByLabel(english.QUANTITY_LABEL, { exact: true }).fill('3');
+  await page.getByRole('button', { name: english.QUANTITY_APPLY, exact: true }).click();
+  await page.getByRole('dialog').waitFor({ state: 'hidden' });
+  await page.locator('.transaction-details').getByText('$15.00', { exact: true }).waitFor();
+  const pill = page.locator('.notification-pill');
+  await pill.waitFor();
+  await pill.hover(); await page.clock.runFor(5000);
+  assert.equal(await pill.isVisible(), true);
+  await page.mouse.move(0, 0); await page.clock.runFor(4600);
+  await pill.waitFor({ state: 'hidden' });
+  assert.deepEqual(dialogs, []);
+});
+
+test('posting a sale displays an automatic success notification without native alerts', async () => {
+  const dialogs: string[] = [];
+  page.on('dialog', dialog => { dialogs.push(dialog.type()); void dialog.dismiss(); });
+  await go('');
+  await page.getByRole('button', { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true }).click();
+  await page.locator('.modal-item').first().click();
+  await page.getByRole('button', { name: english.BUTTON_POST_TRANSACTION, exact: true }).click();
+  await page.locator('.notification-message').getByText(english.NOTIFICATION_POSTED, { exact: true }).waitFor();
+  await page.getByRole('button', { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true }).waitFor();
+  assert.deepEqual(dialogs, []);
+});
+
+test('customer linking reports success without a blocking alert', async () => {
+  const dialogs: string[] = [];
+  page.on('dialog', dialog => { dialogs.push(dialog.type()); void dialog.dismiss(); });
+  await go('');
+  await page.getByRole('button', { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true }).click();
+  await page.locator('.modal-item').first().click();
+  await page.getByRole('button', { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true }).click();
+  await page.locator('.modal-item').filter({ hasText: /^Customer 0$/ }).click();
+  await page.locator('.notification-message').filter({ hasText: 'Customer 0' }).waitFor();
+  await page.getByRole('button', { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true }).waitFor();
+  assert.deepEqual(dialogs, []);
+});
+
+test('a failed customer link preserves the saved sale and retries without posting it twice', async () => {
+  await go('');
+  await page.getByRole('button', { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true }).click();
+  await page.locator('.modal-item').first().click();
+  const moduleUrl = `${base}src/database/CustomersTransactionsOS.ts`;
+  await page.evaluate(`import(${JSON.stringify(moduleUrl)}).then(module => {
+    const original = module.default.prototype.addOne;
+    let attempts = 0;
+    module.default.prototype.addOne = function(...args) {
+      if (attempts++ === 0) return Promise.reject(new Error('Simulated link failure'));
+      return original.apply(this, args);
+    };
+  })`);
+  await page.getByRole('button', { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true }).click();
+  await page.locator('.modal-item').filter({ hasText: /^Customer 0$/ }).click();
+  await page.getByText(english.NOTIFICATION_CUSTOMER_LINK_FAILED, { exact: true }).waitFor();
+  await page.locator('.transaction-details').getByText('$5.00', { exact: true }).waitFor();
+  await page.getByRole('button', { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true }).click();
+  await page.locator('.modal-item').filter({ hasText: /^Customer 0$/ }).click();
+  await page.locator('.notification-message').filter({ hasText: 'Customer 0' }).waitFor();
+  await go('transactions');
+  await page.getByText('1–10 of 36', { exact: true }).waitFor();
+});

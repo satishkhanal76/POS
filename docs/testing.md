@@ -56,6 +56,7 @@ On Linux, Playwright may also need system packages; use `npx playwright install 
 | `controllers.test.ts` | Creating/posting sales, controller boundaries, legacy JSON operations |
 | `editing.test.ts` | Item/customer edits, stable IDs, linked-history preservation, deletion guards |
 | `price-history.test.ts` | Effective-date boundaries, successive changes, historical totals, history listing |
+| `quantity.test.ts` | Positive whole-number quantities and invalid/unsafe input rejection |
 | `discounts.test.ts` | Flat/percentage deductions, decimals, limits, saved types/totals, failed writes |
 | `pagination.test.ts` | Newest/oldest, page limits, customer ranges, lifetime summaries, bounded reads |
 | `migrations.test.ts` | Actual version 1/2 databases upgrading without data loss, fresh schema, concurrent connections |

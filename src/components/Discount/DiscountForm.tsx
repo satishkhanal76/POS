@@ -10,7 +10,6 @@ import FullScreenModal from '../Modals/FullScreenModal';
 import Price from '../Items/Price';
 import '../Customer/CustomForm.css';
 import '../Workspace/Workspace.css';
-import './DiscountForm.css';
 
 interface DiscountFormProps {
   transaction: ITransaction;
@@ -20,7 +19,7 @@ interface DiscountFormProps {
 export default function DiscountForm({ transaction, onClose, onApplied }: DiscountFormProps) {
   const t = useLocaleText();
   const { discountOS } = useDatabase();
-  const [type, setType] = useState(DiscountItemType.PERCENTAGE);
+  const [type, setType] = useState(DiscountItemType.FLAT);
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -48,7 +47,7 @@ export default function DiscountForm({ transaction, onClose, onApplied }: Discou
         <input className="input" id="discount-value" type="number" inputMode="decimal" step="any" min="0" max={type === DiscountItemType.PERCENTAGE ? 100 : transaction.getTotal()} value={value} disabled={busy}
           aria-invalid={!!error} aria-describedby={error ? 'discount-error' : undefined} onChange={event => { setValue(event.target.value); setError(''); }} />
       </div>
-      {preview !== null && <div className="discount-preview"><span>{t('DISCOUNT_PREVIEW')}</span><output><Price price={preview} isDeductionItem /></output></div>}
+      {preview !== null && <div className="form-preview"><span>{t('DISCOUNT_PREVIEW')}</span><output><Price price={preview} isDeductionItem /></output></div>}
       {error && <p id="discount-error" role="alert">{error}</p>}
       <div className="workspace-buttons"><button type="submit" disabled={busy}>{t(busy ? 'DISCOUNT_APPLYING' : 'DISCOUNT_APPLY')}</button><button type="button" disabled={busy} onClick={onClose}>{t('UI_CANCEL')}</button></div>
     </form>
