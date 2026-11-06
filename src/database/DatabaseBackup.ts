@@ -89,12 +89,19 @@ export function validateBackup(value: unknown): DatabaseBackup {
       if (!ids[target].has(row[field] as string)) throw new Error(getLocaleText('UI_BROKEN_RELATIONSHIP_VALUE_VALUE', { value0: table, value1: field }));
     }
   }
+  // Build these once: rescanning every line/link for every payment is quadratic on large backups.
+  const activeLinkCounts = new Map<string | number, number>();
+  for (const link of tables.CUSTOMERS_TRANSACTIONS as BackupRow[]) {
+    if (!link.deletedAt) activeLinkCounts.set(link.transactionId, (activeLinkCounts.get(link.transactionId) ?? 0) + 1);
+  }
+  const transactionsWithLines = new Set<string | number>();
+  for (const name of ['TRANSACTION_PRODUCTS', 'TRANSACTION_DISCOUNTS']) {
+    for (const line of tables[name] as BackupRow[]) transactionsWithLines.add(line.transactionId);
+  }
   // Payments may be explicitly unlinked, but cannot have multiple active customers or sale lines.
   for (const payment of tables.TRANSACTIONS as BackupRow[]) {
     if (payment.kind !== 'payment') continue;
-    const links = (tables.CUSTOMERS_TRANSACTIONS as BackupRow[]).filter(link => link.transactionId === payment.id && !link.deletedAt);
-    const hasLines = ['TRANSACTION_PRODUCTS', 'TRANSACTION_DISCOUNTS'].some(name => (tables[name] as BackupRow[]).some(line => line.transactionId === payment.id));
-    if (links.length > 1 || hasLines) throw new Error(getLocaleText('PAYMENT_INVALID'));
+    if ((activeLinkCounts.get(payment.id) ?? 0) > 1 || transactionsWithLines.has(payment.id)) throw new Error(getLocaleText('PAYMENT_INVALID'));
   }
   // Summary rows are derived from canonical links and saved totals, never trusted blindly.
   const sales = new Map((tables.TRANSACTIONS as BackupRow[]).filter(row => !row.deletedAt).map(row => [row.id, Number(row.total)]));
