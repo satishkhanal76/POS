@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -77,24 +77,106 @@
     <link rel="apple-touch-startup-image" href="/pos/startup/1024x1366-2-portrait-dark.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: dark)">
     <link rel="apple-touch-startup-image" href="/pos/startup/1024x1366-2-landscape-light.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape) and (prefers-color-scheme: light)">
     <link rel="apple-touch-startup-image" href="/pos/startup/1024x1366-2-landscape-dark.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape) and (prefers-color-scheme: dark)">
-    <style>:root { --app-brand-accent: #d97706; --app-brand-light-bg: #f1f5f9; --app-brand-dark-bg: #262626; --boot-light-text: #161619; --boot-dark-text: #f1f5f9; --boot-light-muted: #686870; --boot-dark-muted: #94a3b8; }/* Inlined into HTML so the startup screen appears before the application bundle. */
-html:has(.app-boot) { background: var(--app-brand-light-bg); color-scheme: light; }
-html:has(.app-boot) body { margin: 0; }
-.app-boot { box-sizing: border-box; min-height: 100svh; padding: max(2rem, env(safe-area-inset-top)) 1.5rem max(2rem, env(safe-area-inset-bottom)); display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--app-brand-light-bg); color: var(--boot-light-text); text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-.app-boot-icon { border-radius: 22px; box-shadow: 0 14px 36px color-mix(in srgb, var(--app-brand-accent) 12%, transparent); }
-.app-boot .app-boot-name { margin: 1.25rem 0 .35rem; color: inherit; font-size: 2rem; font-weight: 700; line-height: 1.25; letter-spacing: -.04em; }
-.app-boot .app-boot-tagline { margin: 0; color: var(--boot-light-muted); font-size: 1rem; }
-.app-boot-spinner { width: 22px; height: 22px; margin-top: 2rem; border: 2px solid color-mix(in srgb, var(--app-brand-accent) 15%, transparent); border-top-color: var(--app-brand-accent); border-radius: 50%; animation: app-boot-spin .8s linear infinite; }
-.app-boot .app-boot-message { margin: .8rem 0 0; color: var(--boot-light-muted); font-size: .875rem; line-height: 1.6; }
-.app-boot-retry { margin-top: 1rem; min-height: 44px; padding: .75rem 1.25rem; border: 0; border-radius: 9px; background: var(--app-brand-accent); color: white; font: inherit; cursor: pointer; }
-.app-boot-retry:focus-visible { outline: 3px solid var(--app-brand-accent); outline-offset: 4px; }
-.app-boot [hidden] { display: none; }
-html[data-app-theme=dark]:has(.app-boot), html[data-app-theme=dark] .app-boot { background: var(--app-brand-dark-bg); color: var(--boot-dark-text); color-scheme: dark; }
-html[data-app-theme=dark] .app-boot :is(.app-boot-tagline, .app-boot-message) { color: var(--boot-dark-muted); }
-@media (prefers-reduced-motion: reduce) { .app-boot-spinner { animation: none; border-top-color: var(--app-brand-accent); } }
-@keyframes app-boot-spin { to { transform: rotate(360deg); } }
-</style>
+    <style>
+      :root { --app-brand-accent: #d97706; --app-brand-light-bg: #f1f5f9; --app-brand-dark-bg: #262626; --boot-light-text: #161619; --boot-dark-text: #f1f5f9; --boot-light-muted: #686870; --boot-dark-muted: #94a3b8; }/* Inlined into HTML so the startup screen appears before the application bundle. */
+html:has(.app-boot) {
+  background: var(--app-brand-light-bg);
+  color-scheme: light;
+}
+html:has(.app-boot) body {
+  margin: 0;
+}
+.app-boot {
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding: max(2rem, env(safe-area-inset-top)) 1.5rem
+    max(2rem, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: var(--app-brand-light-bg);
+  color: var(--boot-light-text);
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.app-boot-icon {
+  border-radius: 22px;
+  box-shadow: 0 14px 36px
+    color-mix(in srgb, var(--app-brand-accent) 12%, transparent);
+}
+.app-boot .app-boot-name {
+  margin: 1.25rem 0 0.35rem;
+  color: inherit;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.04em;
+}
+.app-boot .app-boot-tagline {
+  margin: 0;
+  color: var(--boot-light-muted);
+  font-size: 1rem;
+}
+.app-boot-spinner {
+  width: 22px;
+  height: 22px;
+  margin-top: 2rem;
+  border: 2px solid color-mix(in srgb, var(--app-brand-accent) 15%, transparent);
+  border-top-color: var(--app-brand-accent);
+  border-radius: 50%;
+  animation: app-boot-spin 0.8s linear infinite;
+}
+.app-boot .app-boot-message {
+  margin: 0.8rem 0 0;
+  color: var(--boot-light-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.app-boot-retry {
+  margin-top: 1rem;
+  min-height: 44px;
+  padding: 0.75rem 1.25rem;
+  border: 0;
+  border-radius: 9px;
+  background: var(--app-brand-accent);
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+.app-boot-retry:focus-visible {
+  outline: 3px solid var(--app-brand-accent);
+  outline-offset: 4px;
+}
+.app-boot [hidden] {
+  display: none;
+}
+html[data-app-theme="dark"]:has(.app-boot),
+html[data-app-theme="dark"] .app-boot {
+  background: var(--app-brand-dark-bg);
+  color: var(--boot-dark-text);
+  color-scheme: dark;
+}
+html[data-app-theme="dark"]
+  .app-boot
+  :is(.app-boot-tagline, .app-boot-message) {
+  color: var(--boot-dark-muted);
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-boot-spinner {
+    animation: none;
+    border-top-color: var(--app-brand-accent);
+  }
+}
+@keyframes app-boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+    </style>
     <script>
+      
   (function() {
     var dark = false;
     try { dark = JSON.parse(localStorage.getItem('pos.clientGlobal') || '{}').darkMode === true; } catch (_) {}
@@ -102,13 +184,17 @@ html[data-app-theme=dark] .app-boot :is(.app-boot-tagline, .app-boot-message) { 
     var theme = document.querySelector('meta[name="theme-color"]');
     if (theme) theme.setAttribute('content', dark ? '#262626' : '#f1f5f9');
   })();
-</script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+;
+    </script>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
     <!-- Google tag (gtag.js) -->
     <script defer src="https://satishkhanal.com/analytics.js"></script>
     <title>POS — Point of Sale</title>
-    <script type="module" crossorigin src="/pos/assets/index-1SsPRl9v.js"></script>
-    <link rel="stylesheet" crossorigin href="/pos/assets/index-936Dcy1Y.css">
+    <script type="module" crossorigin src="/pos/assets/index-XvkwzSNl.js"></script>
+    <link rel="stylesheet" crossorigin href="/pos/assets/index-RB9X93_u.css">
   <link rel="manifest" href="/pos/manifest.webmanifest"></head>
   <body>
     <div id="root"><div class="app-boot" role="status" aria-live="polite">
@@ -121,6 +207,7 @@ html[data-app-theme=dark] .app-boot :is(.app-boot-tagline, .app-boot-message) { 
     <noscript><p>Enable JavaScript to open this workspace.</p></noscript>
   </div></div>
     <script>
+      
   document.addEventListener('click', function(event) {
     if (event.target instanceof Element && event.target.closest('[data-boot-retry]')) window.location.reload();
   });
@@ -137,6 +224,7 @@ html[data-app-theme=dark] .app-boot :is(.app-boot-tagline, .app-boot-message) { 
     var retry = boot.querySelector('[data-boot-retry]');
     if (retry) retry.hidden = false;
   }, true);
-</script>
+;
+    </script>
   </body>
 </html>
