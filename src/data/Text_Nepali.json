@@ -706,5 +706,11 @@
   "LOCALE_AUDIT_SEARCH": "की वा अंग्रेजी पाठ खोज्नुहोस्…",
   "LOCALE_AUDIT_COUNT": "यो भाषामा ${count} वटा अनुवाद छुटेका छन्।",
   "LOCALE_AUDIT_COMPLETE": "कुनै अनुवाद छुटेको छैन",
-  "LOCALE_AUDIT_NO_MATCHES": "यो खोजीसँग मिल्ने छुटेका अनुवाद भेटिएनन्"
+  "LOCALE_AUDIT_NO_MATCHES": "यो खोजीसँग मिल्ने छुटेका अनुवाद भेटिएनन्",
+  "PRINT_PDF_READY": "रिपोर्ट तयार भयो",
+  "PRINT_PDF_MOBILE_HELP": "PDF सेयर गरेर प्रिन्ट गर्न वा फाइलमा सेभ गर्न सकिन्छ। डाउनलोड गरेर खोल्न पनि मिल्छ।",
+  "PRINT_PDF_SHARE": "PDF सेयर / प्रिन्ट गर्ने",
+  "PRINT_PDF_DOWNLOAD": "PDF डाउनलोड गर्ने",
+  "PRINT_PDF_OPEN": "PDF खोल्ने",
+  "PRINT_PDF_SHARE_FAILED": "सेयर हुन सकेन। PDF डाउनलोड गर्ने वा PDF खोल्ने प्रयोग गर्नुस्।"
 }

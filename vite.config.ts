@@ -91,7 +91,7 @@ export default defineConfig(({ command }) => ({
       includeAssets: ["icons/*.png", "icons/*.svg"],
       workbox: {
         clientsClaim: true,
-        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,html,svg,woff2,ttf}"],
         navigateFallbackDenylist: [/\/analytics\.js$/],
       },
     }),

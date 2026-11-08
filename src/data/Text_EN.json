@@ -706,5 +706,11 @@
   "LOCALE_AUDIT_SEARCH": "Search keys or English text…",
   "LOCALE_AUDIT_COUNT": "${count} missing translations in this language.",
   "LOCALE_AUDIT_COMPLETE": "No missing translations",
-  "LOCALE_AUDIT_NO_MATCHES": "No missing translations match this search"
+  "LOCALE_AUDIT_NO_MATCHES": "No missing translations match this search",
+  "PRINT_PDF_READY": "Report Ready",
+  "PRINT_PDF_MOBILE_HELP": "Share the PDF to print it or save it to Files. You can also download or open it.",
+  "PRINT_PDF_SHARE": "Share / Print PDF",
+  "PRINT_PDF_DOWNLOAD": "Download PDF",
+  "PRINT_PDF_OPEN": "Open PDF",
+  "PRINT_PDF_SHARE_FAILED": "Sharing was unavailable. Try Download PDF or Open PDF."
 }

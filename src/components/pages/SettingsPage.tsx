@@ -77,8 +77,19 @@ export default function SettingsPage() {
         title={t("NAVBAR_SETTINGS")}
         eyebrow={t("UI_MAKE_IT_YOURS")}
         description={t("UI_SET_UP_YOUR_WORKSPACE_CHANGES_ARE_SAVED_ON_THIS")}
+        actions={
+          <button
+            className="settings-save"
+            type="submit"
+            form="workspace-settings"
+            disabled={!dirty || !!invalid}
+          >
+            {t("UI_SAVE_CHANGES_2")}
+          </button>
+        }
       />
       <form
+        id="workspace-settings"
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -100,7 +111,14 @@ export default function SettingsPage() {
         }}
       >
         {(
-          ["Prices", "Appearance", "Order", "Stock", "Deletion", "Purchasing"] as const
+          [
+            "Prices",
+            "Appearance",
+            "Order",
+            "Stock",
+            "Deletion",
+            "Purchasing",
+          ] as const
         ).map((group) => (
           <section
             className="settings-section"
@@ -112,14 +130,14 @@ export default function SettingsPage() {
                 group === "Order"
                   ? "PICKER_SETTINGS"
                   : group === "Prices"
-                  ? "UI_PRICES"
-                  : group === "Stock"
-                    ? "STOCK_TITLE"
-                    : group === "Deletion"
-                      ? "DELETED_CATEGORY"
-                      : group === "Purchasing"
-                        ? "BUY_TITLE"
-                        : "UI_APPEARANCE",
+                    ? "UI_PRICES"
+                    : group === "Stock"
+                      ? "STOCK_TITLE"
+                      : group === "Deletion"
+                        ? "DELETED_CATEGORY"
+                        : group === "Purchasing"
+                          ? "BUY_TITLE"
+                          : "UI_APPEARANCE",
               )}
             </h2>
             {settingsSchema
@@ -206,13 +224,6 @@ export default function SettingsPage() {
         />
         <footer className="settings-actions">
           <div className="settings-action-buttons">
-            <button
-              className="settings-save"
-              type="submit"
-              disabled={!dirty || !!invalid}
-            >
-              {t("UI_SAVE_CHANGES_2")}
-            </button>
             <button
               type="button"
               disabled={!dirty}

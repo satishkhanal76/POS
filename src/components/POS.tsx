@@ -42,7 +42,10 @@ export default function POS() {
   return (
     <>
       <div className="pos-mode-panel" hidden={activeMode !== "sale"}>
-        <SalePOS renderModeSwitch={renderModeSwitch} />
+        <SalePOS
+          active={activeMode === "sale"}
+          renderModeSwitch={renderModeSwitch}
+        />
       </div>
       {purchaseMounted && (
         <div className="pos-mode-panel" hidden={activeMode !== "purchase"}>

@@ -1,7 +1,5 @@
-import {
-  indexedHeader,
-  createListingIndexes,
-} from "./listing/metadata";
+import { PICKER_USAGE_UPDATED } from "../pickers/events";
+import { indexedHeader, createListingIndexes } from "./listing/metadata";
 import { validQuantity, roundQuantity } from "../validators/QuantityValidator";
 import TransactionHistoryStore from "./TransactionHistoryStore";
 import { loadSettings } from "../settings/settings";
@@ -72,10 +70,7 @@ export default class TransactionsOS
     objectStore.createIndex("deletedTimestamp", ["timestamp", "deletedAt"]);
   }
 
-  public onDatabaseUpgrade(
-    database: IDBDatabase,
-    transaction: IDBTransaction,
-  ) {
+  public onDatabaseUpgrade(database: IDBDatabase, transaction: IDBTransaction) {
     const store = transaction.objectStore(TransactionsOS.OBJECT_STORE_NAME);
     if (!store.indexNames.contains("deletedTimestamp"))
       store.createIndex("deletedTimestamp", ["timestamp", "deletedAt"]);
@@ -174,12 +169,14 @@ export default class TransactionsOS
       "TRANSACTION_PRODUCTS",
       "TRANSACTION_DISCOUNTS",
     ]);
-    const supplied = new Map(headers?.map(row => [row.id, row]));
+    const supplied = new Map(headers?.map((row) => [row.id, row]));
     const reads = ids.map((id) =>
       Promise.all([
-        headers ? Promise.resolve(supplied.get(id)) : requestValue(
-          transaction.objectStore("TRANSACTIONS").get(id),
-        ) as Promise<TransactionsSchema | undefined>,
+        headers
+          ? Promise.resolve(supplied.get(id))
+          : (requestValue(
+              transaction.objectStore("TRANSACTIONS").get(id),
+            ) as Promise<TransactionsSchema | undefined>),
         requestValue(
           transaction
             .objectStore("TRANSACTION_PRODUCTS")
@@ -274,18 +271,16 @@ export default class TransactionsOS
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(new Error(message));
       try {
-        transaction
-          .objectStore("TRANSACTIONS")
-          .add({
-            ...this.getObjectAsSchema(sale),
-            stockDeducted: settings.stockManagement ? 1 : 0,
-            ...indexedHeader(
-              this.getObjectAsSchema(sale),
-              "sale",
-              [],
-              products.length + discounts.length,
-            ),
-          });
+        transaction.objectStore("TRANSACTIONS").add({
+          ...this.getObjectAsSchema(sale),
+          stockDeducted: settings.stockManagement ? 1 : 0,
+          ...indexedHeader(
+            this.getObjectAsSchema(sale),
+            "sale",
+            [],
+            products.length + discounts.length,
+          ),
+        });
         for (const line of products)
           transaction
             .objectStore("TRANSACTION_PRODUCTS")
@@ -339,6 +334,7 @@ export default class TransactionsOS
       }
     });
     sale.setIsPosted(true);
+    window.dispatchEvent(new Event(PICKER_USAGE_UPDATED));
     if (settings.stockManagement) publishStockChange(warnings);
     return sale;
   }

@@ -5,7 +5,7 @@
   "stockManagement": false,
   "forceStockAdherence": false,
   "showSoftDeletedToggle": false,
-  "purchasing": false,
+  "purchasing": true,
   "pickerPageSize": 10,
   "pickerRecentFirst": true
 }

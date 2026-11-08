@@ -21,9 +21,7 @@ export default function PrintableDocument({
     <html lang={language}>
       <head>
         <meta charSet="utf-8" />
-        <title>
-          {report.title} — {period}
-        </title>
+        <title>{`${report.title} — ${period}`}</title>
         <style>{`
     @page { size: A4; margin: 16mm 12mm; }
     * { box-sizing: border-box; }
@@ -46,9 +44,7 @@ export default function PrintableDocument({
       <body>
         <header>
           <h1>{report.title}</h1>
-          <p>
-            {report.subtitle ?? `${t("DASH_PERIOD")}: ${period}`}
-          </p>
+          <p>{report.subtitle ?? `${t("DASH_PERIOD")}: ${period}`}</p>
           <p className="meta">{t("PRINT_WORKSPACE", { workspace })}</p>
           <p className="meta">
             {t("PRINT_GENERATED", { date: new Date().toLocaleString() })}

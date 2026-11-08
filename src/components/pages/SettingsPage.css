@@ -113,18 +113,27 @@
   flex-wrap: wrap;
   gap: 0.75rem;
 }
-.settings-actions button {
+.settings-actions button,
+.settings-page .settings-save {
   border: 1px solid var(--color-slate500);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   cursor: pointer;
 }
-.settings-actions .settings-save {
-  background: var(--color-slate100);
-  color: var(--bg-primary);
-  border-color: var(--color-slate100);
+.settings-page .settings-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  font: inherit;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 5px #0002;
 }
-.settings-actions button:disabled {
+.settings-actions button:disabled,
+.settings-page .settings-save:disabled {
   opacity: 0.45;
   cursor: default;
 }
@@ -139,4 +148,8 @@
   .settings-control {
     max-width: 100%;
   }
+}
+
+.settings-page .settings-save:not(:disabled):hover {
+  filter: brightness(0.92);
 }

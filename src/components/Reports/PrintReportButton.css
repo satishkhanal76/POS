@@ -75,3 +75,28 @@ button.print-report-button:focus-visible {
     margin-left: auto;
   }
 }
+
+.mobile-pdf-name {
+  overflow-wrap: anywhere;
+  color: var(--color-slate400);
+  font-size: var(--text-small);
+}
+.mobile-pdf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.mobile-pdf-actions :is(button, a) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--color-slate500);
+  border-radius: 10px;
+  color: var(--color-slate100);
+  background: var(--bg-primary);
+  text-decoration: none;
+  font: inherit;
+}

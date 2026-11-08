@@ -17,8 +17,10 @@ import useSaleOrder from "./useSaleOrder";
 
 export default function SalePOS({
   renderModeSwitch,
+  active,
 }: {
   renderModeSwitch: (disabled: boolean) => ReactNode;
+  active: boolean;
 }) {
   const {
     t,
@@ -66,6 +68,7 @@ export default function SalePOS({
         />
       )}
       <ItemSelectionModal
+        preload={active}
         onClose={() => {
           setTransactionState((t) => ({
             ...t,

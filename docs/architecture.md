@@ -591,3 +591,15 @@ Settings → Missing Translations inspects raw dictionaries to distinguish absen
 A value can reference another locale key: `"NAVBAR_ITEM_HOME": "${SOFTWARE_NAME}"`. `SOFTWARE_NAME` is defined as `"POS"` in English and inherited by the other language files. Main branding entries use this reference; `WEB_NAME` remains a compatibility alias. Custom locales can override `SOFTWARE_NAME` once to rename these shared labels.
 
 Translation functions read raw templates so explicit caller parameters win, then recursively resolve remaining references against the active locale with English fallback. Direct dictionary reads also expand references for labels and startup branding. Unknown references and cycles retain their `${KEY}` placeholder, and recursion is bounded. Supplied parameter values are treated literally. Custom-locale validation follows reference chains while still requiring runtime placeholders such as `${count}`. The missing-translations audit preserves raw English reference templates and resolves its fallback previews.
+
+### Preloaded sale item suggestions
+
+The active sale workspace opts its item picker into preloading. `FirstPageCache` retains one bounded, hydrated first page and shares its in-flight request with Add Item. Stock counts for that page also load before the dialog opens. Searches and subsequent pages continue through the existing picker queries. The purchase and contact pickers retain their on-demand behavior.
+
+The cache is scoped to the mounted picker and loader, with settings and deletion/retry revisions in its identity. Returning to the tab and committed catalog edits refresh it. Committed sales invalidate rolling usage and refresh suggestions in the background, coalescing bursts of updates. Age-based or popularity refreshes retain the ready page while loading; changed settings, deleted items, and workspace/controller changes do not reuse stale results. Failed preloads remain retriable.
+
+### Keyboard-aware dialogs and mobile PDF exports
+
+`useModalViewport` measures the visual viewport and adjusts the shared dialog's position and maximum height when the keyboard opens or Safari pans the view. Keyboard-constrained dialogs align near the top of the visible area, retain a sticky close/header, and scroll their own fields/results. Picker inputs request a Search action key and continue filtering live; Enter dismisses the keyboard. The browser's native accessory bar remains under platform control.
+
+Mobile reports use a lazy-loaded PDF generator instead of hidden iframe printing. They share the same rendered report data as desktop, preserve the selected range, repeat table headings across PDF pages, and offer explicit Share/Print, Download, and Open actions once ready. The explicit Share tap supplies fresh browser activation after report generation. Locally bundled Latin/Devanagari fonts and the PDF module are precached for offline use. Desktop keeps the existing native print flow.

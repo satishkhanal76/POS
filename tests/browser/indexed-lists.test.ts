@@ -54,7 +54,7 @@ beforeEach(async () => {
   errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base);
-  await page.locator(".page-header").first().waitFor();
+  await page.locator(".page-header:visible").first().waitFor();
   await page.evaluate(async (base) => {
     const { createDatabaseStores } = (await import(
       `${base}src/database/DatabaseStores.ts`
@@ -142,7 +142,7 @@ afterEach(async () => {
 });
 async function go(path: string) {
   await page.goto(`${base}${path}`);
-  await page.locator(".page-header").first().waitFor();
+  await page.locator(".page-header:visible").first().waitFor();
 }
 async function choose(label: string, option: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
@@ -1114,18 +1114,16 @@ test("language settings audit missing keys and custom fallbacks without breaking
 
 test("shared software name references update runtime branding and persist through reload", async () => {
   await go("settings");
-  await page
-    .getByLabel(english.LOCALE_FILE_LABEL)
-    .setInputFiles({
-      name: "brand.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(
-        JSON.stringify({
-          SOFTWARE_NAME: "Corner Store",
-          NAVBAR_ITEM_HOME: "${SOFTWARE_NAME}",
-        }),
-      ),
-    });
+  await page.getByLabel(english.LOCALE_FILE_LABEL).setInputFiles({
+    name: "brand.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        SOFTWARE_NAME: "Corner Store",
+        NAVBAR_ITEM_HOME: "${SOFTWARE_NAME}",
+      }),
+    ),
+  });
   await page
     .getByText(english.LOCALE_UPLOAD_SUCCESS, { exact: true })
     .waitFor();
@@ -1157,4 +1155,276 @@ test("shared software name references update runtime branding and persist throug
     .getByText("Corner Store", { exact: true })
     .waitFor();
   assert.equal(await page.title(), "Corner Store — Point of Sale");
+});
+
+test("sale selection preloads item suggestions and reuses them on open, reopen, and after search", async () => {
+  await go("?mode=purchase");
+  await page.evaluate(async (base) => {
+    const { default: PickerController } = (await import(
+      `${base}src/controllers/PickerController.ts`
+    )) as typeof import("../../src/controllers/PickerController");
+    const probe = { initial: 0, ready: 0, searches: 0, forbidInitial: false };
+    Object.defineProperty(window, "pickerPreloadProbe", { value: probe });
+    const original = PickerController.prototype.items;
+    PickerController.prototype.items = async function (options) {
+      if (!options.query && !options.offset && !options.purchase) {
+        probe.initial++;
+        if (probe.forbidInitial)
+          throw new Error("Initial suggestions should already be cached");
+      } else if (options.query) probe.searches++;
+      const result = await original.call(this, options);
+      if (!options.query && !options.offset && !options.purchase) probe.ready++;
+      return result;
+    };
+  }, base);
+  await page
+    .getByRole("button", { name: english.PAYMENT_SALE, exact: true })
+    .click();
+  await page.waitForFunction(
+    () =>
+      (window as unknown as { pickerPreloadProbe: { ready: number } })
+        .pickerPreloadProbe.ready === 1,
+  );
+  assert.equal(await page.getByRole("dialog").count(), 0);
+  await page.evaluate(() => {
+    (
+      window as unknown as { pickerPreloadProbe: { forbidInitial: boolean } }
+    ).pickerPreloadProbe.forbidInitial = true;
+  });
+  await page
+    .getByRole("button", { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true })
+    .click();
+  await page.waitForFunction(
+    () => document.querySelectorAll(".modal-item").length === 10,
+  );
+  assert.equal(await page.locator(".modal-picker-error").count(), 0);
+  assert.equal(
+    await page.locator(".modal-result-count").textContent(),
+    english.PICKER_SHOWN.replace("${count}", "10"),
+  );
+  await page.getByRole("searchbox").fill("Item 33");
+  await page
+    .locator(".modal-item")
+    .getByText("Item 33", { exact: true })
+    .waitFor();
+  await page
+    .getByRole("button", { name: english.UI_CLOSE_DIALOG, exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true })
+    .click();
+  await page.waitForFunction(
+    () => document.querySelectorAll(".modal-item").length === 10,
+  );
+  assert.equal(await page.getByRole("searchbox").inputValue(), "");
+  const probe = await page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          pickerPreloadProbe: { initial: number; searches: number };
+        }
+      ).pickerPreloadProbe,
+  );
+  assert.equal(probe.initial, 1);
+  assert.equal(probe.searches, 1);
+});
+
+test("phone dialogs fit the keyboard viewport, follow panning, and keep live search usable", async () => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await context.addInitScript(() => {
+    const viewport = Object.assign(new EventTarget(), {
+      height: innerHeight,
+      width: innerWidth,
+      offsetTop: 0,
+      offsetLeft: 0,
+      scale: 1,
+    });
+    Object.defineProperty(window, "visualViewport", {
+      configurable: true,
+      value: viewport,
+    });
+  });
+  await go("");
+  await page
+    .getByRole("button", { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true })
+    .click();
+  await page.waitForFunction(
+    () => document.querySelectorAll(".modal-item").length === 10,
+  );
+  const search = page.getByRole("searchbox");
+  assert.equal(await search.getAttribute("enterkeyhint"), "search");
+  await page.evaluate(() => {
+    const viewport = window.visualViewport!;
+    Object.assign(viewport, { height: 400, offsetTop: 0 });
+    viewport.dispatchEvent(new Event("resize"));
+  });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("dialog.pos-modal[open]")?.dataset.keyboardOpen ===
+      "true",
+  );
+  const measure = () =>
+    page.evaluate(() => {
+      const modal = document
+        .querySelector("dialog.pos-modal[open]")!
+        .getBoundingClientRect();
+      const field = document
+        .querySelector(".modal-search")!
+        .getBoundingClientRect();
+      const results = document
+        .querySelector(".modal-items-container")!
+        .getBoundingClientRect();
+      return {
+        top: modal.top,
+        bottom: modal.bottom,
+        fieldTop: field.top,
+        fieldBottom: field.bottom,
+        resultHeight: results.height,
+      };
+    });
+  const keyboard = await measure();
+  assert.ok(keyboard.top >= 0 && keyboard.top <= 16);
+  assert.ok(keyboard.bottom <= 400);
+  assert.ok(keyboard.fieldTop >= keyboard.top && keyboard.fieldBottom <= 400);
+  assert.ok(keyboard.resultHeight >= 100);
+  await search.fill("Item 33");
+  await page
+    .locator(".modal-item")
+    .getByText("Item 33", { exact: true })
+    .waitFor();
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { offsetTop: 50 });
+    window.visualViewport!.dispatchEvent(new Event("scroll"));
+  });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("dialog.pos-modal[open]")!.getBoundingClientRect()
+        .top >= 50,
+  );
+  assert.ok((await measure()).bottom <= 450);
+  await search.press("Enter");
+  assert.equal(
+    await search.evaluate((element) => element === document.activeElement),
+    false,
+  );
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { height: 844, offsetTop: 0 });
+    window.visualViewport!.dispatchEvent(new Event("resize"));
+  });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("dialog.pos-modal[open]")?.dataset.keyboardOpen ===
+      "false",
+  );
+  await page
+    .getByRole("button", { name: english.UI_CLOSE_DIALOG, exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: english.PAYMENT_RECORD, exact: true })
+    .click();
+  await page.evaluate(() => {
+    Object.assign(window.visualViewport!, { height: 380 });
+    window.visualViewport!.dispatchEvent(new Event("resize"));
+  });
+  await page.waitForFunction(
+    () =>
+      document.querySelector("dialog.pos-modal[open]")?.dataset.keyboardOpen ===
+      "true",
+  );
+  assert.ok(
+    await page
+      .getByRole("dialog")
+      .evaluate((element) => element.getBoundingClientRect().bottom <= 380),
+  );
+});
+
+test("installed mobile reports generate a real PDF and offer native sharing without iframe printing", async () => {
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, "userAgent", {
+      value:
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile/15E148 Safari/604.1",
+    });
+    Object.defineProperty(navigator, "standalone", { value: true });
+    Object.defineProperty(navigator, "canShare", { value: () => true });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        const file = data.files![0];
+
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        Object.defineProperty(window, "sharedPdf", {
+          configurable: true,
+          value: {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            prefix: new TextDecoder().decode(bytes.slice(0, 8)),
+          },
+        });
+      },
+    });
+    window.print = () => {
+      throw new Error(
+        "Mobile PWA must export PDF instead of printing hidden frames",
+      );
+    };
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await go("transactions?period=all");
+  await page.getByText("1–10 of 36", { exact: true }).waitFor();
+  await page
+    .getByRole("button", { name: english.PRINT_ACTION, exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: english.PRINT_PDF_READY, exact: true })
+    .waitFor();
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: async (data: ShareData) => {
+        const file = data.files![0];
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        Object.defineProperty(window, "sharedPdf", {
+          configurable: true,
+          value: {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            prefix: new TextDecoder().decode(bytes.slice(0, 8)),
+          },
+        });
+      },
+    });
+  });
+  await page
+    .getByRole("button", { name: english.PRINT_PDF_SHARE, exact: true })
+    .click();
+  await page.waitForFunction(() =>
+    Boolean((window as unknown as { sharedPdf?: unknown }).sharedPdf),
+  );
+  const shared = await page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          sharedPdf: {
+            name: string;
+            type: string;
+            size: number;
+            prefix: string;
+          };
+        }
+      ).sharedPdf,
+  );
+  assert.equal(shared.type, "application/pdf");
+  assert.match(shared.name, /\.pdf$/);
+  assert.match(shared.prefix, /^%PDF-/);
+  assert.ok(shared.size > 1000);
+  const download = page.waitForEvent("download");
+  await page
+    .getByRole("link", { name: english.PRINT_PDF_DOWNLOAD, exact: true })
+    .click();
+  const file = await download;
+  const path = await file.path();
+  assert.ok(path);
+  assert.equal(await page.locator('iframe[aria-hidden="true"]').count(), 0);
 });

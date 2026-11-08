@@ -1,3 +1,4 @@
+import useModalViewport from "../../hooks/useModalViewport";
 import { useLocaleText } from "../../contexts/Locale";
 import { ReactNode, useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -21,6 +22,7 @@ export default function FullScreenModal({
   const { FULL_SCREEN_MODAL_TITLE } = useLocale();
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  useModalViewport(dialog);
 
   useEffect(() => {
     const element = dialog.current;

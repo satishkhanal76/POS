@@ -1,3 +1,4 @@
+import { PICKER_CATALOG_UPDATED } from "../pickers/events";
 import { loadSettings } from "../settings/settings";
 import { ensureListings } from "./listing/maintenance";
 import coalesceRead from "./listing/coalesceRead";
@@ -41,6 +42,12 @@ export default class ProductOS
     super(db, ProductOS.OBJECT_STORE_NAME);
   }
 
+  public async addOne(model: ProductItem): Promise<ProductItem> {
+    const item = await super.addOne(model);
+    window.dispatchEvent(new Event(PICKER_CATALOG_UPDATED));
+    return item;
+  }
+
   public onObjectStoreCreation(objectStore: IDBObjectStore) {
     createCatalogIndex(objectStore);
     objectStore.createIndex("id", "id", { unique: true });
@@ -55,22 +62,40 @@ export default class ProductOS
   }
 
   public async getCatalogPage(options: PageOptions, search = "") {
-    if ((!options.sort.startsWith('name-') && !options.sort.startsWith('price-') && !options.sort.startsWith('stock-')) || (options.sort.startsWith('stock-') && !loadSettings().stockManagement)) options = { ...options, sort: 'name-asc' };
+    if (
+      (!options.sort.startsWith("name-") &&
+        !options.sort.startsWith("price-") &&
+        !options.sort.startsWith("stock-")) ||
+      (options.sort.startsWith("stock-") && !loadSettings().stockManagement)
+    )
+      options = { ...options, sort: "name-asc" };
     const database = await this.db.getDatabase();
     await ensureListings(database, ["PRODUCTS"]);
-    return coalesceRead(database, JSON.stringify(['catalog-models', 'PRODUCTS', options, search]), async () => {
-      const result = await readCatalogPage<ProductSchema>(
-        database.transaction(options.sort.startsWith('price-') ? ['PRODUCTS', 'ITEM_PRICE_CHANGES'] : options.sort.startsWith('stock-') ? ['PRODUCTS', 'STOCK'] : ['PRODUCTS']).objectStore('PRODUCTS'),
-        options,
-        search,
-      );
-      return {
-        ...result,
-        rows: await Promise.all(
-          result.rows.map((row) => this.getSchemaAsObject(row)),
-        ),
-      };
-    });
+    return coalesceRead(
+      database,
+      JSON.stringify(["catalog-models", "PRODUCTS", options, search]),
+      async () => {
+        const result = await readCatalogPage<ProductSchema>(
+          database
+            .transaction(
+              options.sort.startsWith("price-")
+                ? ["PRODUCTS", "ITEM_PRICE_CHANGES"]
+                : options.sort.startsWith("stock-")
+                  ? ["PRODUCTS", "STOCK"]
+                  : ["PRODUCTS"],
+            )
+            .objectStore("PRODUCTS"),
+          options,
+          search,
+        );
+        return {
+          ...result,
+          rows: await Promise.all(
+            result.rows.map((row) => this.getSchemaAsObject(row)),
+          ),
+        };
+      },
+    );
   }
 
   /** Names for pickers come from keys, without loading products or their prices. */
@@ -193,5 +218,6 @@ export default class ProductOS
         }
       };
     });
+    window.dispatchEvent(new Event(PICKER_CATALOG_UPDATED));
   }
 }

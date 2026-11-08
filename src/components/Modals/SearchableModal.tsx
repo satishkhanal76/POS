@@ -33,7 +33,17 @@ export default function SearchableModal({
   searchPlaceholderText,
   handleAdd,
   onClose,
-  items, query, onQueryChange, loading, loadingMore, hasMore, error, onLoadMore, onRetry, recentFirst, searchLabel,
+  items,
+  query,
+  onQueryChange,
+  loading,
+  loadingMore,
+  hasMore,
+  error,
+  onLoadMore,
+  onRetry,
+  recentFirst,
+  searchLabel,
 }: SearchableModalProps) {
   const t = useLocaleText();
   const searchId = useId();
@@ -58,11 +68,35 @@ export default function SearchableModal({
           className="modal-search"
           type="search"
           autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          inputMode="search"
+          enterKeyHint="search"
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
+          }}
         />
       </div>
-      <p className="modal-result-count" role="status">{loading ? t('PAGINATION_LOADING') : t('PICKER_SHOWN', { count: items.length })}</p>
-      {!query.trim() && recentFirst && <p className="modal-picker-hint">{t('PICKER_SUGGESTIONS_HELP')}</p>}
-      {error && <div className="modal-picker-error" role="alert"><p>{t('PICKER_ERROR')}</p><button type="button" onClick={onRetry}>{t('PICKER_RETRY')}</button></div>}
+      <p className="modal-result-count" role="status">
+        {loading
+          ? t("PAGINATION_LOADING")
+          : t("PICKER_SHOWN", { count: items.length })}
+      </p>
+      {!query.trim() && recentFirst && (
+        <p className="modal-picker-hint">{t("PICKER_SUGGESTIONS_HELP")}</p>
+      )}
+      {error && (
+        <div className="modal-picker-error" role="alert">
+          <p>{t("PICKER_ERROR")}</p>
+          <button type="button" onClick={onRetry}>
+            {t("PICKER_RETRY")}
+          </button>
+        </div>
+      )}
       <div className="modal-items-container">
         {items.map((item) => (
           <button
@@ -91,7 +125,13 @@ export default function SearchableModal({
           </div>
         )}
       </div>
-      {hasMore && <div className="modal-picker-footer"><button type="button" disabled={loadingMore} onClick={onLoadMore}>{t(loadingMore ? 'PAGINATION_LOADING' : 'PICKER_MORE')}</button></div>}
+      {hasMore && (
+        <div className="modal-picker-footer">
+          <button type="button" disabled={loadingMore} onClick={onLoadMore}>
+            {t(loadingMore ? "PAGINATION_LOADING" : "PICKER_MORE")}
+          </button>
+        </div>
+      )}
     </FullScreenModal>
   );
 }
