@@ -1,3 +1,5 @@
+import { useClientGlobal } from "../../contexts/ClientGlobal";
+import PurchasingHistory from "../Purchasing/PurchasingHistory";
 import { ReportPrintContext } from "../../reports/ReportPrintContext";
 import WorkspaceReportPrintButton from "../Reports/WorkspaceReportPrintButton";
 import { useState } from "react";
@@ -9,12 +11,12 @@ import PageHeader from "../Layout/PageHeader";
 import DashboardFilters from "../Dashboard/DashboardFilters";
 import CollapsibleReport from "../utils/CollapsibleReport";
 import TransactionsView from "../Transactions/TransactionsView";
-import CustomersHandled from "../Dashboard/CustomersHandled";
 import TopSellingItems from "../Dashboard/TopSellingItems";
 import "../../styles/Reports.css";
 
 export default function DashboardPage() {
   const t = useLocaleText();
+  const { purchasing } = useClientGlobal();
   const period = useReportPeriod("day");
   const [refresh, setRefresh] = useState(0);
   const { data, busy, error } = useDashboardSummary(period.range, refresh);
@@ -52,19 +54,15 @@ export default function DashboardPage() {
             <CollapsibleReport title={t("REPORT_TRANSACTIONS")}>
               <TransactionsView
                 range={period.range}
-                kind="sale"
                 scope="sales"
                 refresh={refresh}
               />
             </CollapsibleReport>
-            <CollapsibleReport title={t("REPORT_PAYMENTS")}>
-              <TransactionsView
-                range={period.range}
-                kind="payment"
-                scope="payments"
-                refresh={refresh}
-              />
-            </CollapsibleReport>
+            {purchasing && (
+              <CollapsibleReport title={t("REPORT_SUPPLIER_TRANSACTIONS")}>
+                <PurchasingHistory range={period.range} refresh={refresh} />
+              </CollapsibleReport>
+            )}
             {busy ? (
               <p role="status">{t("DASH_LOADING")}</p>
             ) : error ? (
@@ -72,13 +70,6 @@ export default function DashboardPage() {
             ) : (
               data && (
                 <>
-                  <CollapsibleReport title={t("DASH_CUSTOMERS")}>
-                    <CustomersHandled
-                      key={key}
-                      rows={data.handledCustomers}
-                      periodParams={period.periodParams}
-                    />
-                  </CollapsibleReport>
                   <TopSellingItems
                     key={key}
                     items={data.topItems}

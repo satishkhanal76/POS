@@ -1,3 +1,4 @@
+import { DashboardRange } from "../../dashboard/period";
 import useListFilter from "../../hooks/useListFilter";
 import Select from "../Forms/Select";
 import { purchaseInvoice } from "../../purchasing/invoice";
@@ -21,8 +22,12 @@ import ReportToolbar from "../Reports/ReportToolbar";
 import printTable from "../Reports/printTable";
 export default function PurchasingHistory({
   contactId,
+  range: fixedRange,
+  refresh = 0,
 }: {
   contactId?: string;
+  range?: DashboardRange;
+  refresh?: number;
 }) {
   const t = useLocaleText(),
     stores = useDatabase(),
@@ -30,6 +35,7 @@ export default function PurchasingHistory({
     revision = useDeletionRevision(),
     navigate = useNavigate(),
     location = useLocation();
+  const range = fixedRange ?? period.range;
   const controller = useMemo(
     () => new PurchasingController(stores.purchasingOS),
     [stores.purchasingOS],
@@ -41,16 +47,17 @@ export default function PurchasingHistory({
   const query = useCallback(
     (options: PageOptions) => {
       void revision;
-      return period.range
+      void refresh;
+      return range
         ? controller.getPage(
-            { ...options, includeDeleted: period.range.includeDeleted },
-            period.range,
+            { ...options, includeDeleted: range.includeDeleted },
+            range,
             contactId,
             selectedKind,
           )
         : Promise.reject(new Error());
     },
-    [controller, period.range, contactId, selectedKind, revision],
+    [controller, range, contactId, selectedKind, revision, refresh],
   );
   const pagination = usePagedQuery(query, "purchasing");
   const columns: CustomTableColumn<PurchasingRow>[] = [
@@ -102,8 +109,8 @@ export default function PurchasingHistory({
   ];
   return (
     <>
-      <DashboardFilters {...period} />
-      {!period.range ? (
+      {!fixedRange && <DashboardFilters {...period} />}
+      {!range ? (
         <p role="alert">{t("DASH_INVALID")}</p>
       ) : (
         <>
@@ -118,7 +125,7 @@ export default function PurchasingHistory({
                   });
                   return {
                     title: t("BUY_HISTORY"),
-                    range: period.range,
+                    range: range,
                     sections: [
                       printTable(t("BUY_HISTORY"), result.rows, columns),
                     ],
@@ -162,8 +169,13 @@ export default function PurchasingHistory({
               rowKey={(row) => row.id}
               onRowClick={(row) =>
                 navigate(
-                  `/purchase?id=${encodeURIComponent(row.id)}&kind=${row.kind}${period.range?.includeDeleted ? "&deleted=1" : ""}`,
-                  { state: { returnTo: location.pathname + location.search } },
+                  `/purchase?id=${encodeURIComponent(row.id)}&kind=${row.kind}${range?.includeDeleted ? "&deleted=1" : ""}`,
+                  {
+                    state: {
+                      returnTo: location.pathname + location.search,
+                      returnState: location.state,
+                    },
+                  },
                 )
               }
             />

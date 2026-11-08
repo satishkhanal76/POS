@@ -1,3 +1,4 @@
+import MissingTranslationsSettings from "./MissingTranslationsSettings";
 import { useRef, useState } from "react";
 import {
   getLocaleText,
@@ -84,6 +85,7 @@ export default function LocaleSettings() {
         </p>
         {error && <p role="alert">{error}</p>}
       </section>
+      <MissingTranslationsSettings />
     </>
   );
 }

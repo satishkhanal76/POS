@@ -50,12 +50,10 @@ export default function TransactionPage() {
   const requestedReturn: unknown = location.state?.returnTo;
   const returnTo =
     typeof requestedReturn === "string" &&
-    /^\/(transactions|customer-transactions|dashboard|overview)(\?|$)/.test(
-      requestedReturn,
-    )
+    /^\/(transactions|contact|dashboard|overview)(\?|$)/.test(requestedReturn)
       ? requestedReturn
       : "/transactions";
-  const customerHistory = returnTo.startsWith("/customer-transactions");
+  const customerHistory = returnTo.startsWith("/contact");
   const reportHistory =
     returnTo.startsWith("/dashboard") || returnTo.startsWith("/overview");
 
@@ -148,7 +146,7 @@ export default function TransactionPage() {
           {reportHistory
             ? t("REPORT_BACK")
             : customerHistory
-              ? t("UI_BACK_TO_CUSTOMER_TRANSACTIONS_2")
+              ? t("CONTACT_BACK_ACCOUNT")
               : t("UI_BACK_TO_TRANSACTIONS")}
         </BackLink>
         {current?.transaction && (
@@ -190,7 +188,7 @@ export default function TransactionPage() {
               {current.customer ? (
                 <>
                   <Link
-                    to={`/customer-transactions?id=${encodeURIComponent(current.customer.getId())}${current.customer.deletedAt ? "&deleted=1" : ""}`}
+                    to={`/contact?id=${encodeURIComponent(current.customer.getId())}${current.customer.deletedAt ? "&deleted=1" : ""}`}
                   >
                     {current.customer.getName()}
                   </Link>

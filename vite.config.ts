@@ -1,10 +1,11 @@
+import { localeKeysPlugin } from "./scripts/localeKeysPlugin";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import { defineConfig } from "vite";
 import dotenv from "dotenv";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import english from "./src/data/Text_EN.json";
+import { englishMessages as english } from "./src/localization/messages";
 import { appBranding, buildAppManifest } from "./src/config/appBranding";
 import {
   escapeHtml,
@@ -40,6 +41,7 @@ export default defineConfig(({ command }) => ({
   base,
   plugins: [
     react(),
+    localeKeysPlugin(),
     {
       name: "pos-install-branding",
       configureServer(server) {

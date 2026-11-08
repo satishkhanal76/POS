@@ -1,7 +1,7 @@
 import { mkdir } from "node:fs/promises";
 import { chromium } from "playwright";
 import { createServer } from "vite";
-import english from "../src/data/Text_EN.json";
+import { englishMessages as english } from "../src/localization/messages";
 import { demoProducts } from "../src/data/demoData";
 
 const server = await createServer({

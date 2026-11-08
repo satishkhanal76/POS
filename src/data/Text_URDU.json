@@ -1,6 +1,6 @@
 {
-  "WEB_NAME": "POS",
-  "NAVBAR_ITEM_HOME": "POS",
+  "WEB_NAME": "${SOFTWARE_NAME}",
+  "NAVBAR_ITEM_HOME": "${SOFTWARE_NAME}",
   "NAVBAR_ITEM_1": "گاہک",
   "NAVBAR_ITEM_2": "اشیاء",
   "NAVBAR_ITEM_3": "لین دین",

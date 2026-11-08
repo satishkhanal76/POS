@@ -1,9 +1,17 @@
 import english from "../data/Text_EN.json";
 import nepali from "../data/Text_Nepali.json";
 
-export type LocaleKey = keyof typeof english;
-export type LocaleMessages = Record<LocaleKey, string>;
-export type TextParameters = Record<string, unknown>;
+import {
+  createLocaleMessages,
+  translateMessage,
+  interpolateLocaleText,
+  englishMessages,
+  LocaleKey,
+  LocaleMessages,
+} from "./messages";
+export type { LocaleKey, LocaleMessages } from "./messages";
+import { requiredParameters, TextParameters } from "./interpolation";
+export type { TextParameters } from "./interpolation";
 export type Translate = (key: LocaleKey, parameters?: TextParameters) => string;
 export type LocaleSelection = "english" | "nepali" | "custom";
 export interface LocaleState {
@@ -14,13 +22,12 @@ export interface LocaleState {
 const STORAGE_KEY = "pos.locale";
 const UPDATE_EVENT = "locale:updated";
 
-export function rt(text: string, parameters: TextParameters) {
-  return text.replace(/\$\{(.*?)\}/g, (match, key: string) => {
-    const name = key.trim();
-    return Object.prototype.hasOwnProperty.call(parameters, name)
-      ? String(parameters[name])
-      : match;
-  });
+export function rt(
+  text: string,
+  parameters: TextParameters = {},
+  messages: LocaleMessages = state.messages,
+) {
+  return interpolateLocaleText(text, parameters, messages);
 }
 
 export class LocaleValidationError extends Error {
@@ -31,28 +38,39 @@ export class LocaleValidationError extends Error {
     super(key);
   }
 }
-const placeholders = (text: string) =>
-  Array.from(
-    new Set(
-      Array.from(text.matchAll(/\$\{(.*?)\}/g), (match) => match[1].trim()),
-    ),
-  ).sort();
-
 /** Validate provided entries; omitted keys inherit English, including future additions. */
 export function validateCustomLocale(value: unknown): Partial<LocaleMessages> {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new LocaleValidationError("LOCALE_FILE_OBJECT");
   const custom: Partial<LocaleMessages> = {};
-  for (const key of Object.keys(english) as LocaleKey[]) {
+  const source = english as Record<string, unknown>;
+  const candidate = { ...source, ...(value as Record<string, unknown>) };
+  const lookup = (dictionary: Record<string, unknown>) => (key: string) => {
+    const text = Object.prototype.hasOwnProperty.call(dictionary, key)
+      ? dictionary[key]
+      : undefined;
+    return typeof text === "string" && text.trim() ? text : undefined;
+  };
+
+  for (const key of Object.keys(english) as (keyof typeof english)[]) {
     if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
     const translated = (value as Record<string, unknown>)[key];
     if (typeof translated !== "string" || !translated.trim())
       throw new LocaleValidationError("LOCALE_VALUE_INVALID", { key });
-    const expected = placeholders(english[key]);
-    if (JSON.stringify(placeholders(translated)) !== JSON.stringify(expected)) {
+    const expected = requiredParameters(
+      lookup(source)(key) ?? key,
+      lookup(source),
+      new Set([key]),
+    );
+    if (
+      JSON.stringify(
+        requiredParameters(translated, lookup(candidate), new Set([key])),
+      ) !== JSON.stringify(expected)
+    ) {
       throw new LocaleValidationError("LOCALE_PLACEHOLDER_INVALID", {
         key,
-        placeholders: expected.join(", ") || english.LOCALE_NO_PLACEHOLDERS,
+        placeholders:
+          expected.join(", ") || englishMessages.LOCALE_NO_PLACEHOLDERS,
       });
     }
     custom[key] = translated;
@@ -66,9 +84,11 @@ function resolveMessages(
   selection: LocaleSelection,
   custom: Partial<LocaleMessages> | null,
 ): LocaleMessages {
-  if (selection === "nepali") return { ...english, ...nepali };
-  if (selection === "custom") return { ...english, ...custom };
-  return english;
+  if (selection === "nepali")
+    return createLocaleMessages({ ...english, ...nepali });
+  if (selection === "custom")
+    return createLocaleMessages({ ...english, ...custom });
+  return englishMessages;
 }
 
 function readState(): LocaleState {
@@ -94,12 +114,12 @@ function readState(): LocaleState {
   } catch {
     /* Invalid or unavailable saved language preferences fall back to English. */
   }
-  return { selection: "english", custom: null, messages: english };
+  return { selection: "english", custom: null, messages: englishMessages };
 }
 let state = readState();
 export const getLocaleState = () => state;
 export const getLocaleText: Translate = (key, parameters = {}) =>
-  rt(state.messages[key], parameters);
+  translateMessage(state.messages, key, parameters);
 
 /** Persist before notifying React and non-React consumers of the new language. */
 function saveState(

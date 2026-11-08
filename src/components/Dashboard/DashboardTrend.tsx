@@ -1,3 +1,4 @@
+import { useClientGlobal } from "../../contexts/ClientGlobal";
 import ReportTable from "./ReportTable";
 import CollapsibleReport from "../utils/CollapsibleReport";
 import { useLocaleText } from "../../contexts/Locale";
@@ -7,6 +8,7 @@ import { CustomTableColumn } from "../utils/CustomTableView";
 
 export default function DashboardTrend({ data }: { data: DashboardSummary }) {
   const t = useLocaleText();
+  const { purchasing } = useClientGlobal();
   const columns: CustomTableColumn<DashboardSummary["buckets"][number]>[] = [
     {
       key: "period",
@@ -38,10 +40,30 @@ export default function DashboardTrend({ data }: { data: DashboardSummary }) {
       render: (row) => <Price price={row.payments} />,
     },
   ];
+  if (purchasing)
+    columns.push(
+      {
+        key: "purchases",
+        header: t("DASH_PURCHASES"),
+        variant: "numeric",
+        render: (row) => <Price price={row.purchases} />,
+      },
+      {
+        key: "supplierPayments",
+        header: t("DASH_SUPPLIER_PAYMENTS"),
+        variant: "numeric",
+        render: (row) => <Price price={row.supplierPayments} />,
+      },
+    );
   const max = data
     ? data.buckets.reduce(
         (maximum, bucket) =>
-          Math.max(maximum, Math.abs(bucket.sales), bucket.payments),
+          Math.max(
+            maximum,
+            Math.abs(bucket.sales),
+            bucket.payments,
+            ...(purchasing ? [bucket.purchases, bucket.supplierPayments] : []),
+          ),
         1,
       )
     : 1;
@@ -52,6 +74,14 @@ export default function DashboardTrend({ data }: { data: DashboardSummary }) {
       <div className="dashboard-legend" aria-hidden="true">
         <span>{t("DASH_SALES")}</span>
         <span>{t("DASH_PAYMENTS")}</span>
+        {purchasing && (
+          <>
+            <span className="supplier-purchases">{t("DASH_PURCHASES")}</span>
+            <span className="supplier-payments">
+              {t("DASH_SUPPLIER_PAYMENTS")}
+            </span>
+          </>
+        )}
       </div>
       <div className="dashboard-chart" aria-hidden="true">
         {data.buckets.map((bucket) => (
@@ -65,6 +95,20 @@ export default function DashboardTrend({ data }: { data: DashboardSummary }) {
                 style={{ height: `${(Math.abs(bucket.sales) / max) * 100}%` }}
               />
               <i style={{ height: `${(bucket.payments / max) * 100}%` }} />
+              {purchasing && (
+                <>
+                  <i
+                    className="supplier-purchases"
+                    style={{ height: `${(bucket.purchases / max) * 100}%` }}
+                  />
+                  <i
+                    className="supplier-payments"
+                    style={{
+                      height: `${(bucket.supplierPayments / max) * 100}%`,
+                    }}
+                  />
+                </>
+              )}
             </div>
             <span>
               {new Date(bucket.timestamp).toLocaleDateString(

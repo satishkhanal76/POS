@@ -1,3 +1,7 @@
+import { supplierColumns } from "../Suppliers/supplierColumns";
+import printTable from "./printTable";
+import { useClientGlobal } from "../../contexts/ClientGlobal";
+import { purchaseInvoice } from "../../purchasing/invoice";
 import { useMemo } from "react";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import { useLocaleText } from "../../contexts/Locale";
@@ -16,6 +20,7 @@ export default function WorkspaceReportPrintButton({
   mode: "dashboard" | "overview";
 }) {
   const t = useLocaleText();
+  const { purchasing } = useClientGlobal();
   const stores = useDatabase();
   const controller = useMemo(
     () => new PrintReportsController(stores),
@@ -26,10 +31,12 @@ export default function WorkspaceReportPrintButton({
       disabled={!range}
       createReport={async () => {
         if (!range) throw new Error();
-        const { summary, sales, payments } = await controller.getReport(
-          range,
-          mode,
-        );
+        const {
+          summary,
+          transactions,
+          supplierTransactions,
+          supplierInsights,
+        } = await controller.getReport(range, mode, purchasing);
         const status = (deletedAt?: number) =>
           deletedAt ? t("DELETED_BADGE") : "";
         const sections: PrintableSection[] = [];
@@ -37,7 +44,7 @@ export default function WorkspaceReportPrintButton({
           sections.push({
             title: t("DASH_OVERVIEW"),
             columns: [t("PRINT_METRIC"), t("PRINT_VALUE"), t("PRINT_NOTES")],
-            rows: dashboardMetrics(summary).map((metric) => [
+            rows: dashboardMetrics(summary, purchasing).map((metric) => [
               t(metric.label),
               "money" in metric ? (
                 <Price price={metric.value} />
@@ -54,6 +61,9 @@ export default function WorkspaceReportPrintButton({
               t("DASH_SALE_COUNT"),
               t("DASH_SALES"),
               t("DASH_PAYMENTS"),
+              ...(purchasing
+                ? [t("DASH_PURCHASES"), t("DASH_SUPPLIER_PAYMENTS")]
+                : []),
             ],
             rows: summary.buckets.map((bucket) => [
               new Date(bucket.timestamp).toLocaleDateString(
@@ -65,48 +75,93 @@ export default function WorkspaceReportPrintButton({
               bucket.salesCount,
               <Price price={bucket.sales} />,
               <Price price={bucket.payments} />,
+              ...(purchasing
+                ? [
+                    <Price price={bucket.purchases} />,
+                    <Price price={bucket.supplierPayments} />,
+                  ]
+                : []),
             ]),
           });
-        } else {
-          for (const [title, rows, isPayment] of [
-            [t("REPORT_TRANSACTIONS"), sales, false],
-            [t("REPORT_PAYMENTS"), payments, true],
-          ] as const) {
+          if (supplierInsights) {
             sections.push({
-              title,
-              columns: [
-                t("PRINT_ID"),
-                t("TRANSACTION_TABLE_HEADER_TIME"),
-                t("PRINT_VALUE"),
-                t("DASH_STATUS"),
+              title: t("SUPPLIER_INSIGHTS"),
+              columns: [t("PRINT_METRIC"), t("PRINT_VALUE"), t("PRINT_NOTES")],
+              rows: [
+                [t("SUPPLIER_ACTIVE"), supplierInsights.activeSuppliers, ""],
+                [
+                  t("SUPPLIER_AVERAGE_PURCHASE"),
+                  <Price price={supplierInsights.averagePurchase} />,
+                  "",
+                ],
+                [
+                  t("SUPPLIER_TOTAL_OWED"),
+                  <Price price={supplierInsights.owed} />,
+                  t("SUPPLIER_ALL_TIME"),
+                ],
+                [
+                  t("SUPPLIER_CREDIT"),
+                  <Price price={supplierInsights.credit} />,
+                  t("SUPPLIER_ALL_TIME"),
+                ],
               ],
-              rows: rows.map((row) => [
-                row.id,
-                new Date(row.timestamp).toLocaleString(),
-                <Price price={isPayment ? -row.total : row.total} />,
-                status(row.deletedAt),
-              ]),
             });
+            sections.push(
+              printTable(
+                t("SUPPLIER_TOP"),
+                supplierInsights.topSuppliers,
+                supplierColumns(t),
+              ),
+            );
+            sections.push(
+              printTable(
+                t("SUPPLIER_BALANCES"),
+                supplierInsights.balances,
+                supplierColumns(t, true),
+              ),
+            );
           }
+        } else {
           sections.push({
-            title: t("DASH_CUSTOMERS"),
+            title: t("REPORT_TRANSACTIONS"),
             columns: [
-              t("CUSTOMER_NAME"),
-              t("DASH_SALE_COUNT"),
-              t("DASH_SALES"),
-              t("DASH_PAYMENT_COUNT"),
-              t("DASH_PAYMENTS"),
+              t("PRINT_ID"),
+              t("TRANSACTION_TABLE_HEADER_TIME"),
+              t("PAYMENT_TYPE"),
+              t("CONTACT_NAME"),
+              t("PRINT_VALUE"),
               t("DASH_STATUS"),
             ],
-            rows: summary.handledCustomers.map((row) => [
-              row.name,
-              row.salesCount,
-              <Price price={row.sales} />,
-              row.paymentCount,
-              <Price price={row.payments} />,
+            rows: transactions.map((row) => [
+              row.id,
+              new Date(row.timestamp).toLocaleString(),
+              t(row.kind === "payment" ? "PAYMENT_TITLE" : "PAYMENT_SALE"),
+              row.customers.map((contact) => contact.name).join(", ") ||
+                t("TRANSACTION_NO_CUSTOMER"),
+              <Price price={row.total} />,
               status(row.deletedAt),
             ]),
           });
+          if (purchasing)
+            sections.push({
+              title: t("REPORT_SUPPLIER_TRANSACTIONS"),
+              columns: [
+                t("BUY_REFERENCE"),
+                t("TRANSACTION_TABLE_HEADER_TIME"),
+                t("PAYMENT_TYPE"),
+                t("CONTACT_NAME"),
+                t("PRINT_VALUE"),
+                t("DASH_STATUS"),
+              ],
+              rows: supplierTransactions.map((row) => [
+                row.kind === "purchase" ? purchaseInvoice(row) : row.reference,
+                new Date(row.timestamp).toLocaleString(),
+                t(row.kind === "purchase" ? "BUY_PURCHASE" : "BUY_PAYMENT"),
+                row.contactName,
+                <Price price={row.total} />,
+                status(row.deletedAt),
+              ]),
+            });
         }
         sections.push({
           title: t("REPORT_ITEMS_SOLD"),

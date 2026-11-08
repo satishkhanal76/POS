@@ -1,3 +1,4 @@
+import { englishMessages } from "../../src/localization/messages";
 import { after, afterEach, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
@@ -106,14 +107,12 @@ async function controlledApp() {
       ),
     }));
     const workers = await Promise.all(
-      context
-        .serviceWorkers()
-        .map((worker) =>
-          worker.evaluate(async () => ({
-            caches: await caches.keys(),
-            script: location.href,
-          })),
-        ),
+      context.serviceWorkers().map((worker) =>
+        worker.evaluate(async () => ({
+          caches: await caches.keys(),
+          script: location.href,
+        })),
+      ),
     );
     throw new Error(
       `Worker did not control page: ${JSON.stringify(state)}; workers: ${JSON.stringify(workers)}; ${failures.join("; ")}`,
@@ -135,7 +134,7 @@ test("production HTML exposes scoped install metadata, icons, and previews witho
   const manifest = await (
     await context.request.get(new URL(manifestUrl, base).href)
   ).json();
-  assert.equal(manifest.name, english.PWA_APP_NAME);
+  assert.equal(manifest.name, englishMessages.PWA_APP_NAME);
   assert.equal(manifest.scope, new URL(base).pathname);
   assert.equal(manifest.display, "standalone");
   for (const asset of [...manifest.icons, ...manifest.screenshots]) {

@@ -1,3 +1,4 @@
+import { useClientGlobal } from "../../contexts/ClientGlobal";
 import { dashboardMetrics } from "../../dashboard/metrics";
 import { useLocaleText } from "../../contexts/Locale";
 import { DashboardSummary } from "../../controllers/DashboardController";
@@ -5,7 +6,8 @@ import Price from "../Items/Price";
 
 export default function DashboardMetrics({ data }: { data: DashboardSummary }) {
   const t = useLocaleText();
-  const metrics = dashboardMetrics(data);
+  const { purchasing } = useClientGlobal();
+  const metrics = dashboardMetrics(data, purchasing);
   return (
     <section className="dashboard-metrics" aria-label={t("DASH_OVERVIEW")}>
       {metrics.map((metric) => (

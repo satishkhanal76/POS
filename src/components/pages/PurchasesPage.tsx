@@ -7,7 +7,7 @@ import SupplierPaymentForm from "../Purchasing/SupplierPaymentForm";
 import PurchasingHistory from "../Purchasing/PurchasingHistory";
 import "../../styles/Reports.css";
 import "../Purchasing/Purchasing.css";
-export default function PurchasingPage() {
+export default function PurchasesPage() {
   const t = useLocaleText(),
     settings = useClientGlobal(),
     [entry, setEntry] = useState<"payment" | null>(null);

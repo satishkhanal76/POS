@@ -1,9 +1,15 @@
+/* eslint-disable react-refresh/only-export-components -- The locale context intentionally shares its provider, hooks, and compatibility helpers. */
+import {
+  createLocaleMessages,
+  translateMessage,
+} from "../localization/messages";
 import {
   ReactNode,
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useSyncExternalStore,
 } from "react";
 import {
@@ -11,7 +17,6 @@ import {
   subscribeLocale,
   LocaleMessages,
   Translate,
-  rt,
 } from "../localization/locale";
 
 // Preserve the existing import API for feature components and controllers.
@@ -26,7 +31,8 @@ export const LocaleContext = createContext<LocaleMessages>(
 );
 
 export function useLocale() {
-  return useContext(LocaleContext);
+  const messages = useContext(LocaleContext);
+  return useMemo(() => createLocaleMessages(messages), [messages]);
 }
 export function useLocalePreferences() {
   return useSyncExternalStore(subscribeLocale, getLocaleState, getLocaleState);
@@ -46,7 +52,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 export function useLocaleText(): Translate {
   const messages = useLocale();
   return useCallback(
-    (key, parameters = {}) => rt(messages[key], parameters),
+    (key, parameters = {}) => translateMessage(messages, key, parameters),
     [messages],
   );
 }

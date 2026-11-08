@@ -1,6 +1,6 @@
 import { DashboardSummary } from "../controllers/DashboardController";
 /** Shared metric definitions keep on-screen and printed summaries aligned. */
-export function dashboardMetrics(data: DashboardSummary) {
+export function dashboardMetrics(data: DashboardSummary, purchasing = false) {
   return [
     {
       label: "DASH_SALES",
@@ -30,5 +30,26 @@ export function dashboardMetrics(data: DashboardSummary) {
       money: true,
       note: "DASH_MOVEMENT_HELP",
     },
+    ...(purchasing
+      ? ([
+          { label: "DASH_PURCHASES", value: data.purchases, money: true },
+          { label: "DASH_PURCHASE_COUNT", value: data.purchaseCount },
+          {
+            label: "DASH_SUPPLIER_PAYMENTS",
+            value: data.supplierPayments,
+            money: true,
+          },
+          {
+            label: "DASH_SUPPLIER_PAYMENT_COUNT",
+            value: data.supplierPaymentCount,
+          },
+          {
+            label: "DASH_SUPPLIER_MOVEMENT",
+            value: data.supplierBalanceMovement,
+            money: true,
+            note: "DASH_SUPPLIER_MOVEMENT_HELP",
+          },
+        ] as const)
+      : []),
   ] as const;
 }

@@ -18,3 +18,13 @@
   background: var(--bg-primary);
   color: var(--color-slate100);
 }
+
+.locale-audit-key {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.locale-audit-fallback {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--color-slate400);
+}

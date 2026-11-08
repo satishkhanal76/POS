@@ -1,5 +1,4 @@
 import PageHeader from "../Layout/PageHeader";
-import React from "react";
 import TransactionsView from "../Transactions/TransactionsView";
 import { useLocale } from "../../contexts/Locale";
 
@@ -9,7 +8,7 @@ const TransactionsPage = () => {
   return (
     <>
       <PageHeader title={text.TRANSACTIONS_TITLE} />
-      <TransactionsView />
+      <TransactionsView contactFilter />
     </>
   );
 };

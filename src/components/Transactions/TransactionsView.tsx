@@ -1,3 +1,4 @@
+import TransactionContactFilter from "./TransactionContactFilter";
 import useListFilter from "../../hooks/useListFilter";
 import Select from "../Forms/Select";
 import ReportToolbar from "../Reports/ReportToolbar";
@@ -31,7 +32,9 @@ export default function TransactionsView({
   scope = "",
   refresh = 0,
   customerName,
+  contactFilter = false,
 }: {
+  contactFilter?: boolean;
   customerId?: string;
   customerName?: string;
   range?: DashboardRange;
@@ -63,6 +66,17 @@ export default function TransactionsView({
     (requestedKind === "sale" || requestedKind === "payment"
       ? requestedKind
       : undefined);
+  const [contactSelection, setContactSelection] = useListFilter("contact");
+  const membership =
+    contactFilter &&
+    (contactSelection === "linked" || contactSelection === "unlinked")
+      ? contactSelection
+      : undefined;
+  const selectedCustomer =
+    customerId ??
+    (contactFilter && !["all", "linked", "unlinked"].includes(contactSelection)
+      ? contactSelection
+      : undefined);
   const query = useCallback(
     (options: PageOptions) => {
       void refresh;
@@ -72,11 +86,20 @@ export default function TransactionsView({
             { ...options, includeDeleted: range.includeDeleted },
             range,
             selectedKind,
-            customerId,
+            selectedCustomer,
+            membership,
           )
         : Promise.reject(new Error());
     },
-    [range, controller, selectedKind, customerId, refresh, revision],
+    [
+      range,
+      controller,
+      selectedKind,
+      selectedCustomer,
+      membership,
+      refresh,
+      revision,
+    ],
   );
   const pagination = usePagedQuery(query, scope);
   const columns: CustomTableColumn<TransactionListEntry>[] = [
@@ -90,6 +113,14 @@ export default function TransactionsView({
       header: t("PAYMENT_TYPE"),
       render: (row) =>
         t(row.kind === "payment" ? "PAYMENT_TITLE" : "PAYMENT_SALE"),
+    },
+    {
+      key: "contact",
+      header: t("CONTACT_NAME"),
+      render: (row) =>
+        row.contacts?.length
+          ? row.contacts.map((contact) => contact.name).join(", ")
+          : t("TRANSACTION_NO_CUSTOMER"),
     },
     {
       key: "items",
@@ -193,16 +224,24 @@ export default function TransactionsView({
           >
             <PaginationControls
               filters={
-                !kind && (
-                  <label className="pagination-field">
-                    {t("FILTER_TYPE")}
-                    <Select value={selectedKind ?? "all"} onChange={setKind}>
-                      <option value="all">{t("FILTER_ALL_TYPES")}</option>
-                      <option value="sale">{t("PAYMENT_SALE")}</option>
-                      <option value="payment">{t("REPORT_PAYMENTS")}</option>
-                    </Select>
-                  </label>
-                )
+                <>
+                  {contactFilter && (
+                    <TransactionContactFilter
+                      value={contactSelection}
+                      onChange={setContactSelection}
+                    />
+                  )}
+                  {!kind && (
+                    <label className="pagination-field">
+                      {t("FILTER_TYPE")}
+                      <Select value={selectedKind ?? "all"} onChange={setKind}>
+                        <option value="all">{t("FILTER_ALL_TYPES")}</option>
+                        <option value="sale">{t("PAYMENT_SALE")}</option>
+                        <option value="payment">{t("REPORT_PAYMENTS")}</option>
+                      </Select>
+                    </label>
+                  )}
+                </>
               }
               extraSorts
               page={pagination.page}
@@ -242,7 +281,10 @@ export default function TransactionsView({
                   `/transaction?id=${encodeURIComponent(row.id)}${range?.includeDeleted ? "&deleted=1" : ""}`,
                   {
                     state: {
-                      returnTo: location.pathname + location.search,
+                      returnTo:
+                        location.pathname +
+                        location.search +
+                        (customerId ? "#transactions" : ""),
                       returnState: location.state,
                     },
                   },

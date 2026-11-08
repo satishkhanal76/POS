@@ -1,42 +1,87 @@
+import { SupplierActivityEntry } from "../database/SupplierActivityStore";
 import DashboardOS, { DashboardEntry } from "../database/DashboardOS";
 import { DashboardRange, dateInput } from "../dashboard/period";
 
 export default class DashboardController {
   constructor(private readonly store: DashboardOS) {}
-  async getSummary(range: DashboardRange) {
-    return this.summarize(await this.store.getEntries(range), range);
+  async getSummary(range: DashboardRange, purchasing = true) {
+    const [entries, suppliers] = await Promise.all([
+      this.store.getEntries(range),
+      purchasing ? this.store.getSupplierEntries(range) : Promise.resolve([]),
+    ]);
+    return this.summarize(entries, range, suppliers);
   }
-  public summarize(entries: DashboardEntry[], range: DashboardRange) {
-    const first = entries[0]?.timestamp ?? Date.now();
-    const last = entries[entries.length - 1]?.timestamp ?? first;
-    const bucketRange = range.all ? { start: first, end: last + 1 } : range;
-    const monthly = bucketRange.end - bucketRange.start > 62 * 86400000;
+  public summarize(
+    entries: DashboardEntry[],
+    range: DashboardRange,
+    suppliers: SupplierActivityEntry[] = [],
+  ) {
+    let first = Infinity,
+      last = -Infinity;
+    for (const entry of entries) {
+      first = Math.min(first, entry.timestamp);
+      last = Math.max(last, entry.timestamp);
+    }
+    for (const entry of suppliers) {
+      first = Math.min(first, entry.timestamp);
+      last = Math.max(last, entry.timestamp);
+    }
+    const monthly =
+      (range.all ? last - first : range.end - range.start) > 62 * 86400000;
     const keyFor = (date: Date) =>
       monthly ? dateInput(date).slice(0, 7) : dateInput(date);
-    const buckets = new Map<
-      string,
-      {
-        key: string;
-        timestamp: number;
-        sales: number;
-        salesCount: number;
-        payments: number;
+    type Bucket = {
+      key: string;
+      timestamp: number;
+      sales: number;
+      salesCount: number;
+      payments: number;
+      purchases: number;
+      purchaseCount: number;
+      supplierPayments: number;
+      supplierPaymentCount: number;
+    };
+    const buckets = new Map<string, Bucket>();
+    // Create buckets from activity, including zero-value orders, rather than calendar gaps.
+    const bucketFor = (timestamp: number) => {
+      const date = new Date(timestamp);
+      const key = keyFor(date);
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        date.setHours(0, 0, 0, 0);
+        if (monthly) date.setDate(1);
+        bucket = {
+          key,
+          timestamp: date.getTime(),
+          sales: 0,
+          salesCount: 0,
+          payments: 0,
+          purchases: 0,
+          purchaseCount: 0,
+          supplierPayments: 0,
+          supplierPaymentCount: 0,
+        };
+        buckets.set(key, bucket);
       }
-    >();
-    const cursor = new Date(bucketRange.start);
-    cursor.setHours(0, 0, 0, 0);
-    if (monthly) cursor.setDate(1);
-    while (cursor.getTime() < bucketRange.end) {
-      const key = keyFor(cursor);
-      buckets.set(key, {
-        key,
-        timestamp: cursor.getTime(),
-        sales: 0,
-        salesCount: 0,
-        payments: 0,
-      });
-      if (monthly) cursor.setMonth(cursor.getMonth() + 1);
-      else cursor.setDate(cursor.getDate() + 1);
+      return bucket;
+    };
+    let purchases = 0,
+      purchaseCount = 0,
+      supplierPayments = 0,
+      supplierPaymentCount = 0;
+    for (const entry of suppliers) {
+      const bucket = bucketFor(entry.timestamp);
+      if (entry.kind === "purchase") {
+        purchases += entry.total;
+        purchaseCount++;
+        bucket.purchases += entry.total;
+        bucket.purchaseCount++;
+      } else {
+        supplierPayments += entry.total;
+        supplierPaymentCount++;
+        bucket.supplierPayments += entry.total;
+        bucket.supplierPaymentCount++;
+      }
     }
     let salesCount = 0,
       sales = 0,
@@ -72,8 +117,11 @@ export default class DashboardController {
       }
     >();
     for (const entry of entries) {
-      entry.customers.forEach((customer) => customers.add(customer.id));
-      for (const customer of entry.customers) {
+      const activeCustomers = entry.customers.filter(
+        (customer) => range.includeDeleted || !customer.deletedAt,
+      );
+      activeCustomers.forEach((customer) => customers.add(customer.id));
+      for (const customer of activeCustomers) {
         const row = handled.get(customer.id) ?? {
           ...customer,
           sales: 0,
@@ -90,7 +138,7 @@ export default class DashboardController {
         }
         handled.set(row.id, row);
       }
-      const bucket = buckets.get(keyFor(new Date(entry.timestamp)))!;
+      const bucket = bucketFor(entry.timestamp);
       if (entry.kind === "payment") {
         paymentCount++;
         payments -= entry.total;
@@ -123,6 +171,11 @@ export default class DashboardController {
       }
     }
     return {
+      purchases,
+      purchaseCount,
+      supplierPayments,
+      supplierPaymentCount,
+      supplierBalanceMovement: purchases - supplierPayments,
       salesCount,
       sales,
       paymentCount,
@@ -137,7 +190,7 @@ export default class DashboardController {
       ),
       topItems: [...items.values()],
       monthly,
-      buckets: [...buckets.values()],
+      buckets: [...buckets.values()].sort((a, b) => a.timestamp - b.timestamp),
     };
   }
 }

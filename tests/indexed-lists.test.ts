@@ -382,56 +382,193 @@ test("version-10 records backfill listing keys without changing canonical data",
   assert.deepEqual(actual.tables, backup.tables);
 });
 
-test('customer balance projections use keys and retain historical inclusion semantics', async context => {
-    const { stores, product, customer } = await catalog();
-    await sale(stores, product, 'sale', 1000, customer);
-    await stores.cutomersTransactionsOS.recordPayment(new Transaction('payment', 2000, 2), customer);
-    await new DeletionStore(stores.database).delete('TRANSACTIONS', 'sale');
-    const reads = recordReads(context);
-    const activity = new CustomerActivityStore(stores.database);
-    const active = await activity.list();
-    assert.equal(active[0].total, -2);
-    assert.equal(active[0].name, 'Alex');
-    assert.equal(active[0].phoneNumber, '555-0101');
-    const historical = await activity.list(true);
-    assert.equal(historical[0].total, 3);
-    assert.equal(historical[0].count, 2);
-    assert.equal(historical[0].timestamp, 2000);
-    assert.equal(reads.length, 0);
+test("customer balance projections use keys and retain historical inclusion semantics", async (context) => {
+  const { stores, product, customer } = await catalog();
+  await sale(stores, product, "sale", 1000, customer);
+  await stores.cutomersTransactionsOS.recordPayment(
+    new Transaction("payment", 2000, 2),
+    customer,
+  );
+  await new DeletionStore(stores.database).delete("TRANSACTIONS", "sale");
+  const reads = recordReads(context);
+  const activity = new CustomerActivityStore(stores.database);
+  const active = await activity.list();
+  assert.equal(active[0].total, -2);
+  assert.equal(active[0].name, "Alex");
+  assert.equal(active[0].phoneNumber, "555-0101");
+  const historical = await activity.list(true);
+  assert.equal(historical[0].total, 3);
+  assert.equal(historical[0].count, 2);
+  assert.equal(historical[0].timestamp, 2000);
+  assert.equal(reads.length, 0);
 });
 
-test('dashboard scans period keys, reuses products and preserves historical prices', async context => {
-    const { default: DashboardOS } = await import('../src/database/DashboardOS');
-    const { default: DashboardController } = await import('../src/controllers/DashboardController');
-    const { default: ItemPriceChange } = await import('../src/models/ItemPriceChange');
-    const { stores, product, customer } = await catalog();
-    await sale(stores, product, 'old', 1000, customer);
-    await stores.itemPriceChangesOS.addOne(new ItemPriceChange({ id: 'new-price', itemId: product.getId(), timestamp: 1500, amount: 7 }));
-    await sale(stores, await stores.itemOS.getOne(product.getId()), 'new', 2000, customer);
-    await stores.cutomersTransactionsOS.recordPayment(new Transaction('payment', 3000, 3), customer);
-    const original = IDBObjectStore.prototype.get;
-    const reads: string[] = [];
-    context.mock.method(IDBObjectStore.prototype, 'get', function(this: IDBObjectStore, key: IDBValidKey | IDBKeyRange) {
-        reads.push(this.name); return original.call(this, key);
-    });
-    const controller = new DashboardController(new DashboardOS(stores.database));
-    const report = await controller.getSummary(all);
-    assert.equal(report.sales, 12);
-    assert.equal(report.payments, 3);
-    assert.equal(report.salesCount, 2);
-    assert.equal(report.topItems[0].gross, 12);
-    assert.equal(report.topItems[0].quantity, 2);
-    assert.equal(reads.filter(name => name === 'PRODUCTS').length, 1);
-    assert.equal(reads.filter(name => name === 'TRANSACTIONS').length, 0);
-    const early = await controller.getSummary({ start: 1000, end: 1500 });
-    assert.equal(early.sales, 5);
-    assert.equal(early.payments, 0);
-    assert.equal(early.topItems[0].gross, 5);
-    context.mock.restoreAll();
-    await new DeletionStore(stores.database).delete('TRANSACTIONS', 'old');
-    assert.equal((await controller.getSummary(all)).sales, 7);
-    const historical = await new DashboardOS(stores.database).getEntries({ ...all, includeDeleted: true });
-    assert.equal(historical.length, 3);
-    assert.ok(historical.find(row => row.id === 'old')?.deletedAt);
-    assert.equal(controller.summarize(historical, all).sales, 12);
+test("dashboard scans period keys, reuses products and preserves historical prices", async (context) => {
+  const { default: DashboardOS } = await import("../src/database/DashboardOS");
+  const { default: DashboardController } =
+    await import("../src/controllers/DashboardController");
+  const { default: ItemPriceChange } =
+    await import("../src/models/ItemPriceChange");
+  const { stores, product, customer } = await catalog();
+  await sale(stores, product, "old", 1000, customer);
+  await stores.itemPriceChangesOS.addOne(
+    new ItemPriceChange({
+      id: "new-price",
+      itemId: product.getId(),
+      timestamp: 1500,
+      amount: 7,
+    }),
+  );
+  await sale(
+    stores,
+    await stores.itemOS.getOne(product.getId()),
+    "new",
+    2000,
+    customer,
+  );
+  await stores.cutomersTransactionsOS.recordPayment(
+    new Transaction("payment", 3000, 3),
+    customer,
+  );
+  const original = IDBObjectStore.prototype.get;
+  const reads: string[] = [];
+  context.mock.method(
+    IDBObjectStore.prototype,
+    "get",
+    function (this: IDBObjectStore, key: IDBValidKey | IDBKeyRange) {
+      reads.push(this.name);
+      return original.call(this, key);
+    },
+  );
+  const controller = new DashboardController(new DashboardOS(stores.database));
+  const report = await controller.getSummary(all);
+  assert.equal(report.sales, 12);
+  assert.equal(report.payments, 3);
+  assert.equal(report.salesCount, 2);
+  assert.equal(report.topItems[0].gross, 12);
+  assert.equal(report.topItems[0].quantity, 2);
+  assert.equal(reads.filter((name) => name === "PRODUCTS").length, 1);
+  assert.equal(reads.filter((name) => name === "TRANSACTIONS").length, 0);
+  const early = await controller.getSummary({ start: 1000, end: 1500 });
+  assert.equal(early.sales, 5);
+  assert.equal(early.payments, 0);
+  assert.equal(early.topItems[0].gross, 5);
+  context.mock.restoreAll();
+  await new DeletionStore(stores.database).delete("TRANSACTIONS", "old");
+  assert.equal((await controller.getSummary(all)).sales, 7);
+  const historical = await new DashboardOS(stores.database).getEntries({
+    ...all,
+    includeDeleted: true,
+  });
+  assert.equal(historical.length, 3);
+  assert.ok(historical.find((row) => row.id === "old")?.deletedAt);
+  assert.equal(controller.summarize(historical, all).sales, 12);
+});
+
+test("linked and unlinked history filters compose with range, kind, sorting and deletion without hydrating skipped headers", async (context) => {
+  const { stores, product, customer } = await catalog();
+  for (let index = 0; index < 24; index++) {
+    await sale(
+      stores,
+      product,
+      `membership-${index}`,
+      1000 + index,
+      index % 2 ? customer : undefined,
+    );
+  }
+  await stores.cutomersTransactionsOS.recordPayment(
+    new Transaction("membership-payment", 1030, 4),
+    customer,
+  );
+  const store = new TransactionHistoryStore(stores.database);
+  await store.getPage(options, all, undefined, undefined, "linked");
+  const reads = recordReads(context);
+  for (const sort of [
+    "newest",
+    "oldest",
+    "total-high",
+    "total-low",
+    "items-high",
+    "items-low",
+  ] as PageSort[]) {
+    for (const membership of ["linked", "unlinked"] as const) {
+      reads.length = 0;
+      const result = await store.getPage(
+        { ...options, sort, page: 2 },
+        all,
+        undefined,
+        undefined,
+        membership,
+      );
+      assert.equal(result.total, membership === "linked" ? 13 : 12);
+      assert.equal(result.rows.length, membership === "linked" ? 3 : 2);
+      assert.equal(
+        reads.filter((read) => read.startsWith("TRANSACTIONS/")).length,
+        result.rows.length,
+      );
+      assert.ok(
+        result.rows.every((row) =>
+          membership === "linked"
+            ? row.listCustomerIds?.includes(customer.getId())
+            : !row.listCustomerIds?.length,
+        ),
+      );
+    }
+  }
+  const ranged = await store.getPage(
+    { ...options, pageSize: 0 },
+    { start: 1005, end: 1010 },
+    "sale",
+    undefined,
+    "linked",
+  );
+  assert.deepEqual(
+    ranged.rows.map((row) => row.id),
+    ["membership-9", "membership-7", "membership-5"],
+  );
+  const payments = await store.getPage(
+    options,
+    all,
+    "payment",
+    undefined,
+    "linked",
+  );
+  assert.deepEqual(
+    payments.rows.map((row) => row.id),
+    ["membership-payment"],
+  );
+  // Mutations use canonical reads; stop query instrumentation before changing assignments.
+  context.mock.restoreAll();
+  await stores.cutomersTransactionsOS.unlinkTransaction(
+    "membership-23",
+    customer.getId(),
+  );
+  assert.equal(
+    (await store.getPage(options, all, "sale", undefined, "linked")).total,
+    11,
+  );
+  assert.equal(
+    (await store.getPage(options, all, "sale", undefined, "unlinked")).total,
+    13,
+  );
+  await new DeletionStore(stores.database).delete(
+    "TRANSACTIONS",
+    "membership-21",
+  );
+  assert.equal(
+    (await store.getPage(options, all, "sale", undefined, "linked")).total,
+    10,
+  );
+  assert.equal(
+    (
+      await store.getPage(
+        { ...options, includeDeleted: true },
+        all,
+        "sale",
+        undefined,
+        "linked",
+      )
+    ).total,
+    11,
+  );
 });

@@ -224,9 +224,6 @@
   align-items: center;
   min-height: 44px;
 }
-.customer-transactions-page {
-  margin-bottom: 4rem;
-}
 @media (prefers-reduced-motion: reduce) {
   .report-disclosure > summary::before {
     transition: none;
@@ -279,4 +276,24 @@
     min-width: 0;
     white-space: normal;
   }
+}
+
+.dashboard-bars i.supplier-purchases,
+.dashboard-legend span.supplier-purchases::before {
+  background: #f59e0b;
+}
+.dashboard-bars i.supplier-payments,
+.dashboard-legend span.supplier-payments::before {
+  background: #a78bfa;
+}
+
+.supplier-insights {
+  margin-top: 2rem;
+  min-width: 0;
+}
+.supplier-insights .dashboard-metric h3 {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-slate300);
 }

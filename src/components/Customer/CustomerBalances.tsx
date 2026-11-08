@@ -6,7 +6,7 @@ import useDeletionRevision from "../../hooks/useDeletionRevision";
 import Select from "../Forms/Select";
 import "../../styles/Reports.css";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import { useLocaleText } from "../../contexts/Locale";
 import CustomerBalancesOS, {
@@ -30,6 +30,7 @@ export default function CustomerBalances({
   const { database } = useDatabase();
   const store = useMemo(() => new CustomerBalancesOS(database), [database]);
   const navigate = useNavigate();
+  const location = useLocation();
   const [filter, setFilter] = useState<BalanceFilter>("owing");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -221,7 +222,8 @@ export default function CustomerBalances({
               rowKey={(row) => row.id}
               onRowClick={(row) =>
                 navigate(
-                  `/customer-transactions?id=${encodeURIComponent(row.id)}${includeDeleted ? "&deleted=1" : ""}`,
+                  `/contact?id=${encodeURIComponent(row.id)}${includeDeleted ? "&deleted=1" : ""}#transactions`,
+                  { state: { returnTo: location.pathname + location.search } },
                 )
               }
             />

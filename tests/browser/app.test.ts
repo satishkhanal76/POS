@@ -1,3 +1,4 @@
+import { englishMessages } from "../../src/localization/messages";
 import { availablePort } from "../helpers/availablePort";
 import { after, afterEach, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
@@ -65,6 +66,9 @@ beforeEach(async () => {
     const { indexedCatalog } = (await import(
       modulePath.replace("DatabaseStores.ts", "listing/catalog.ts")
     )) as typeof import("../../src/database/listing/catalog");
+    const { indexedHeader, indexedLink, indexedSummary } = (await import(
+      modulePath.replace("DatabaseStores.ts", "listing/metadata.ts")
+    )) as typeof import("../../src/database/listing/metadata");
     const stores = createDatabaseStores("POS_DEMO");
     const database = await stores.database.getDatabase();
     await new Promise<void>((resolve, reject) => {
@@ -94,19 +98,28 @@ beforeEach(async () => {
         const customerId = `c${i % 12}`;
         transaction
           .objectStore("TRANSACTIONS")
-          .add({ id: `t${i}`, timestamp, total: 5 });
+          .add(
+            indexedHeader(
+              { id: `t${i}`, timestamp, total: 5 },
+              "sale",
+              [customerId],
+              1,
+            ),
+          );
         transaction.objectStore("TRANSACTION_PRODUCTS").add({
           id: `row${i}`,
           transactionId: `t${i}`,
           productId: "product",
           quantity: 1,
         });
-        transaction.objectStore("CUSTOMERS_TRANSACTIONS").add({
-          id: `link${i}`,
-          transactionId: `t${i}`,
-          customerId,
-          timestamp,
-        });
+        transaction.objectStore("CUSTOMERS_TRANSACTIONS").add(
+          indexedLink({
+            id: `link${i}`,
+            transactionId: `t${i}`,
+            customerId,
+            timestamp,
+          }),
+        );
         const summary = summaries.get(customerId) || {
           id: customerId,
           count: 0,
@@ -119,7 +132,9 @@ beforeEach(async () => {
         summaries.set(customerId, summary);
       }
       for (const summary of summaries.values())
-        transaction.objectStore("CUSTOMER_TRANSACTION_SUMMARIES").add(summary);
+        transaction
+          .objectStore("CUSTOMER_TRANSACTION_SUMMARIES")
+          .add(indexedSummary(summary));
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(transaction.error);
     });
@@ -174,22 +189,30 @@ test("pagination controls query pages and preserve list state through detail/bac
   assert.equal(new URL(page.url()).searchParams.get("sort"), "oldest");
   assert.equal(new URL(page.url()).searchParams.get("pageSize"), "25");
 });
-test("customer summary, customer history, and sale detail preserve their return paths", async () => {
-  await go("customers-transactions");
+test("contacts, combined contact history, and sale detail preserve their return paths", async () => {
+  await go("contacts");
   await rowCount(10);
-  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await page
+    .getByRole("button", { name: english.PAGINATION_NEXT, exact: true })
+    .click();
   await rowCount(2);
   await page.locator(".custom-table tbody tr").first().click();
-  await rowCount(3);
-  await page.getByLabel("Per page", { exact: true }).selectOption("25");
-  await page.getByText("1–3 of 3", { exact: true }).waitFor();
-  await page.locator(".custom-table tbody tr").first().click();
-  await page.locator(".transaction-back-link").click();
-  await rowCount(3);
-  assert.equal(new URL(page.url()).searchParams.get("pageSize"), "25");
-  await page.locator(".transaction-back-link").click();
+  const sales = page.locator("#transactions");
+  await sales.getByText("1–3 of 3", { exact: true }).waitFor();
+  await sales
+    .getByRole("combobox", { name: english.PAGINATION_PAGE_SIZE, exact: true })
+    .click();
+  await page.getByRole("option", { name: "25", exact: true }).click();
+  await sales.getByText("1–3 of 3", { exact: true }).waitFor();
+  await sales.locator("tbody tr").first().click();
+  await page
+    .getByRole("link", { name: english.CONTACT_BACK_ACCOUNT, exact: true })
+    .click();
+  await sales.getByText("1–3 of 3", { exact: true }).waitFor();
+  assert.equal(new URL(page.url()).searchParams.get("sales-pageSize"), "25");
+  await page.locator(".page-back-link").first().click();
   await rowCount(2);
-  assert.equal(new URL(page.url()).searchParams.get("page"), "2");
+  assert.equal(new URL(page.url()).searchParams.get("contacts-page"), "2");
 });
 test("mobile navigation, populated cards, and dialogs fit narrow phone and tablet widths", async () => {
   for (const width of [320, 390, 768]) {
@@ -199,7 +222,7 @@ test("mobile navigation, populated cards, and dialogs fit narrow phone and table
       "items",
       "customers",
       "transactions",
-      "customers-transactions",
+      "contact?id=c0",
       "price-history",
       "settings",
     ]) {
@@ -415,7 +438,7 @@ test("fresh demo populates catalog, customer summaries, sale history, and price 
   await go("transactions");
   await rowCount(10);
   await page.getByText("1–10 of 24", { exact: true }).waitFor();
-  await go("customers-transactions");
+  await go("contacts");
   await rowCount(3);
   await page.locator(".custom-table tbody tr").first().click();
   await rowCount(6);
@@ -445,7 +468,10 @@ test("install settings use the browser install prompt and theme metadata follows
     );
   });
   await page
-    .getByRole("button", { name: english.PWA_INSTALL_ACTION, exact: true })
+    .getByRole("button", {
+      name: englishMessages.PWA_INSTALL_ACTION,
+      exact: true,
+    })
     .click();
   await page
     .getByText(english.PWA_INSTALL_DISMISSED, { exact: true })
@@ -477,7 +503,10 @@ test("development installs expose a real manifest and correctly scoped Apple ico
   const contentType = manifestResponse.headers()["content-type"];
   assert.ok(contentType.includes("application/manifest+json"));
   assert.equal(manifestResponse.headers()["cache-control"], "no-store");
-  assert.equal((await manifestResponse.json()).name, english.PWA_APP_NAME);
+  assert.equal(
+    (await manifestResponse.json()).name,
+    englishMessages.PWA_APP_NAME,
+  );
   for (const selector of [
     'link[rel="apple-touch-icon"]',
     'link[rel="icon"][type="image/png"]',

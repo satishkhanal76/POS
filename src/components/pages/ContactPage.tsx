@@ -1,3 +1,5 @@
+import TransactionsView from "../Transactions/TransactionsView";
+import DashboardFilters from "../Dashboard/DashboardFilters";
 import useReportPeriod from "../../hooks/useReportPeriod";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
@@ -51,15 +53,33 @@ export default function ContactPage() {
       cancelled = true;
     };
   }, [stores, id, includeDeleted, revision, t]);
+  useEffect(() => {
+    if (!contact || !["#transactions", "#purchases"].includes(location.hash))
+      return;
+    const frame = requestAnimationFrame(() =>
+      document.getElementById(location.hash.slice(1))?.scrollIntoView(),
+    );
+    return () => cancelAnimationFrame(frame);
+  }, [contact, location.hash]);
   const requested: unknown = location.state?.returnTo;
   const back =
     typeof requested === "string" &&
-    /^\/(contacts|customers)(\?|$)/.test(requested)
+    /^\/(contacts|customers|transactions|dashboard|overview)(\?|$)/.test(
+      requested,
+    )
       ? requested
       : "/contacts";
   return (
     <main className="dashboard-page">
-      <BackLink to={back}>{t("CONTACT_BACK")}</BackLink>
+      <BackLink to={back}>
+        {t(
+          back.startsWith("/dashboard") || back.startsWith("/overview")
+            ? "REPORT_BACK"
+            : back.startsWith("/transactions")
+              ? "UI_BACK_TO_TRANSACTIONS"
+              : "CONTACT_BACK",
+        )}
+      </BackLink>
       {error ? (
         <p role="alert">{error}</p>
       ) : !contact ? (
@@ -99,20 +119,38 @@ export default function ContactPage() {
               </article>
             )}
           </section>
-          <p>
-            <Link
-              className="page-back-link"
-              to={`/customer-transactions?id=${encodeURIComponent(contact.getId())}&${period.periodParams}`}
-              state={{ returnTo: location.pathname + location.search }}
-            >
-              {t("CONTACT_SALES")}
-            </Link>
-          </p>
-          {settings.purchasing && (
+          <DashboardFilters {...period} />
+          {period.range ? (
             <>
-              <h2>{t("BUY_HISTORY")}</h2>
-              <PurchasingHistory contactId={contact.getId()} />
+              <section
+                id="transactions"
+                className="contact-history-section"
+                aria-labelledby="contact-sales-title"
+              >
+                <h2 id="contact-sales-title">{t("CONTACT_SALES")}</h2>
+                <TransactionsView
+                  customerId={contact.getId()}
+                  customerName={contact.getName()}
+                  range={period.range}
+                  scope="sales"
+                />
+              </section>
+              {settings.purchasing && (
+                <section
+                  id="purchases"
+                  className="contact-history-section"
+                  aria-labelledby="contact-purchases-title"
+                >
+                  <h2 id="contact-purchases-title">{t("BUY_HISTORY")}</h2>
+                  <PurchasingHistory
+                    contactId={contact.getId()}
+                    range={period.range}
+                  />
+                </section>
+              )}
             </>
+          ) : (
+            <p role="alert">{t("DASH_INVALID")}</p>
           )}
           {entry && (
             <SupplierPaymentForm

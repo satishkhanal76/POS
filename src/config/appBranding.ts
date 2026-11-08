@@ -1,10 +1,10 @@
 import type { ManifestOptions } from "vite-plugin-pwa";
-import english from "../data/Text_EN.json";
+import { englishMessages as english } from "../localization/messages";
 
 /** Build-time install branding. Keep the app ID stable when changing its appearance. */
 export const appBranding = {
   name: english.PWA_APP_NAME,
-  shortName: english.WEB_NAME,
+  shortName: english.SOFTWARE_NAME,
   tagline: english.PWA_APP_TAGLINE,
   description: english.PWA_APP_DESCRIPTION,
   accent: "#d97706",

@@ -1,3 +1,5 @@
+import { useClientGlobal } from "../../contexts/ClientGlobal";
+import SupplierInsights from "../Suppliers/SupplierInsights";
 import { ReportPrintContext } from "../../reports/ReportPrintContext";
 import WorkspaceReportPrintButton from "../Reports/WorkspaceReportPrintButton";
 import { Link } from "react-router-dom";
@@ -16,6 +18,7 @@ import CollapsibleReport from "../utils/CollapsibleReport";
 
 export default function OverviewPage() {
   const t = useLocaleText();
+  const { purchasing } = useClientGlobal();
   const period = useReportPeriod("month");
   const [refresh, setRefresh] = useState(0);
   const { range } = period;
@@ -52,14 +55,24 @@ export default function OverviewPage() {
         ) : (
           data && (
             <>
-              {!data.salesCount && !data.paymentCount && (
-                <p role="status">{t("DASH_EMPTY")}</p>
-              )}
+              {!data.salesCount &&
+                !data.paymentCount &&
+                !data.purchaseCount &&
+                !data.supplierPaymentCount && (
+                  <p role="status">{t("DASH_EMPTY")}</p>
+                )}
               <DashboardMetrics data={data} />
               <DashboardTrend data={data} />
               <TopSellingItems items={data.topItems} />
             </>
           )
+        )}
+        {purchasing && range && (
+          <SupplierInsights
+            range={range}
+            refresh={refresh}
+            periodParams={period.periodParams}
+          />
         )}
         <CollapsibleReport title={t("DASH_BALANCES")}>
           <CustomerBalances refresh={refresh} embedded />

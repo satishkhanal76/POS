@@ -555,3 +555,39 @@ ItemsPrintButton lives beside the Items title and receives the already displayed
 - `hooks/useExclusiveAction.ts` provides a synchronous lock alongside React's busy state. Acquire with `begin()` and release in `finally` with `end()`; React state alone cannot prevent duplicate events before a render.
 
 Keep mode-specific business rules in their workflow, rather than adding them to shared presentation components.
+
+## Contact accounts and history
+
+`ContactPage` is the single account page for a person: lifetime customer/supplier balances appear above sales/customer payments and purchases/supplier payments. One URL-backed report period controls both histories; `sales-*` and `purchasing-*` query parameters keep their pagination, type filters, and sorts independent. Detail views retain the full return URL and navigation state.
+
+The Transactions page replaces the separate customer transaction pages. Its `contact` filter accepts `all`, `linked`, `unlinked`, or a contact ID. Specific contacts use the existing contact projection scope. Linked/unlinked filters use `readContactMembershipPage`, which reads existing contact/date index keys to count and rank matches, then hydrates only the selected page. Ordinary unfiltered latest-first queries retain the timestamp-index fast path. No schema upgrade is needed. Both on-screen results and PDF reports use the same filtered query.
+
+Purchases live at `/purchases` in the History menu when purchasing is enabled; creating a purchase remains in POS. The former customer-history and `/purchasing` routes have been removed.
+
+## Business activity reports
+
+The dashboard combines sales and customer payments in `TransactionsView`, shows supplier purchases/payments through `PurchasingHistory`, and retains Items Sold. Both histories query only their visible page and share the selected reporting range. `TransactionHistoryStore.getContacts` resolves the active assignments and contact names only for displayed transaction IDs, including archived contacts needed for historical display.
+
+`SupplierActivityStore` aggregates purchase and supplier-payment index keys for the same range and deletion visibility as sales. `DashboardController` builds daily/monthly buckets from actual activity across both sides of the business, including zero-value orders; it does not generate inactive calendar buckets. Supplier metrics include purchase totals/counts, payment totals/counts, and the change in supplier debt (purchases minus payments), rather than treating inventory purchases as cost of goods sold. Purchasing settings control supplier sections and queries.
+
+`PrintReportsController` reuses these aggregates and ranges. Dashboard PDF reports include combined customer-side transactions with contact names, supplier transactions, and items sold; overview PDF reports use the same metrics and active-only period buckets as the screen.
+
+### Supplier insights
+
+Overview has a dedicated `SupplierInsights` section. `SupplierInsightsStore` scans existing contact projection keys from purchases and supplier payments, aggregates selected-period activity alongside lifetime totals, and loads each distinct contact once. It does not hydrate purchase/payment records or add indexes. `SupplierInsightsController` ranks suppliers by period purchase value and calculates average order size, current amounts owed, and supplier credits. Zero-value orders still count as activity. Deleted records and contacts follow report visibility settings.
+
+Top-supplier tables follow the selected period. Current balances deliberately use all recorded activity so narrowing a date range cannot hide an older unpaid purchase. They are explicitly labeled All Time, use an All Time context for individual exports, and link to each contact's purchase history. Shared columns keep the overview and printed tables aligned. The whole overview printout includes supplier insights, rankings, and lifetime balances.
+
+## Resilient localization and missing-text audit
+
+`localization/messages.ts` resolves every string lookup through a dictionary view: selected language → English → the key itself. Empty or non-string bundled values also fall back. Both `useLocaleText()`/`getLocaleText()` and legacy `useLocale().KEY` reads use this resolver. Startup markup, manifest branding, and Vite HTML titles use the same safe English dictionary without importing browser preference state. Text keys are open strings so a removed JSON entry cannot cause a production type-check failure. Custom locale upload validation remains strict.
+
+Settings → Missing Translations inspects raw dictionaries to distinguish absent, empty, and invalid values rather than hiding gaps behind fallback text. It supports English, Nepali, and uploaded custom files, with search, pagination, English references, and the actual fallback displayed. Runtime-only missing keys are remembered for the session and included when the list is opened or refreshed.
+
+`scripts/localeKeys.ts` collects text references from bundled dictionaries and application code. A Vite plugin exposes that list as an in-memory virtual module and updates it when source references change in development. No generated key file or manual scan command is needed. This keeps keys discoverable when a translation is absent from every dictionary and its page has not been visited. Computed keys that cannot be inferred statically are discovered when used. Template downloads still contain only actual English entries.
+
+### References inside locale values
+
+A value can reference another locale key: `"NAVBAR_ITEM_HOME": "${SOFTWARE_NAME}"`. `SOFTWARE_NAME` is defined as `"POS"` in English and inherited by the other language files. Main branding entries use this reference; `WEB_NAME` remains a compatibility alias. Custom locales can override `SOFTWARE_NAME` once to rename these shared labels.
+
+Translation functions read raw templates so explicit caller parameters win, then recursively resolve remaining references against the active locale with English fallback. Direct dictionary reads also expand references for labels and startup branding. Unknown references and cycles retain their `${KEY}` placeholder, and recursion is bounded. Supplied parameter values are treated literally. Custom-locale validation follows reference chains while still requiring runtime placeholders such as `${count}`. The missing-translations audit preserves raw English reference templates and resolves its fallback previews.

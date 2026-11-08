@@ -3,6 +3,7 @@ import { LocaleKey } from "../contexts/Locale";
 export interface NavigationLink {
   path: string;
   localeKey: LocaleKey;
+  feature?: "purchasing";
 }
 
 export interface NavigationGroup {
@@ -29,6 +30,7 @@ export const navigationGroups: NavigationGroup[] = [
       { path: "/items", localeKey: "NAVBAR_ITEM_2" },
       { path: "/contacts", localeKey: "NAVBAR_ITEM_1" },
     ],
+    relatedPaths: ["/contact"],
   },
   {
     id: "history",
@@ -36,8 +38,8 @@ export const navigationGroups: NavigationGroup[] = [
     links: [
       { path: "/price-history", localeKey: "NAVBAR_PRICE_HISTORY" },
       { path: "/transactions", localeKey: "NAVBAR_ITEM_3" },
-      { path: "/customers-transactions", localeKey: "NAVBAR_ITEM_4" },
+      { path: "/purchases", localeKey: "BUY_TITLE", feature: "purchasing" },
     ],
-    relatedPaths: ["/transaction", "/customer-transactions"],
+    relatedPaths: ["/transaction", "/purchase"],
   },
 ];

@@ -35,3 +35,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+.contact-history-section {
+  scroll-margin-top: 1.5rem;
+  margin-top: 1.75rem;
+  min-width: 0;
+}
+
+.contact-history-section > h2 {
+  margin-bottom: 1rem;
+}

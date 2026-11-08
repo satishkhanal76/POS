@@ -1,3 +1,4 @@
+import { useClientGlobal } from "../contexts/ClientGlobal";
 import useDeletionRevision from "./useDeletionRevision";
 import { useEffect, useMemo, useState } from "react";
 import { useDatabase } from "../contexts/DatabaseContext";
@@ -13,6 +14,7 @@ export default function useDashboardSummary(
   refresh: number,
 ) {
   const revision = useDeletionRevision();
+  const { purchasing } = useClientGlobal();
   const { database } = useDatabase();
   const controller = useMemo(
     () => new DashboardController(new DashboardOS(database)),
@@ -35,7 +37,7 @@ export default function useDashboardSummary(
     }
     setBusy(true);
     controller
-      .getSummary({ start, end, all, includeDeleted })
+      .getSummary({ start, end, all, includeDeleted }, purchasing)
       .then((result) => {
         if (!cancelled) setData(result);
       })
@@ -48,6 +50,15 @@ export default function useDashboardSummary(
     return () => {
       cancelled = true;
     };
-  }, [controller, start, end, all, includeDeleted, refresh, revision]);
+  }, [
+    controller,
+    start,
+    end,
+    all,
+    includeDeleted,
+    refresh,
+    revision,
+    purchasing,
+  ]);
   return { data, busy, error };
 }

@@ -14,14 +14,26 @@ export default class TransactionHistoryController {
     range: DashboardRange,
     kind?: TransactionKindFilter,
     customerId?: string,
+    membership?: "linked" | "unlinked",
   ) {
-    const result = await this.store.getPage(options, range, kind, customerId);
+    const result = await this.store.getPage(
+      options,
+      range,
+      kind,
+      customerId,
+      membership,
+    );
+    const ids = result.rows.map((row) => row.id);
+    const [rows, contacts] = await Promise.all([
+      this.transactions.getListEntries(ids, result.rows),
+      this.store.getContacts(ids),
+    ]);
     return {
       ...result,
-      rows: await this.transactions.getListEntries(
-        result.rows.map((row) => row.id),
-        result.rows,
-      ),
+      rows: rows.map((row) => ({
+        ...row,
+        contacts: contacts.get(row.id) ?? [],
+      })),
     };
   }
 }

@@ -128,10 +128,18 @@ export default function Select({
     };
   }, [open]);
   useEffect(() => {
-    if (open)
-      list.current
-        ?.querySelector(`[data-index="${active}"]`)
-        ?.scrollIntoView({ block: "nearest" });
+    const menu = list.current;
+    const option = menu?.querySelector<HTMLElement>(`[data-index="${active}"]`);
+    if (!open || !menu || !option) return;
+    // Scroll only the popup. scrollIntoView can also move a long account page,
+    // triggering the outside-scroll handler and immediately closing the menu.
+    if (option.offsetTop < menu.scrollTop) menu.scrollTop = option.offsetTop;
+    else if (
+      option.offsetTop + option.offsetHeight >
+      menu.scrollTop + menu.clientHeight
+    )
+      menu.scrollTop =
+        option.offsetTop + option.offsetHeight - menu.clientHeight;
   }, [active, open]);
   useEffect(() => {
     if (disabled) setOpen(false);

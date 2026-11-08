@@ -59,13 +59,15 @@ export default function NavBar() {
         <NavLink className="nav-control" to="/" end>
           {t("NAVBAR_ITEM_HOME")}
         </NavLink>
-        {purchasing && (
-          <NavLink className="nav-control" to="/purchasing">
-            {t("BUY_TITLE")}
-          </NavLink>
-        )}
         {navigationGroups.map((group) => (
-          <NavigationDropdown key={group.id} group={group} translate={t} />
+          <NavigationDropdown
+            key={group.id}
+            group={{
+              ...group,
+              links: group.links.filter((link) => !link.feature || purchasing),
+            }}
+            translate={t}
+          />
         ))}
         <NavLink className="nav-control nav-settings" to="/settings">
           {t("NAVBAR_SETTINGS")}

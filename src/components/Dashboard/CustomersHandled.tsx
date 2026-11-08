@@ -52,7 +52,7 @@ export default function CustomersHandled({
       onRowClick={(row) => {
         const params = new URLSearchParams(periodParams);
         params.set("id", row.id);
-        navigate(`/customer-transactions?${params}`, {
+        navigate(`/contact?${params}#transactions`, {
           state: { returnTo: location.pathname + location.search },
         });
       }}

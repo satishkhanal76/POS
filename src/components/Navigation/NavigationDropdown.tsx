@@ -89,8 +89,7 @@ export default function NavigationDropdown({
               ? MdOutlinePriceChange
               : link.path === "/items"
                 ? MdOutlineInventory2
-                : link.path === "/customers" ||
-                    link.path === "/customers-transactions"
+                : link.path === "/contacts"
                   ? MdOutlinePeople
                   : MdOutlineReceiptLong;
           return (

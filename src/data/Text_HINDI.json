@@ -1,6 +1,6 @@
 {
-  "WEB_NAME": "POS",
-  "NAVBAR_ITEM_HOME": "POS",
+  "WEB_NAME": "${SOFTWARE_NAME}",
+  "NAVBAR_ITEM_HOME": "${SOFTWARE_NAME}",
   "NAVBAR_ITEM_1": "ग्राहक",
   "NAVBAR_ITEM_2": "आइटम",
   "NAVBAR_ITEM_3": "लेन-देन",

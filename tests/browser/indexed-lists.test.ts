@@ -217,7 +217,7 @@ test("catalog search and price history pagination work on a narrow phone", async
 });
 
 test("purchasing merges pages and filters supplier payments correctly", async () => {
-  await go("purchasing?period=all");
+  await go("purchases?period=all");
   await page.getByText("1–10 of 30", { exact: true }).waitFor();
   await page
     .locator(".pagination-field")
@@ -678,4 +678,483 @@ test("Items prints exactly the visible page with optional stock counts", async (
   await choose(english.PAGINATION_PAGE_SIZE, english.REPORT_ALL);
   await rows(36);
   assert.equal((await printPage()).rows.length, 36);
+});
+
+test("contact details consolidate both histories, preserve independent pages and return paths, and transactions filter contacts", async () => {
+  await go("contact?id=c0&period=all");
+  const sales = page.locator("#transactions");
+  const purchases = page.locator(".contact-history-section").nth(1);
+  await sales.getByText("1–4 of 4", { exact: true }).waitFor();
+  await purchases.getByText("1–10 of 30", { exact: true }).waitFor();
+  assert.equal(
+    await page
+      .getByRole("combobox", { name: english.DASH_PERIOD, exact: true })
+      .count(),
+    1,
+  );
+  await purchases
+    .getByRole("combobox", { name: english.PAGINATION_PAGE_SIZE, exact: true })
+    .click();
+  const sizeOption = await page
+    .getByRole("option", { name: "25", exact: true })
+    .boundingBox();
+  assert.ok(sizeOption);
+  await page.mouse.click(
+    sizeOption.x + sizeOption.width / 2,
+    sizeOption.y + sizeOption.height / 2,
+  );
+  await purchases.getByText("1–25 of 30", { exact: true }).waitFor();
+  await sales.getByText("1–4 of 4", { exact: true }).waitFor();
+  await sales.locator("tbody tr").first().click();
+  await page
+    .getByRole("link", { name: english.CONTACT_BACK_ACCOUNT, exact: true })
+    .click();
+  await sales.getByText("1–4 of 4", { exact: true }).waitFor();
+  assert.match(page.url(), /purchasing-pageSize=25/);
+  await purchases.locator("tbody tr").first().click();
+  await page.locator(".page-back-link").first().click();
+  await purchases.getByText("1–25 of 30", { exact: true }).waitFor();
+
+  await go("contact?id=c0&period=custom&date=2024-01-01&end=2024-01-02");
+  await sales.getByText("0–0 of 0", { exact: true }).waitFor();
+  await purchases.getByText("0–0 of 0", { exact: true }).waitFor();
+
+  await go("transactions?period=all");
+  await choose(english.CONTACT_NAME, english.TRANSACTION_CONTACT_LINKED);
+  await page.getByText("1–10 of 36", { exact: true }).waitFor();
+  await choose(english.CONTACT_NAME, english.TRANSACTION_CONTACT_UNLINKED);
+  await page
+    .getByText(english.UI_NO_TRANSACTIONS_YET, { exact: true })
+    .waitFor();
+  await choose(english.CONTACT_NAME, english.TRANSACTION_CONTACT_CHOOSE);
+  await page.getByRole("searchbox").fill("Contact 00");
+  await page.locator(".modal-item").filter({ hasText: "Contact 00" }).click();
+  await page.getByText("1–4 of 4", { exact: true }).waitFor();
+  assert.match(page.url(), /contact=c0/);
+  await page
+    .getByRole("button", { name: english.NAVBAR_HISTORY, exact: true })
+    .click();
+  assert.equal(
+    await page
+      .getByRole("link", { name: english.BUY_TITLE, exact: true })
+      .getAttribute("href"),
+    new URL("purchases", base).pathname,
+  );
+  assert.equal(
+    await page.locator('a[href="/customers-transactions"]').count(),
+    0,
+  );
+  await page
+    .getByRole("link", { name: english.BUY_TITLE, exact: true })
+    .click();
+  await page.getByText("1–10 of 30", { exact: true }).waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await go("contact?id=c0&period=all");
+  await sales.getByText("1–4 of 4", { exact: true }).waitFor();
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+});
+
+test("dashboard and overview include supplier activity, linked contacts, and matching PDF tables without inactive dates", async () => {
+  await context.addInitScript(() => {
+    window.print = () => window.dispatchEvent(new Event("afterprint"));
+  });
+  const captureReport = async () => {
+    await page.evaluate(() => {
+      const reports: string[] = [];
+      Object.defineProperty(window, "workspaceReports", {
+        value: reports,
+        configurable: true,
+      });
+      const descriptor = Object.getOwnPropertyDescriptor(
+        HTMLIFrameElement.prototype,
+        "srcdoc",
+      )!;
+      Object.defineProperty(HTMLIFrameElement.prototype, "srcdoc", {
+        ...descriptor,
+        set(this: HTMLIFrameElement, value: string) {
+          reports.push(value);
+          descriptor.set!.call(this, value);
+        },
+      });
+    });
+    await page.locator(".page-header .print-report-button").click();
+    await page.waitForFunction(
+      () =>
+        (window as unknown as { workspaceReports: string[] }).workspaceReports
+          .length > 0,
+    );
+    return page.evaluate(() => {
+      const html = (window as unknown as { workspaceReports: string[] })
+        .workspaceReports[0];
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      return [...doc.querySelectorAll("section")].map((section) => ({
+        title: section.querySelector("h2")?.textContent,
+        headers: [...section.querySelectorAll("th")].map(
+          (cell) => cell.textContent,
+        ),
+        rows: [...section.querySelectorAll("tbody tr")].map(
+          (row) => row.textContent,
+        ),
+      }));
+    });
+  };
+  await go("dashboard?period=custom&date=2023-11-14&end=2023-11-20");
+  await page
+    .locator("summary")
+    .filter({ hasText: new RegExp(`^${english.REPORT_TRANSACTIONS}$`) })
+    .click();
+  const transactions = page.locator("details").filter({
+    has: page.getByText(english.REPORT_TRANSACTIONS, { exact: true }),
+  });
+  await transactions.getByText("1–10 of 36", { exact: true }).waitFor();
+  await transactions
+    .getByRole("columnheader", { name: english.CONTACT_NAME, exact: true })
+    .waitFor();
+  assert.match(
+    await transactions.locator("tbody tr").first().innerText(),
+    /Contact 00/,
+  );
+  assert.match(
+    await transactions.locator("tbody tr").first().innerText(),
+    new RegExp(english.PAYMENT_TITLE),
+  );
+  await page
+    .locator("summary")
+    .filter({
+      hasText: new RegExp(`^${english.REPORT_SUPPLIER_TRANSACTIONS}$`),
+    })
+    .click();
+  await page.getByText("1–10 of 30", { exact: true }).waitFor();
+  assert.equal(
+    await page
+      .locator("summary")
+      .filter({ hasText: new RegExp(`^${english.DASH_CUSTOMERS}$`) })
+      .count(),
+    0,
+  );
+  assert.equal(
+    await page
+      .locator("summary")
+      .filter({ hasText: new RegExp(`^${english.REPORT_PAYMENTS}$`) })
+      .count(),
+    0,
+  );
+  const dashboard = await captureReport();
+  assert.equal(
+    dashboard.find((section) => section.title === english.REPORT_TRANSACTIONS)
+      ?.rows.length,
+    36,
+  );
+  assert.ok(
+    dashboard
+      .find((section) => section.title === english.REPORT_TRANSACTIONS)
+      ?.rows.every((row) => row?.includes("Contact")),
+  );
+  assert.equal(
+    dashboard.find(
+      (section) => section.title === english.REPORT_SUPPLIER_TRANSACTIONS,
+    )?.rows.length,
+    30,
+  );
+  assert.ok(
+    dashboard.some((section) => section.title === english.REPORT_ITEMS_SOLD),
+  );
+  assert.ok(
+    !dashboard.some(
+      (section) =>
+        section.title === english.DASH_CUSTOMERS ||
+        section.title === english.REPORT_PAYMENTS,
+    ),
+  );
+
+  await go("overview?period=custom&date=2023-11-14&end=2023-11-20");
+  await page
+    .getByRole("heading", { name: english.DASH_PURCHASES, exact: true })
+    .waitFor();
+  await page
+    .getByRole("heading", { name: english.DASH_SUPPLIER_PAYMENTS, exact: true })
+    .waitFor();
+  await page
+    .locator("summary")
+    .filter({ hasText: english.DASH_BREAKDOWN })
+    .click();
+  const breakdown = page.getByRole("table", {
+    name: english.DASH_BREAKDOWN,
+    exact: true,
+  });
+  await breakdown
+    .getByRole("columnheader", { name: english.DASH_PURCHASES, exact: true })
+    .waitFor();
+  assert.equal(await breakdown.locator("tbody tr").count(), 1);
+  const overview = await captureReport();
+  const trend = overview.find(
+    (section) => section.title === english.DASH_TREND,
+  );
+  assert.equal(trend?.rows.length, 1);
+  assert.ok(trend?.headers.includes(english.DASH_PURCHASES));
+  assert.ok(trend?.headers.includes(english.DASH_SUPPLIER_PAYMENTS));
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+});
+
+test("supplier overview ranks selected activity, filters lifetime balances, links accounts, and prints insights", async () => {
+  await page.evaluate(async (base) => {
+    const { createDatabaseStores } = (await import(
+      `${base}src/database/DatabaseStores.ts`
+    )) as typeof import("../../src/database/DatabaseStores");
+    const stores = createDatabaseStores("POS_DEMO");
+    await stores.purchasingOS.receive({
+      contactId: "c1",
+      timestamp: 1700000400000,
+      reference: "INSIGHT-OWED",
+      lines: [{ productId: "coffee", quantity: 1, unitCost: 75 }],
+    });
+    await stores.purchasingOS.pay("c2", 5, 1700000400001, "INSIGHT-CREDIT");
+    (await stores.database.getDatabase()).close();
+  }, base);
+  await context.addInitScript(() => {
+    window.print = () => window.dispatchEvent(new Event("afterprint"));
+  });
+  await go("overview?period=custom&date=2023-11-14&end=2023-11-20");
+  const section = page.locator(".supplier-insights");
+  await section
+    .getByRole("heading", { name: english.SUPPLIER_INSIGHTS, exact: true })
+    .waitFor();
+  await section
+    .locator(".dashboard-metric")
+    .filter({
+      has: page.getByRole("heading", {
+        name: english.SUPPLIER_TOTAL_OWED,
+        exact: true,
+      }),
+    })
+    .getByText("$75.00", { exact: true })
+    .waitFor();
+  await section
+    .locator(".dashboard-metric")
+    .filter({
+      has: page.getByRole("heading", {
+        name: english.SUPPLIER_CREDIT,
+        exact: true,
+      }),
+    })
+    .getByText("$5.00", { exact: true })
+    .waitFor();
+  await section
+    .locator("summary")
+    .filter({ hasText: english.SUPPLIER_TOP })
+    .click();
+  const top = section.getByRole("table", {
+    name: english.SUPPLIER_TOP,
+    exact: true,
+  });
+  assert.equal(await top.locator("tbody tr").count(), 3);
+  assert.match(await top.locator("tbody tr").first().innerText(), /Contact 00/);
+  await section
+    .locator("summary")
+    .filter({ hasText: english.SUPPLIER_BALANCES })
+    .click();
+  const balances = section.getByRole("table", {
+    name: english.SUPPLIER_BALANCES,
+    exact: true,
+  });
+  await balances.getByText("Contact 01", { exact: true }).waitFor();
+  await choose(english.SUPPLIER_FILTER, english.SUPPLIER_FILTER_CREDIT);
+  await balances.getByText("Contact 02", { exact: true }).waitFor();
+  await balances.locator("tbody tr").first().click();
+  await page
+    .locator("#purchases")
+    .getByText("1–1 of 1", { exact: true })
+    .waitFor();
+  assert.equal(new URL(page.url()).hash, "#purchases");
+  await page.locator(".page-back-link").first().click();
+  await section
+    .getByRole("heading", { name: english.SUPPLIER_INSIGHTS, exact: true })
+    .waitFor();
+  await page.evaluate(() => {
+    const reports: string[] = [];
+    Object.defineProperty(window, "supplierPrints", { value: reports });
+    const original = Object.getOwnPropertyDescriptor(
+      HTMLIFrameElement.prototype,
+      "srcdoc",
+    )!;
+    Object.defineProperty(HTMLIFrameElement.prototype, "srcdoc", {
+      ...original,
+      set(this: HTMLIFrameElement, value: string) {
+        reports.push(value);
+        original.set!.call(this, value);
+      },
+    });
+  });
+  await page.locator(".page-header .print-report-button").click();
+  await page.waitForFunction(
+    () =>
+      (window as unknown as { supplierPrints: string[] }).supplierPrints
+        .length > 0,
+  );
+  const printed = await page.evaluate(() => {
+    const doc = new DOMParser().parseFromString(
+      (window as unknown as { supplierPrints: string[] }).supplierPrints[0],
+      "text/html",
+    );
+    return [...doc.querySelectorAll("section")].map((section) => ({
+      title: section.querySelector("h2")?.textContent,
+      rows: section.querySelectorAll("tbody tr").length,
+    }));
+  });
+  assert.ok(
+    printed.some((section) => section.title === english.SUPPLIER_INSIGHTS),
+  );
+  assert.equal(
+    printed.find((section) => section.title === english.SUPPLIER_TOP)?.rows,
+    3,
+  );
+  assert.equal(
+    printed.find((section) => section.title === english.SUPPLIER_BALANCES)
+      ?.rows,
+    3,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+  await go("overview?period=custom&date=2024-01-01&end=2024-01-02");
+  await section
+    .locator(".dashboard-metric")
+    .filter({
+      has: page.getByRole("heading", {
+        name: english.SUPPLIER_TOTAL_OWED,
+        exact: true,
+      }),
+    })
+    .getByText("$75.00", { exact: true })
+    .waitFor();
+});
+
+test("language settings audit missing keys and custom fallbacks without breaking the app", async () => {
+  await go("settings");
+  const audit = page.locator(".locale-audit");
+  await audit
+    .getByRole("heading", { name: english.LOCALE_AUDIT_TITLE, exact: true })
+    .waitFor();
+  const fallback = await page.evaluate(async (base) => {
+    const locale = (await import(
+      `${base}src/localization/locale.ts`
+    )) as typeof import("../../src/localization/locale");
+    return locale.getLocaleText("BROWSER_MISSING_LOCALE_KEY");
+  }, base);
+  assert.equal(fallback, "BROWSER_MISSING_LOCALE_KEY");
+  await audit
+    .getByRole("button", { name: english.DASH_REFRESH, exact: true })
+    .click();
+  await audit
+    .locator("tbody tr")
+    .filter({ hasText: "BROWSER_MISSING_LOCALE_KEY" })
+    .waitFor();
+  await audit
+    .locator("tbody tr")
+    .filter({ hasText: "BROWSER_MISSING_LOCALE_KEY" })
+    .getByText(english.LOCALE_AUDIT_USES_KEY, { exact: true })
+    .waitFor();
+  await page.getByLabel(english.LOCALE_FILE_LABEL).setInputFiles({
+    name: "custom.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify({ NAVBAR_MANAGE: "Custom Manage" })),
+  });
+  await page
+    .getByText(english.LOCALE_UPLOAD_SUCCESS, { exact: true })
+    .waitFor();
+  const language = audit.getByRole("combobox", {
+    name: english.LOCALE_AUDIT_LANGUAGE,
+    exact: true,
+  });
+  await language.focus();
+  await language.press("Enter");
+  await language.press("End");
+  await language.press("Enter");
+  await audit.getByRole("searchbox").fill("PAYMENT_TITLE");
+  await audit
+    .locator("tbody tr")
+    .filter({ hasText: "PAYMENT_TITLE" })
+    .waitFor();
+  await audit
+    .getByText(english.LOCALE_AUDIT_USES_ENGLISH, { exact: true })
+    .waitFor();
+  assert.equal(await audit.locator("tbody tr").count(), 1);
+  await audit.getByRole("searchbox").fill("NAVBAR_MANAGE");
+  await audit
+    .getByText(english.LOCALE_AUDIT_NO_MATCHES, { exact: true })
+    .waitFor();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await audit.getByRole("searchbox").fill("PAYMENT_TITLE");
+  await audit
+    .locator("tbody tr")
+    .filter({ hasText: "PAYMENT_TITLE" })
+    .waitFor();
+  assert.equal(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth > innerWidth,
+    ),
+    false,
+  );
+});
+
+test("shared software name references update runtime branding and persist through reload", async () => {
+  await go("settings");
+  await page
+    .getByLabel(english.LOCALE_FILE_LABEL)
+    .setInputFiles({
+      name: "brand.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(
+        JSON.stringify({
+          SOFTWARE_NAME: "Corner Store",
+          NAVBAR_ITEM_HOME: "${SOFTWARE_NAME}",
+        }),
+      ),
+    });
+  await page
+    .getByText(english.LOCALE_UPLOAD_SUCCESS, { exact: true })
+    .waitFor();
+  const overridden = await page.evaluate(async (base) => {
+    const locale = (await import(
+      `${base}src/localization/locale.ts`
+    )) as typeof import("../../src/localization/locale");
+    locale.selectLocale("custom");
+    return locale.getLocaleText("NAVBAR_ITEM_HOME", {
+      SOFTWARE_NAME: "Explicit Name",
+    });
+  }, base);
+  assert.equal(overridden, "Explicit Name");
+  await page
+    .locator(".nav-brand")
+    .getByText("Corner Store", { exact: true })
+    .waitFor();
+  await page
+    .locator(".nav-links > a.nav-control")
+    .first()
+    .getByText("Corner Store", { exact: true })
+    .waitFor();
+  await page.waitForFunction(
+    () => document.title === "Corner Store — Point of Sale",
+  );
+  await page.reload();
+  await page
+    .locator(".nav-brand")
+    .getByText("Corner Store", { exact: true })
+    .waitFor();
+  assert.equal(await page.title(), "Corner Store — Point of Sale");
 });

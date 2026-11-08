@@ -46,9 +46,9 @@ export default function PurchasePage() {
   const requested: unknown = location.state?.returnTo,
     back =
       typeof requested === "string" &&
-      /^\/(purchasing|contact|purchase)(\?|$)/.test(requested)
+      /^\/(purchases|contact|purchase)(\?|$)/.test(requested)
         ? requested
-        : "/purchasing";
+        : "/purchases";
   useEffect(() => {
     let cancelled = false;
     if (!id) return;
@@ -96,7 +96,9 @@ export default function PurchasePage() {
   ];
   return (
     <main className="transaction-page purchase-details-page">
-      <BackLink to={back}>{t("REPORT_BACK")}</BackLink>
+      <BackLink to={back} state={location.state?.returnState}>
+        {t("REPORT_BACK")}
+      </BackLink>
       {error ? (
         <p role="alert">{error}</p>
       ) : !data ? (

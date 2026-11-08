@@ -1,5 +1,5 @@
 import { SETTINGS_STORAGE_KEY } from "../settings/storage";
-import english from "../data/Text_EN.json";
+import { englishMessages as english } from "../localization/messages";
 import { appBranding, startupAssets } from "../config/appBranding";
 
 export const escapeHtml = (value: string) =>
