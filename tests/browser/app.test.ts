@@ -1,3 +1,4 @@
+import { availablePort } from "../helpers/availablePort";
 import { after, afterEach, before, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { chromium, Browser, BrowserContext, Page, Download } from "playwright";
@@ -16,7 +17,11 @@ let errors: string[];
 before(async () => {
   server = await createServer({
     logLevel: "silent",
-    server: { host: "127.0.0.1", port: 0, strictPort: true },
+    server: {
+      host: "127.0.0.1",
+      port: await availablePort(),
+      strictPort: true,
+    },
   });
   await server.listen();
   const address = server.httpServer!.address();
@@ -57,6 +62,9 @@ beforeEach(async () => {
     const { createDatabaseStores } = (await import(
       modulePath
     )) as typeof import("../../src/database/DatabaseStores");
+    const { indexedCatalog } = (await import(
+      modulePath.replace("DatabaseStores.ts", "listing/catalog.ts")
+    )) as typeof import("../../src/database/listing/catalog");
     const stores = createDatabaseStores("POS_DEMO");
     const database = await stores.database.getDatabase();
     await new Promise<void>((resolve, reject) => {
@@ -68,37 +76,37 @@ beforeEach(async () => {
         transaction.objectStore(name).clear();
       transaction
         .objectStore("PRODUCTS")
-        .add({ id: "product", name: "Coffee", amount: 5 });
+        .add(indexedCatalog({ id: "product", name: "Coffee", amount: 5 }));
       const summaries = new Map<
         string,
         { id: string; count: number; total: number; timestamp: number }
       >();
       for (let i = 0; i < 12; i++)
-        transaction
-          .objectStore("CUSTOMER")
-          .add({ id: `c${i}`, name: `Customer ${i}`, phoneNumber: "555-0101" });
+        transaction.objectStore("CUSTOMER").add(
+          indexedCatalog({
+            id: `c${i}`,
+            name: `Customer ${i}`,
+            phoneNumber: "555-0101",
+          }),
+        );
       for (let i = 0; i < 35; i++) {
         const timestamp = 1700000000000 + i * 60000;
         const customerId = `c${i % 12}`;
         transaction
           .objectStore("TRANSACTIONS")
           .add({ id: `t${i}`, timestamp, total: 5 });
-        transaction
-          .objectStore("TRANSACTION_PRODUCTS")
-          .add({
-            id: `row${i}`,
-            transactionId: `t${i}`,
-            productId: "product",
-            quantity: 1,
-          });
-        transaction
-          .objectStore("CUSTOMERS_TRANSACTIONS")
-          .add({
-            id: `link${i}`,
-            transactionId: `t${i}`,
-            customerId,
-            timestamp,
-          });
+        transaction.objectStore("TRANSACTION_PRODUCTS").add({
+          id: `row${i}`,
+          transactionId: `t${i}`,
+          productId: "product",
+          quantity: 1,
+        });
+        transaction.objectStore("CUSTOMERS_TRANSACTIONS").add({
+          id: `link${i}`,
+          transactionId: `t${i}`,
+          customerId,
+          timestamp,
+        });
         const summary = summaries.get(customerId) || {
           id: customerId,
           count: 0,
@@ -301,15 +309,13 @@ test("settings download the English template, accept custom text, and persist Ne
   const download = await pending;
   assert.equal(download.suggestedFilename(), "Text_EN.json");
   assert.deepEqual(await downloadedJson(download), english);
-  await page
-    .getByLabel("Choose a custom locale JSON file")
-    .setInputFiles({
-      name: "custom.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(
-        JSON.stringify({ NAVBAR_SETTINGS: "Preferences Test" }),
-      ),
-    });
+  await page.getByLabel("Choose a custom locale JSON file").setInputFiles({
+    name: "custom.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({ NAVBAR_SETTINGS: "Preferences Test" }),
+    ),
+  });
   await page
     .getByRole("option", { name: "Custom", exact: true })
     .waitFor({ state: "attached" });
@@ -468,11 +474,8 @@ test("development installs expose a real manifest and correctly scoped Apple ico
   const manifestResponse = await context.request.get(
     `${base}manifest.webmanifest`,
   );
-  assert.ok(
-    manifestResponse
-      .headers()
-      ["content-type"].includes("application/manifest+json"),
-  );
+  const contentType = manifestResponse.headers()["content-type"];
+  assert.ok(contentType.includes("application/manifest+json"));
   assert.equal(manifestResponse.headers()["cache-control"], "no-store");
   assert.equal((await manifestResponse.json()).name, english.PWA_APP_NAME);
   for (const selector of [
@@ -514,7 +517,7 @@ test("quantity uses a validated dialog and notification pills pause on hover the
   await page
     .getByRole("button", { name: english.BUTTON_CHANGE_QUANTITY, exact: true })
     .click();
-  await page.getByLabel(english.QUANTITY_LABEL, { exact: true }).fill("2.5");
+  await page.getByLabel(english.QUANTITY_LABEL, { exact: true }).fill("0");
   await page
     .getByRole("button", { name: english.QUANTITY_APPLY, exact: true })
     .click();
@@ -577,9 +580,10 @@ test("customer linking reports success without a blocking alert", async () => {
   await page
     .getByRole("button", { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true })
     .click();
+  await page.getByRole("searchbox").fill("Customer 0");
   await page
     .locator(".modal-item")
-    .filter({ hasText: /^Customer 0$/ })
+    .filter({ hasText: /^Customer 0/ })
     .click();
   await page
     .locator(".notification-message")
@@ -609,13 +613,12 @@ test("a failed customer link preserves the saved sale and retries without postin
   await page
     .getByRole("button", { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true })
     .click();
+  await page.getByRole("searchbox").fill("Customer 0");
   await page
     .locator(".modal-item")
-    .filter({ hasText: /^Customer 0$/ })
+    .filter({ hasText: /^Customer 0/ })
     .click();
-  await page
-    .getByText(english.NOTIFICATION_CUSTOMER_LINK_FAILED, { exact: true })
-    .waitFor();
+  await page.getByText("Simulated link failure", { exact: true }).waitFor();
   await page
     .locator(".transaction-details")
     .getByText("$5.00", { exact: true })
@@ -623,9 +626,10 @@ test("a failed customer link preserves the saved sale and retries without postin
   await page
     .getByRole("button", { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true })
     .click();
+  await page.getByRole("searchbox").fill("Customer 0");
   await page
     .locator(".modal-item")
-    .filter({ hasText: /^Customer 0$/ })
+    .filter({ hasText: /^Customer 0/ })
     .click();
   await page
     .locator(".notification-message")

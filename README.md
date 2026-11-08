@@ -142,3 +142,7 @@ IndexedDB is a relatively low-level API with an event-driven interface and a num
 The result is a database layer that allows the rest of the application to work with strongly typed TypeScript models while still using native browser persistence underneath.
 
 That abstraction is documented in detail in [Database Architecture](docs/database.md).
+
+### Formatting
+
+Prettier is installed locally and configured in `.prettierrc.json`, so editor saves and command-line formatting use the same rules. After editing files outside the editor, run `npx prettier --write <changed-files>` before finishing. Use `npm run format` to format the whole repository or `npm run format:check` to check it without writing changes. Generated build output and the lockfile are excluded.

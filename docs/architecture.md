@@ -543,3 +543,15 @@ Items also support current selling price and stock in both directions. Numeric c
 ### Current-page inventory printing
 
 ItemsPrintButton lives beside the Items title and receives the already displayed page, not an all-items query. The report preserves current search, sort and page selection, including a partially filled last page or the explicit All page-size option. When stock management is enabled it reads current counts only for those visible IDs. itemColumns supplies the same name/price/stock columns to ItemsView and the report; printTable retains deletion badges and omits interactive controls. The report identifies the Items-list page and displayed count, and uses a current-inventory subtitle rather than a misleading all-time period. Existing report buttons retain their all-matching scope; Items supplies a specific tooltip for its current-page behavior.
+
+## POS workspace boundaries
+
+`components/POS.tsx` handles the sale/purchase mode and URL. Both workspaces stay mounted so changing modes preserves each draft.
+
+- `components/POS/SalePOS.tsx` renders the sale workspace and its dialogs.
+- `components/POS/useSaleOrder.ts` owns sale draft state, stock checks, posting, customer linking, and action definitions. Persistence remains in the existing controllers and object stores.
+- `components/POS/PurchasePOS.tsx` owns the purchase workflow.
+- `components/POS/OrderActionsPanel.tsx` renders the shared action panel and disables all actions while a write is running.
+- `hooks/useExclusiveAction.ts` provides a synchronous lock alongside React's busy state. Acquire with `begin()` and release in `finally` with `end()`; React state alone cannot prevent duplicate events before a render.
+
+Keep mode-specific business rules in their workflow, rather than adding them to shared presentation components.

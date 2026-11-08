@@ -16,7 +16,8 @@ import {
 import PageHeader from "../Layout/PageHeader";
 import ItemSelectionModal from "../Modals/ItemSelectionModal";
 import CustomerSelectionModal from "../Modals/CustomerSelectionModal";
-import TransactionButtons from "../Transaction/TransactionButtons";
+import OrderActionsPanel from "./OrderActionsPanel";
+import useExclusiveAction from "../../hooks/useExclusiveAction";
 import { IButtonProps } from "../Button";
 import SupplierPaymentForm from "../Purchasing/SupplierPaymentForm";
 import PurchaseLineForm from "./PurchaseLineForm";
@@ -46,10 +47,9 @@ export default function PurchasePOS({
       line: PurchaseOrderLine;
       isNew: boolean;
     } | null>(null),
-    [paymentOpen, setPaymentOpen] = useState(false),
-    [busy, setBusy] = useState(false);
-  const lock = useRef(false),
-    postAfterSelection = useRef(false);
+    [paymentOpen, setPaymentOpen] = useState(false);
+  const { busy, isBusy: lock, begin, end } = useExclusiveAction();
+  const postAfterSelection = useRef(false);
   useEffect(() => {
     let cancelled = false;
     if (initialSupplierId)
@@ -66,8 +66,7 @@ export default function PurchasePOS({
   const active = lines.find((line) => line.id === selected);
   const addItem = async (item: ProductItem | null) => {
     if (!item || lock.current) return;
-    lock.current = true;
-    setBusy(true);
+    if (!begin()) return;
     setAddOpen(false);
     try {
       const current = await stores.itemOS.getOne(item.getId());
@@ -99,14 +98,12 @@ export default function PurchasePOS({
         "error",
       );
     } finally {
-      lock.current = false;
-      setBusy(false);
+      end();
     }
   };
   const post = async (person: IContact) => {
     if (lock.current || !lines.length) return;
-    lock.current = true;
-    setBusy(true);
+    if (!begin()) return;
     setSupplierOpen(false);
     try {
       const range = dashboardRange("day", date, date);
@@ -139,8 +136,7 @@ export default function PurchasePOS({
         "error",
       );
     } finally {
-      lock.current = false;
-      setBusy(false);
+      end();
     }
   };
   const chooseSupplier = (forPosting: boolean) => {
@@ -280,19 +276,12 @@ export default function PurchasePOS({
               onAdd={() => setAddOpen(true)}
             />
           </section>
-          <aside className="pos-actions-panel">
-            <h2>{t("UI_ORDER_ACTIONS")}</h2>
-            <p>{t("ORDER_PURCHASE_HELP")}</p>
-            <TransactionButtons
-              buttonsClassName="pos-action"
-              buttonsClassNameWhenActive="pos-action"
-              buttonsProps={buttons.map((button) => ({
-                ...button,
-                disabled: busy || button.disabled,
-              }))}
-            />
-            <div className="pos-actions-note">{t("BUY_RECEIVE_HELP")}</div>
-          </aside>
+          <OrderActionsPanel
+            busy={busy}
+            buttons={buttons}
+            description={t("ORDER_PURCHASE_HELP")}
+            note={t("BUY_RECEIVE_HELP")}
+          />
         </div>
       </main>
     </>

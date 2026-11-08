@@ -19,7 +19,9 @@
     "lint:tests": "eslint tests --ext ts --max-warnings 0",
     "assets:generate": "node --import tsx scripts/generate-brand-assets.ts",
     "assets:screenshots": "node --import tsx scripts/capture-install-screenshots.ts",
-    "test:browser:run": "node --import tsx --test --test-timeout=120000 tests/browser/*.test.ts"
+    "test:browser:run": "node --import tsx --test --test-timeout=120000 tests/browser/*.test.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
