@@ -1,3 +1,4 @@
+import { FolderBackupProvider } from "./contexts/FolderBackupContext";
 import NotificationProvider from "./components/Notifications/NotificationProvider";
 import { PwaProvider } from "./pwa/PwaProvider";
 import React from "react";
@@ -20,7 +21,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <DatabaseProvider>
             <PwaProvider>
               <NotificationProvider>
-                <App />
+                <FolderBackupProvider>
+                  <App />
+                </FolderBackupProvider>
               </NotificationProvider>
             </PwaProvider>
           </DatabaseProvider>

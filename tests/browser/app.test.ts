@@ -581,6 +581,94 @@ test("backup controls download the full database and restore a reviewed file", a
     .waitFor();
 });
 
+test("folder backups write only changes and recover after local workspace loss", async () => {
+  // Use real writable handles and IndexedDB serialization, with an isolated
+  // browser-private test directory standing in for the native folder picker.
+  const openBackups = async () => {
+    await go("settings");
+    await page.evaluate(`(() => {
+      Object.defineProperty(window, "showDirectoryPicker", {
+        configurable: true,
+        value: async () => {
+          const root = await navigator.storage.getDirectory();
+          return root.getDirectoryHandle("folder-backup-test", {
+            create: true,
+          });
+        },
+      });
+    })()`);
+    await page
+      .locator(".settings-category > summary")
+      .filter({ hasText: english.SETTINGS_WORKSPACE_DATA })
+      .click();
+  };
+  const button = (name: string) =>
+    page.getByRole("button", { name, exact: true });
+  await openBackups();
+  await button(english.FOLDER_BACKUP_CHOOSE).click();
+  await button(english.FOLDER_BACKUP_NOW).waitFor();
+  await go("items");
+  await button("Edit Coffee").click();
+  await page.getByLabel("Item name", { exact: true }).fill("Folder Coffee");
+  await button(english.UI_SAVE_CHANGES).click();
+  await button("Edit Folder Coffee").waitFor();
+
+  await openBackups();
+  await button(english.FOLDER_BACKUP_NOW).click();
+  await page.waitForFunction(
+    (name) =>
+      [...document.querySelectorAll("button")].some(
+        (button) => button.textContent === name && !button.disabled,
+      ),
+    english.FOLDER_BACKUP_NOW,
+  );
+  const folderStatus = page.locator(".backup-preview [role=status]");
+  assert.equal(
+    await folderStatus.count(),
+    0,
+    await folderStatus.allTextContents().then((messages) => messages.join(" ")),
+  );
+  const delta = await page.evaluate(async () => {
+    const root = await navigator.storage.getDirectory();
+    const folder = await root.getDirectoryHandle("folder-backup-test");
+    const handle = await folder.getFileHandle("pos-change-00000001.json");
+    return JSON.parse(await (await handle.getFile()).text());
+  });
+  assert.deepEqual(Object.keys(delta.tables), ["PRODUCTS"]);
+  assert.equal(delta.tables.PRODUCTS.upserts[0].name, "Folder Coffee");
+
+  await page.evaluate(`(async (moduleUrl) => {
+    const { createDatabaseStores } = (await import(
+      moduleUrl
+    ));
+    async function clear(db) {
+      await new Promise((resolve, reject) => {
+        const names = Array.from(db.objectStoreNames);
+        const tx = db.transaction(names, "readwrite");
+        for (const name of names) tx.objectStore(name).clear();
+        tx.oncomplete = () => resolve();
+        tx.onabort = () => reject(tx.error);
+      });
+    }
+    await clear(await createDatabaseStores("POS_DEMO").database.getDatabase());
+    const request = indexedDB.open("POS_FOLDER_BACKUP_SETTINGS");
+    const preferences = await new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    await clear(preferences);
+    preferences.close();
+  })(${JSON.stringify(base + "src/database/DatabaseStores.ts")})`);
+
+  await openBackups();
+  await button(english.FOLDER_BACKUP_RECOVER).click();
+  page.once("dialog", (dialog) => void dialog.accept());
+  await button("Replace demo workspace").click();
+  await button(english.UI_RELOAD_APP).waitFor();
+  await go("items");
+  await button("Edit Folder Coffee").waitFor();
+});
+
 test("settings switch back to the existing demo without resetting practice records", async () => {
   await go("settings");
   await page

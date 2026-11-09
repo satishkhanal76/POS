@@ -1,3 +1,7 @@
+import FolderBackupSettings from "./FolderBackupSettings";
+import { useFolderBackup } from "../../contexts/FolderBackupContext";
+import { chooseBackupFolder } from "../../backup/folderAccess";
+import { readFolderArchive } from "../../backup/folderArchive";
 import { BackupProgress } from "../../backup/progress";
 import BackupExportProgress from "./BackupExportProgress";
 import { hasUnfinishedRestore } from "../../backup/restoreStatus";
@@ -11,6 +15,8 @@ import { workspaceController } from "../../controllers/WorkspaceController";
 
 export default function BackupSettings() {
   const t = useLocaleText();
+  const folder = useFolderBackup();
+  const folderInput = useRef<HTMLInputElement>(null);
   const { database } = useDatabase();
   const controller = useMemo(() => new BackupController(database), [database]);
   const [backup, setBackup] = useState<DatabaseBackup | null>(null);
@@ -67,6 +73,7 @@ export default function BackupSettings() {
     try {
       await action();
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       setStatus(
         error instanceof Error
           ? error.message
@@ -110,6 +117,22 @@ export default function BackupSettings() {
         >
           {t("UI_CHOOSE_BACKUP_TO_RESTORE")}
         </button>
+        <button
+          type="button"
+          disabled={busy || restored || folder.busy}
+          onClick={() => {
+            if (!folder.supported) {
+              folderInput.current?.click();
+              return;
+            }
+            void run(async () => {
+              const directory = await chooseBackupFolder("read");
+              setBackup(await folder.controller.inspect(directory));
+            });
+          }}
+        >
+          {t("FOLDER_BACKUP_RECOVER")}
+        </button>
       </div>
       <input
         ref={input}
@@ -127,6 +150,29 @@ export default function BackupSettings() {
             });
         }}
       />
+      <input
+        ref={folderInput}
+        type="file"
+        multiple
+        accept=".zip,.json"
+        aria-label={t("FOLDER_BACKUP_FILES")}
+        hidden
+        onChange={(event) => {
+          const files = Array.from(event.target.files ?? []);
+          event.target.value = "";
+          if (files.length)
+            void run(async () => {
+              setBackup(
+                (
+                  await readFolderArchive(
+                    new Map(files.map((file) => [file.name, file])),
+                  )
+                ).backup,
+              );
+            });
+        }}
+      />
+      <FolderBackupSettings disabled={busy || restored || backup !== null} />
       {backup && !restored && (
         <div className="backup-preview">
           <p>
