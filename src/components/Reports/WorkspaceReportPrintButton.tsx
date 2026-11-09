@@ -20,7 +20,7 @@ export default function WorkspaceReportPrintButton({
   mode: "dashboard" | "overview";
 }) {
   const t = useLocaleText();
-  const { purchasing } = useClientGlobal();
+  const { sales, purchasing } = useClientGlobal();
   const stores = useDatabase();
   const controller = useMemo(
     () => new PrintReportsController(stores),
@@ -36,7 +36,7 @@ export default function WorkspaceReportPrintButton({
           transactions,
           supplierTransactions,
           supplierInsights,
-        } = await controller.getReport(range, mode, purchasing);
+        } = await controller.getReport(range, mode, purchasing, sales);
         const status = (deletedAt?: number) =>
           deletedAt ? t("DELETED_BADGE") : "";
         const sections: PrintableSection[] = [];
@@ -44,7 +44,7 @@ export default function WorkspaceReportPrintButton({
           sections.push({
             title: t("DASH_OVERVIEW"),
             columns: [t("PRINT_METRIC"), t("PRINT_VALUE"), t("PRINT_NOTES")],
-            rows: dashboardMetrics(summary, purchasing).map((metric) => [
+            rows: dashboardMetrics(summary, purchasing, sales).map((metric) => [
               t(metric.label),
               "money" in metric ? (
                 <Price price={metric.value} />
@@ -58,9 +58,9 @@ export default function WorkspaceReportPrintButton({
             title: t("DASH_TREND"),
             columns: [
               t("DASH_PERIOD"),
-              t("DASH_SALE_COUNT"),
-              t("DASH_SALES"),
-              t("DASH_PAYMENTS"),
+              ...(sales
+                ? [t("DASH_SALE_COUNT"), t("DASH_SALES"), t("DASH_PAYMENTS")]
+                : []),
               ...(purchasing
                 ? [t("DASH_PURCHASES"), t("DASH_SUPPLIER_PAYMENTS")]
                 : []),
@@ -72,9 +72,13 @@ export default function WorkspaceReportPrintButton({
                   ? { month: "long", year: "numeric" }
                   : undefined,
               ),
-              bucket.salesCount,
-              <Price price={bucket.sales} />,
-              <Price price={bucket.payments} />,
+              ...(sales
+                ? [
+                    bucket.salesCount,
+                    <Price price={bucket.sales} />,
+                    <Price price={bucket.payments} />,
+                  ]
+                : []),
               ...(purchasing
                 ? [
                     <Price price={bucket.purchases} />,
@@ -122,26 +126,27 @@ export default function WorkspaceReportPrintButton({
             );
           }
         } else {
-          sections.push({
-            title: t("REPORT_TRANSACTIONS"),
-            columns: [
-              t("PRINT_ID"),
-              t("TRANSACTION_TABLE_HEADER_TIME"),
-              t("PAYMENT_TYPE"),
-              t("CONTACT_NAME"),
-              t("PRINT_VALUE"),
-              t("DASH_STATUS"),
-            ],
-            rows: transactions.map((row) => [
-              row.id,
-              new Date(row.timestamp).toLocaleString(),
-              t(row.kind === "payment" ? "PAYMENT_TITLE" : "PAYMENT_SALE"),
-              row.customers.map((contact) => contact.name).join(", ") ||
-                t("TRANSACTION_NO_CUSTOMER"),
-              <Price price={row.total} />,
-              status(row.deletedAt),
-            ]),
-          });
+          if (sales)
+            sections.push({
+              title: t("REPORT_TRANSACTIONS"),
+              columns: [
+                t("PRINT_ID"),
+                t("TRANSACTION_TABLE_HEADER_TIME"),
+                t("PAYMENT_TYPE"),
+                t("CONTACT_NAME"),
+                t("PRINT_VALUE"),
+                t("DASH_STATUS"),
+              ],
+              rows: transactions.map((row) => [
+                row.id,
+                new Date(row.timestamp).toLocaleString(),
+                t(row.kind === "payment" ? "PAYMENT_TITLE" : "PAYMENT_SALE"),
+                row.customers.map((contact) => contact.name).join(", ") ||
+                  t("TRANSACTION_NO_CUSTOMER"),
+                <Price price={row.total} />,
+                status(row.deletedAt),
+              ]),
+            });
           if (purchasing)
             sections.push({
               title: t("REPORT_SUPPLIER_TRANSACTIONS"),
@@ -163,33 +168,35 @@ export default function WorkspaceReportPrintButton({
               ]),
             });
         }
-        sections.push({
-          title: t("REPORT_ITEMS_SOLD"),
-          columns: [
-            t("UI_ITEM"),
-            t("DASH_UNITS"),
-            t("DASH_SALE_COUNT"),
-            t("DASH_ITEM_VALUE"),
-            t("DASH_STATUS"),
-          ],
-          rows: [...summary.topItems]
-            .sort(
-              (a, b) => b.quantity - a.quantity || a.name.localeCompare(b.name),
-            )
-            .map((row) => [
-              row.name,
-              row.quantity,
-              row.salesCount,
-              <Price price={row.gross} />,
-              status(row.deletedAt),
-            ]),
-        });
+        if (sales)
+          sections.push({
+            title: t("REPORT_ITEMS_SOLD"),
+            columns: [
+              t("UI_ITEM"),
+              t("DASH_UNITS"),
+              t("DASH_SALE_COUNT"),
+              t("DASH_ITEM_VALUE"),
+              t("DASH_STATUS"),
+            ],
+            rows: [...summary.topItems]
+              .sort(
+                (a, b) =>
+                  b.quantity - a.quantity || a.name.localeCompare(b.name),
+              )
+              .map((row) => [
+                row.name,
+                row.quantity,
+                row.salesCount,
+                <Price price={row.gross} />,
+                status(row.deletedAt),
+              ]),
+          });
         return {
           title: t(
             mode === "dashboard" ? "REPORT_DASHBOARD" : "REPORT_OVERVIEW",
           ),
           range,
-          note: t("DASH_TOP_ITEMS_HELP"),
+          note: sales ? t("DASH_TOP_ITEMS_HELP") : undefined,
           sections,
         };
       }}

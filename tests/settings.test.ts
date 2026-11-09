@@ -40,13 +40,13 @@ test("valid drafts save normalized strings, numbers, and booleans", () => {
     ...toDraft(defaultSettings),
     currencyCharacter: " CA$ ",
     numOfDecimalPlaces: "0",
-    darkMode: true,
+    theme: "dark",
   });
   assert.deepEqual(saved, {
     ...defaultSettings,
     currencyCharacter: "CA$",
     numOfDecimalPlaces: 0,
-    darkMode: true,
+    theme: "dark",
   });
   assert.deepEqual(loadSettings(), saved);
 });
@@ -62,7 +62,7 @@ test("invalid text and toggles are rejected", () => {
     parseDraft({ ...toDraft(defaultSettings), currencyCharacter: " " }),
   );
   assert.throws(() =>
-    parseDraft({ ...toDraft(defaultSettings), darkMode: "true" }),
+    parseDraft({ ...toDraft(defaultSettings), theme: "true" }),
   );
 });
 test("subscribers are notified only after storage succeeds", () => {
@@ -79,4 +79,40 @@ test("subscribers are notified only after storage succeeds", () => {
   });
   assert.throws(() => saveSettings(toDraft(defaultSettings)));
   assert.equal(events, 1);
+});
+
+test("order modes require at least one side and recover invalid stored settings", () => {
+  const draft = toDraft(defaultSettings);
+  assert.equal(
+    parseDraft({ ...draft, sales: false, purchasing: true }).sales,
+    false,
+  );
+  assert.equal(
+    parseDraft({ ...draft, sales: true, purchasing: false }).purchasing,
+    false,
+  );
+  assert.throws(() =>
+    saveSettings({ ...draft, sales: false, purchasing: false }),
+  );
+  assert.equal(localStorage.getItem(STORAGE_KEY), null);
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ sales: false, purchasing: false }),
+  );
+  assert.equal(loadSettings().sales, true);
+  assert.equal(loadSettings().purchasing, false);
+});
+
+test("theme defaults to the system and preserves a legacy dark preference", () => {
+  assert.equal(loadSettings().theme, "system");
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ darkMode: false }));
+  assert.equal(loadSettings().theme, "system");
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ darkMode: true }));
+  assert.equal(loadSettings().theme, "dark");
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ darkMode: true, theme: "light" }),
+  );
+  assert.equal(loadSettings().theme, "light");
 });

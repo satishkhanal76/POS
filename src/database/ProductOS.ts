@@ -171,8 +171,8 @@ export default class ProductOS
   public async updateDetails(
     id: string,
     name: string,
-    amount: number,
-    eligibility?: { canSell: number; canPurchase: number },
+    amount: number | undefined,
+    eligibility?: Partial<{ canSell: number; canPurchase: number }>,
   ): Promise<void> {
     if (!this.priceChanges)
       throw new Error(getLocaleText("UI_PRICE_HISTORY_IS_UNAVAILABLE"));
@@ -203,7 +203,10 @@ export default class ProductOS
         }
         const latest = latestRequest.result?.value;
         products.put(indexedCatalog({ ...original, name, ...eligibility }));
-        if ((latest?.amount ?? original.amount) !== amount) {
+        if (
+          amount !== undefined &&
+          (latest?.amount ?? original.amount) !== amount
+        ) {
           history.add(
             indexedPriceChange(
               {

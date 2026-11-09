@@ -1,3 +1,4 @@
+import { useClientGlobal } from "../../contexts/ClientGlobal";
 import { useState } from "react";
 import { useLocaleText } from "../../contexts/Locale";
 import FullScreenModal from "../Modals/FullScreenModal";
@@ -12,11 +13,12 @@ export default function ItemAddForm({
   onClose: () => void;
   onAddItem?: (item: IProductItem) => void;
 }) {
+  const { sales } = useClientGlobal();
   const t = useLocaleText(),
     { itemOS } = useDatabase();
   const [name, setName] = useState(""),
     [price, setPrice] = useState(""),
-    [canSell, setCanSell] = useState(true),
+    [canSell, setCanSell] = useState(sales),
     [canPurchase, setCanPurchase] = useState(true),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -36,12 +38,12 @@ export default function ItemAddForm({
           setBusy(true);
           setError("");
           try {
-            if (canSell && !price.trim())
+            if (sales && canSell && !price.trim())
               throw new Error(t("UI_ENTER_A_PRICE"));
             const item = await new ItemsController(itemOS).handleFormSubmit({
               name,
-              price: canSell ? Number(price) : 0,
-              canSell,
+              price: sales && canSell ? Number(price) : 0,
+              canSell: sales && canSell,
               canPurchase,
             });
             if (item) onAddItem?.(item);
@@ -63,27 +65,31 @@ export default function ItemAddForm({
             disabled={busy}
           />
         </label>
-        <label>
-          {t("INPUT_ITEM_PRICE_LABEL")}
-          <input
-            className="input"
-            type="number"
-            min="0"
-            step="0.01"
-            value={price}
-            onChange={(event) => setPrice(event.target.value)}
-            disabled={busy || !canSell}
-          />
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={canSell}
-            onChange={(event) => setCanSell(event.target.checked)}
-            disabled={busy}
-          />
-          {t("BUY_CAN_SELL")}
-        </label>
+        {sales && (
+          <>
+            <label>
+              {t("INPUT_ITEM_PRICE_LABEL")}
+              <input
+                className="input"
+                type="number"
+                min="0"
+                step="0.01"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                disabled={busy || !canSell}
+              />
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={canSell}
+                onChange={(event) => setCanSell(event.target.checked)}
+                disabled={busy}
+              />
+              {t("BUY_CAN_SELL")}
+            </label>
+          </>
+        )}
         <label>
           <input
             type="checkbox"

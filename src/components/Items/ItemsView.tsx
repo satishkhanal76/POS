@@ -18,48 +18,48 @@ interface ItemsViewProps {
 
 const ItemsView = ({ items, onDeleted, onEdit }: ItemsViewProps) => {
   const t = useLocaleText();
-  const { stockManagement } = useClientGlobal();
+  const { sales, stockManagement } = useClientGlobal();
   const { counts, error } = useStockCounts(
     items.map((item) => item.getId()),
     stockManagement,
   );
   const [stockItem, setStockItem] = useState<IProductItem | null>(null);
 
-  const columns = itemColumns(t, stockManagement, counts, error);
+  const columns = itemColumns(t, stockManagement, counts, error, sales);
   columns.push({
-      key: "actions",
-      header: t("UI_ACTIONS"),
-      variant: "actions",
-      render: (item) => (
-        <>
-          {stockManagement && !item.deletedAt && (
-            <button
-              type="button"
-              disabled={!counts || error}
-              aria-label={t("STOCK_EDIT_TITLE", { item: item.getName() })}
-              onClick={() => setStockItem(item)}
-            >
-              {t("STOCK_EDIT")}
-            </button>
-          )}
-          {onEdit && (
-            <button
-              type="button"
-              aria-label={t("UI_EDIT_VALUE", { value0: item.getName() })}
-              onClick={() => onEdit(item)}
-            >
-              {t("UI_EDIT")}
-            </button>
-          )}
-          <DeleteRecordButton
-            table="PRODUCTS"
-            id={item.getId()}
-            name={item.getName()}
-            deleted={!!item.deletedAt}
-            onDeleted={onDeleted}
-          />
-        </>
-      ),
+    key: "actions",
+    header: t("UI_ACTIONS"),
+    variant: "actions",
+    render: (item) => (
+      <>
+        {stockManagement && !item.deletedAt && (
+          <button
+            type="button"
+            disabled={!counts || error}
+            aria-label={t("STOCK_EDIT_TITLE", { item: item.getName() })}
+            onClick={() => setStockItem(item)}
+          >
+            {t("STOCK_EDIT")}
+          </button>
+        )}
+        {onEdit && (
+          <button
+            type="button"
+            aria-label={t("UI_EDIT_VALUE", { value0: item.getName() })}
+            onClick={() => onEdit(item)}
+          >
+            {t("UI_EDIT")}
+          </button>
+        )}
+        <DeleteRecordButton
+          table="PRODUCTS"
+          id={item.getId()}
+          name={item.getName()}
+          deleted={!!item.deletedAt}
+          onDeleted={onDeleted}
+        />
+      </>
+    ),
   });
   return (
     <>

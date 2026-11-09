@@ -26,7 +26,7 @@ export default function DemoSettings() {
       className="settings-section demo-settings"
       aria-labelledby="demo-settings-title"
     >
-      <h2 id="demo-settings-title">{t("UI_DEMO_WORKSPACE")}</h2>
+      <h3 id="demo-settings-title">{t("UI_DEMO_WORKSPACE")}</h3>
       <p>
         {demo
           ? t("UI_YOU_ARE_USING_SAMPLE_DATA_ALL_ITEMS_CUSTOMERS_AND")

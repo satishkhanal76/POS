@@ -37,8 +37,15 @@ export default function ContactPage() {
     if (!id) return;
     Promise.all([
       stores.contactOS.getOne(id, includeDeleted),
-      new CustomerActivityStore(stores.database).getBalance(id, includeDeleted),
-      stores.purchasingOS.balance(id, includeDeleted),
+      settings.sales
+        ? new CustomerActivityStore(stores.database).getBalance(
+            id,
+            includeDeleted,
+          )
+        : Promise.resolve(0),
+      settings.purchasing
+        ? stores.purchasingOS.balance(id, includeDeleted)
+        : Promise.resolve(0),
     ])
       .then(([person, sales, purchases]) => {
         if (!cancelled) {
@@ -52,7 +59,15 @@ export default function ContactPage() {
     return () => {
       cancelled = true;
     };
-  }, [stores, id, includeDeleted, revision, t]);
+  }, [
+    stores,
+    id,
+    includeDeleted,
+    revision,
+    t,
+    settings.sales,
+    settings.purchasing,
+  ]);
   useEffect(() => {
     if (!contact || !["#transactions", "#purchases"].includes(location.hash))
       return;
@@ -106,12 +121,18 @@ export default function ContactPage() {
               )
             }
           />
-          <p>{t("CONTACT_BALANCE_HELP")}</p>
+          {settings.sales && settings.purchasing && (
+            <p>{t("CONTACT_BALANCE_HELP")}</p>
+          )}
           <section className="contact-balances">
-            <article>
-              <h2>{t("CONTACT_THEY_OWE")}</h2>
-              <Price price={balances.sales} />
-            </article>
+            {settings.sales && (
+              <>
+                <article>
+                  <h2>{t("CONTACT_THEY_OWE")}</h2>
+                  <Price price={balances.sales} />
+                </article>
+              </>
+            )}
             {settings.purchasing && (
               <article>
                 <h2>{t("CONTACT_WE_OWE")}</h2>
@@ -122,19 +143,23 @@ export default function ContactPage() {
           <DashboardFilters {...period} />
           {period.range ? (
             <>
-              <section
-                id="transactions"
-                className="contact-history-section"
-                aria-labelledby="contact-sales-title"
-              >
-                <h2 id="contact-sales-title">{t("CONTACT_SALES")}</h2>
-                <TransactionsView
-                  customerId={contact.getId()}
-                  customerName={contact.getName()}
-                  range={period.range}
-                  scope="sales"
-                />
-              </section>
+              {settings.sales && (
+                <>
+                  <section
+                    id="transactions"
+                    className="contact-history-section"
+                    aria-labelledby="contact-sales-title"
+                  >
+                    <h2 id="contact-sales-title">{t("CONTACT_SALES")}</h2>
+                    <TransactionsView
+                      customerId={contact.getId()}
+                      customerName={contact.getName()}
+                      range={period.range}
+                      scope="sales"
+                    />
+                  </section>
+                </>
+              )}
               {settings.purchasing && (
                 <section
                   id="purchases"

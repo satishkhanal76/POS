@@ -70,11 +70,11 @@ export default class ItemsController
   public async updateItem(
     id: string,
     name: string,
-    price: number,
-    eligibility?: { canSell: number; canPurchase: number },
+    price: number | undefined,
+    eligibility?: Partial<{ canSell: number; canPurchase: number }>,
   ): Promise<void> {
     if (!name.trim()) throw new Error(getLocaleText("UI_ENTER_AN_ITEM_NAME"));
-    if (!Number.isFinite(price) || price < 0)
+    if (price !== undefined && (!Number.isFinite(price) || price < 0))
       throw new Error(getLocaleText("UI_ENTER_A_VALID_PRICE_OF_ZERO_OR_MORE"));
     await this.objectStore.updateDetails(id, name.trim(), price, eligibility);
   }

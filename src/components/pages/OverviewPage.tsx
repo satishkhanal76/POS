@@ -18,7 +18,7 @@ import CollapsibleReport from "../utils/CollapsibleReport";
 
 export default function OverviewPage() {
   const t = useLocaleText();
-  const { purchasing } = useClientGlobal();
+  const { sales, purchasing } = useClientGlobal();
   const period = useReportPeriod("month");
   const [refresh, setRefresh] = useState(0);
   const { range } = period;
@@ -28,7 +28,7 @@ export default function OverviewPage() {
       <main className="dashboard-page">
         <PageHeader
           title={t("REPORT_OVERVIEW")}
-          description={t("DASH_DESCRIPTION")}
+          description={t(sales ? "DASH_DESCRIPTION" : "PURCHASE_REPORT_HELP")}
           actions={
             <>
               <WorkspaceReportPrintButton range={range} mode="overview" />
@@ -63,7 +63,7 @@ export default function OverviewPage() {
                 )}
               <DashboardMetrics data={data} />
               <DashboardTrend data={data} />
-              <TopSellingItems items={data.topItems} />
+              {sales && <TopSellingItems items={data.topItems} />}
             </>
           )
         )}
@@ -74,9 +74,13 @@ export default function OverviewPage() {
             periodParams={period.periodParams}
           />
         )}
-        <CollapsibleReport title={t("DASH_BALANCES")}>
-          <CustomerBalances refresh={refresh} embedded />
-        </CollapsibleReport>
+        {sales && (
+          <>
+            <CollapsibleReport title={t("DASH_BALANCES")}>
+              <CustomerBalances refresh={refresh} embedded />
+            </CollapsibleReport>
+          </>
+        )}
       </main>
     </ReportPrintContext.Provider>
   );

@@ -6,7 +6,7 @@ import PurchasePOS from "./POS/PurchasePOS";
 import SalePOS from "./POS/SalePOS";
 
 export default function POS() {
-  const { purchasing } = useClientGlobal();
+  const { sales, purchasing } = useClientGlobal();
   const [params, setParams] = useSearchParams();
   const requested = params.get("mode");
   const [mode, setMode] = useState<OrderMode>(
@@ -19,9 +19,9 @@ export default function POS() {
   useEffect(() => {
     setMode(requested === "purchase" ? "purchase" : "sale");
   }, [requested]);
-  const activeMode = purchasing ? mode : "sale";
+  const activeMode = !sales ? "purchase" : purchasing ? mode : "sale";
   const renderModeSwitch = (disabled: boolean) =>
-    purchasing ? (
+    sales && purchasing ? (
       <OrderModeSwitch
         mode={activeMode}
         disabled={disabled}
@@ -41,13 +41,15 @@ export default function POS() {
   // Keep both workspaces mounted so switching modes preserves each unsaved draft.
   return (
     <>
-      <div className="pos-mode-panel" hidden={activeMode !== "sale"}>
-        <SalePOS
-          active={activeMode === "sale"}
-          renderModeSwitch={renderModeSwitch}
-        />
-      </div>
-      {purchaseMounted && (
+      {sales && (
+        <div className="pos-mode-panel" hidden={activeMode !== "sale"}>
+          <SalePOS
+            active={activeMode === "sale"}
+            renderModeSwitch={renderModeSwitch}
+          />
+        </div>
+      )}
+      {(purchaseMounted || purchasing) && (
         <div className="pos-mode-panel" hidden={activeMode !== "purchase"}>
           <PurchasePOS
             renderModeSwitch={renderModeSwitch}

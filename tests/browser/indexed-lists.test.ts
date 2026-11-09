@@ -1260,13 +1260,13 @@ test("phone dialogs fit the keyboard viewport, follow panning, and keep live sea
   });
   await page.waitForFunction(
     () =>
-      document.querySelector("dialog.pos-modal[open]")?.dataset.keyboardOpen ===
-      "true",
+      document.querySelector<HTMLDialogElement>("dialog.pos-modal[open]")
+        ?.dataset.keyboardOpen === "true",
   );
   const measure = () =>
     page.evaluate(() => {
       const modal = document
-        .querySelector("dialog.pos-modal[open]")!
+        .querySelector<HTMLDialogElement>("dialog.pos-modal[open]")!
         .getBoundingClientRect();
       const field = document
         .querySelector(".modal-search")!
@@ -1298,8 +1298,9 @@ test("phone dialogs fit the keyboard viewport, follow panning, and keep live sea
   });
   await page.waitForFunction(
     () =>
-      document.querySelector("dialog.pos-modal[open]")!.getBoundingClientRect()
-        .top >= 50,
+      document
+        .querySelector<HTMLDialogElement>("dialog.pos-modal[open]")!
+        .getBoundingClientRect().top >= 50,
   );
   assert.ok((await measure()).bottom <= 450);
   await search.press("Enter");
@@ -1313,8 +1314,8 @@ test("phone dialogs fit the keyboard viewport, follow panning, and keep live sea
   });
   await page.waitForFunction(
     () =>
-      document.querySelector("dialog.pos-modal[open]")?.dataset.keyboardOpen ===
-      "false",
+      document.querySelector<HTMLDialogElement>("dialog.pos-modal[open]")
+        ?.dataset.keyboardOpen === "false",
   );
   await page
     .getByRole("button", { name: english.UI_CLOSE_DIALOG, exact: true })
@@ -1328,8 +1329,8 @@ test("phone dialogs fit the keyboard viewport, follow panning, and keep live sea
   });
   await page.waitForFunction(
     () =>
-      document.querySelector("dialog.pos-modal[open]")?.dataset.keyboardOpen ===
-      "true",
+      document.querySelector<HTMLDialogElement>("dialog.pos-modal[open]")
+        ?.dataset.keyboardOpen === "true",
   );
   assert.ok(
     await page

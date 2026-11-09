@@ -14,7 +14,7 @@ export default function useDashboardSummary(
   refresh: number,
 ) {
   const revision = useDeletionRevision();
-  const { purchasing } = useClientGlobal();
+  const { sales, purchasing } = useClientGlobal();
   const { database } = useDatabase();
   const controller = useMemo(
     () => new DashboardController(new DashboardOS(database)),
@@ -37,7 +37,7 @@ export default function useDashboardSummary(
     }
     setBusy(true);
     controller
-      .getSummary({ start, end, all, includeDeleted }, purchasing)
+      .getSummary({ start, end, all, includeDeleted }, purchasing, sales)
       .then((result) => {
         if (!cancelled) setData(result);
       })
@@ -59,6 +59,7 @@ export default function useDashboardSummary(
     refresh,
     revision,
     purchasing,
+    sales,
   ]);
   return { data, busy, error };
 }

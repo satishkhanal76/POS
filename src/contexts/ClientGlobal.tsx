@@ -1,9 +1,10 @@
-import { appBranding } from "../config/appBranding";
+import { applyTheme, SYSTEM_THEME_QUERY } from "../settings/theme";
 import {
   ReactNode,
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useState,
 } from "react";
 import {
@@ -33,24 +34,14 @@ export function ClientGlobalProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("storage", onStorage);
     };
   }, []);
-  useEffect(() => {
-    document.body.classList.toggle("light-theme", !settings.darkMode);
-    document.documentElement.style.colorScheme = settings.darkMode
-      ? "dark"
-      : "light";
-    document.documentElement.dataset.appTheme = settings.darkMode
-      ? "dark"
-      : "light";
-    document
-      .querySelector('meta[name="theme-color"]')
-      ?.setAttribute(
-        "content",
-        settings.darkMode ? appBranding.darkBackground : appBranding.background,
-      );
-    document
-      .querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
-      ?.setAttribute("content", settings.darkMode ? "black" : "default");
-  }, [settings.darkMode]);
+  useLayoutEffect(() => {
+    const system = window.matchMedia(SYSTEM_THEME_QUERY);
+    const update = () => applyTheme(settings.theme, system.matches);
+    update();
+    if (settings.theme !== "system") return;
+    system.addEventListener("change", update);
+    return () => system.removeEventListener("change", update);
+  }, [settings.theme]);
   return (
     <ClientGlobalContext.Provider value={settings}>
       {children}

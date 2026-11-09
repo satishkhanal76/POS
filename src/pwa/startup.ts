@@ -1,15 +1,8 @@
 import { getLocaleText } from "../localization/locale";
 import { loadSettings } from "../settings/settings";
-import { appBranding } from "../config/appBranding";
+import { applyTheme, SYSTEM_THEME_QUERY } from "../settings/theme";
 
-const dark = loadSettings().darkMode;
-document.documentElement.dataset.appTheme = dark ? "dark" : "light";
-document
-  .querySelector('meta[name="theme-color"]')
-  ?.setAttribute(
-    "content",
-    dark ? appBranding.darkBackground : appBranding.background,
-  );
+applyTheme(loadSettings().theme, window.matchMedia(SYSTEM_THEME_QUERY).matches);
 const setText = (selector: string, text: string) => {
   const element = document.querySelector(selector);
   if (element) element.textContent = text;

@@ -1,3 +1,4 @@
+import { useClientGlobal } from "../../contexts/ClientGlobal";
 import { nameSortOptions } from "../utils/catalogSorts";
 import CatalogSearch from "../Forms/CatalogSearch";
 import { useCallback, useState } from "react";
@@ -18,6 +19,7 @@ import ContactForm from "../Contacts/ContactForm";
 import ContactsTable from "../Contacts/ContactsTable";
 
 export default function ContactsPage() {
+  const { sales, purchasing } = useClientGlobal();
   const t = useLocaleText(),
     { contactOS } = useDatabase(),
     { includeDeleted } = useDeletedVisibility(),
@@ -37,12 +39,17 @@ export default function ContactsPage() {
     },
     [contactOS, includeDeleted, search, revision, refresh],
   );
-  const pagination = usePagedQuery(query, 'contacts', 'name-asc', nameSortOptions.map(option => option.value));
+  const pagination = usePagedQuery(
+    query,
+    "contacts",
+    "name-asc",
+    nameSortOptions.map((option) => option.value),
+  );
   return (
     <main>
       <PageHeader
         title={t("CUSTOMERS_TITLE")}
-        description={t("CONTACT_ROLE_HELP")}
+        description={sales && purchasing ? t("CONTACT_ROLE_HELP") : undefined}
         actions={
           <button
             type="button"
@@ -61,7 +68,14 @@ export default function ContactsPage() {
       <PaginationControls
         className="catalog-toolbar"
         sortOptions={nameSortOptions}
-        filters={<CatalogSearch label={t('SEARCH_CONTACTS')} placeholder={t('SEARCH_CONTACTS_PLACEHOLDER')} value={search} onChange={setSearch}/>}
+        filters={
+          <CatalogSearch
+            label={t("SEARCH_CONTACTS")}
+            placeholder={t("SEARCH_CONTACTS_PLACEHOLDER")}
+            value={search}
+            onChange={setSearch}
+          />
+        }
 
         page={pagination.page}
         pageSize={pagination.pageSize}

@@ -1,18 +1,24 @@
+import { isThemePreference, ThemePreference } from "./theme";
 import { SETTINGS_STORAGE_KEY } from "./storage";
 import { getLocaleText, LocaleKey, Translate } from "../contexts/Locale";
 import defaults from "../data/ClientGlobal.json";
 
-export type Settings = typeof defaults;
+export type Settings = Omit<typeof defaults, "theme"> & {
+  theme: ThemePreference;
+};
 type Field<K extends keyof Settings> = {
   key: K;
-  type: Settings[K] extends boolean
-    ? "boolean"
-    : Settings[K] extends number
-      ? "number"
-      : "text";
+  type: K extends "theme"
+    ? "select"
+    : Settings[K] extends boolean
+      ? "boolean"
+      : Settings[K] extends number
+        ? "number"
+        : "text";
   label: LocaleKey;
   description: LocaleKey;
-  group: "Prices" | "Appearance" | "Stock" | "Deletion" | "Purchasing" | "Order";
+  group:
+    "Prices" | "Appearance" | "Stock" | "Deletion" | "Purchasing" | "Order";
   min?: number;
   max?: number;
   integer?: boolean;
@@ -21,8 +27,30 @@ type Field<K extends keyof Settings> = {
 export type SettingField = { [K in keyof Settings]: Field<K> }[keyof Settings];
 
 export const settingsSchema: SettingField[] = [
-  { key: 'pickerPageSize', type: 'number', label: 'PICKER_LIMIT', description: 'PICKER_LIMIT_HELP', group: 'Order', min: 1, max: 50, integer: true },
-  { key: 'pickerRecentFirst', type: 'boolean', label: 'PICKER_RECENT', description: 'PICKER_RECENT_HELP', group: 'Order' },
+  {
+    key: "pickerPageSize",
+    type: "number",
+    label: "PICKER_LIMIT",
+    description: "PICKER_LIMIT_HELP",
+    group: "Order",
+    min: 1,
+    max: 50,
+    integer: true,
+  },
+  {
+    key: "pickerRecentFirst",
+    type: "boolean",
+    label: "PICKER_RECENT",
+    description: "PICKER_RECENT_HELP",
+    group: "Order",
+  },
+  {
+    key: "sales",
+    type: "boolean",
+    label: "SALES_ENABLE",
+    description: "SALES_ENABLE_HELP",
+    group: "Purchasing",
+  },
   {
     key: "purchasing",
     type: "boolean",
@@ -70,14 +98,17 @@ export const settingsSchema: SettingField[] = [
     integer: true,
   },
   {
-    key: "darkMode",
-    type: "boolean",
-    label: "UI_DARK_MODE",
-    description: "UI_USE_A_DARKER_APPEARANCE_THROUGHOUT_THE_APP",
+    key: "theme",
+    type: "select",
+    label: "SETTINGS_THEME",
+    description: "SETTINGS_THEME_HELP",
     group: "Appearance",
   },
 ];
-export const defaultSettings: Settings = defaults;
+export const defaultSettings: Settings = {
+  ...defaults,
+  theme: isThemePreference(defaults.theme) ? defaults.theme : "system",
+};
 export const STORAGE_KEY = SETTINGS_STORAGE_KEY;
 export const UPDATE_EVENT = "clientGlobal:updated";
 export type SettingsDraft = Record<keyof Settings, string | boolean>;
@@ -96,6 +127,8 @@ export function fieldError(
   value: unknown,
   t: Translate = getLocaleText,
 ): string | undefined {
+  if (field.type === "select")
+    return isThemePreference(value) ? undefined : t("SETTINGS_THEME_INVALID");
   if (field.type === "boolean")
     return typeof value === "boolean" ? undefined : t("UI_CHOOSE_ON_OR_OFF");
   if (field.type === "text") {
@@ -124,6 +157,15 @@ export function fieldError(
     });
 }
 
+export function orderModeError(
+  settings: Pick<SettingsDraft, "sales" | "purchasing">,
+  t: Translate = getLocaleText,
+) {
+  return !settings.sales && !settings.purchasing
+    ? t("ORDER_MODE_REQUIRED")
+    : undefined;
+}
+
 export function parseDraft(draft: SettingsDraft): Settings {
   const next = { ...defaultSettings };
   for (const field of settingsSchema) {
@@ -145,6 +187,8 @@ export function parseDraft(draft: SettingsDraft): Settings {
             : value,
     });
   }
+  const error = orderModeError(next);
+  if (error) throw new Error(error);
   return next;
 }
 
@@ -156,8 +200,12 @@ export function loadSettings(): Settings {
     );
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
       return next;
+    const stored = parsed as Record<string, unknown>;
+    // The old light value was also the default, so only a legacy dark selection is carried forward.
+    if (!isThemePreference(stored.theme) && stored.darkMode === true)
+      next.theme = "dark";
     for (const field of settingsSchema) {
-      const value = (parsed as Record<string, unknown>)[field.key];
+      const value = stored[field.key];
       const expected = typeof defaultSettings[field.key];
       if (typeof value === expected && !fieldError(field, value))
         Object.assign(next, {
@@ -167,6 +215,7 @@ export function loadSettings(): Settings {
   } catch {
     /* Missing or unreadable storage falls back to validated defaults. */
   }
+  if (!next.sales && !next.purchasing) next.sales = defaultSettings.sales;
   return next;
 }
 

@@ -1,3 +1,4 @@
+import Select from "../Forms/Select";
 import DatabaseResetSettings from "../Settings/DatabaseResetSettings";
 import LanguageSettings from "../Settings/LanguageSettings";
 import { LocaleSelection, selectLocale } from "../../localization/locale";
@@ -11,17 +12,36 @@ import {
 import PageHeader from "../Layout/PageHeader";
 import BackupSettings from "../Settings/BackupSettings";
 import DemoSettings from "../Workspace/DemoSettings";
-import { useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useClientGlobal } from "../../contexts/ClientGlobal";
 import {
   defaultSettings,
   fieldError,
+  orderModeError,
   saveSettings,
   settingsSchema,
+  SettingField,
   SettingsDraft,
   toDraft,
 } from "../../settings/settings";
 import "./SettingsPage.css";
+
+function SettingsCategory({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <details className="settings-category" open>
+      <summary>
+        <h2>{title}</h2>
+      </summary>
+      <div className="settings-category-content">{children}</div>
+    </details>
+  );
+}
 
 export default function SettingsPage() {
   const t = useLocaleText();
@@ -38,7 +58,9 @@ export default function SettingsPage() {
   const dirty =
     JSON.stringify(displayDraft) !== JSON.stringify(savedDraft) ||
     displayLanguage !== preferences.selection;
+  const modeError = orderModeError(displayDraft, t);
   const invalid =
+    modeError ||
     settingsSchema.some((field) =>
       fieldError(field, displayDraft[field.key], t),
     ) ||
@@ -71,6 +93,96 @@ export default function SettingsPage() {
     ? t("UI_ENTER_VALID_DECIMAL_PLACES_TO_PREVIEW")
     : `${displayDraft.currencyCharacter}${(1234.5).toFixed(decimals)}`;
 
+  const renderGroup = (group: SettingField["group"], label: string) => (
+    <section className="settings-section" aria-labelledby={`group-${group}`}>
+      <h3 id={`group-${group}`}>{t(label)}</h3>
+      {settingsSchema
+        .filter((field) => field.group === group)
+        .map((field) => {
+          const id = `setting-${field.key}`;
+          const error = fieldError(field, displayDraft[field.key], t);
+          return (
+            <div className="settings-field" key={field.key}>
+              <div>
+                <label htmlFor={id}>{t(field.label)}</label>
+                <p id={`${id}-help`}>{t(field.description)}</p>
+              </div>
+              <div className="settings-control">
+                {field.type === "boolean" ? (
+                  <label className="settings-toggle">
+                    <input
+                      id={id}
+                      type="checkbox"
+                      role="switch"
+                      disabled={
+                        field.key === "forceStockAdherence" &&
+                        !displayDraft.stockManagement
+                      }
+                      checked={Boolean(displayDraft[field.key])}
+                      onChange={(event) =>
+                        update(field.key, event.target.checked)
+                      }
+                      aria-describedby={`${id}-help`}
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="settings-toggle-track"
+                    />
+                    <span>
+                      {displayDraft[field.key] ? t("UI_ON") : t("UI_OFF")}
+                    </span>
+                  </label>
+                ) : field.type === "select" ? (
+                  <Select
+                    id={id}
+                    value={String(displayDraft[field.key])}
+                    aria-describedby={`${id}-help`}
+                    onChange={(value) => update(field.key, value)}
+                  >
+                    <option value="system">{t("SETTINGS_THEME_SYSTEM")}</option>
+                    <option value="light">{t("SETTINGS_THEME_LIGHT")}</option>
+                    <option value="dark">{t("SETTINGS_THEME_DARK")}</option>
+                  </Select>
+                ) : (
+                  <input
+                    id={id}
+                    type={field.type === "number" ? "number" : "text"}
+                    value={String(displayDraft[field.key])}
+                    min={field.min}
+                    max={field.max}
+                    step={field.integer ? 1 : "any"}
+                    maxLength={field.maxLength}
+                    aria-invalid={!!error}
+                    aria-describedby={`${id}-help${error ? ` ${id}-error` : ""}`}
+                    onChange={(event) => update(field.key, event.target.value)}
+                  />
+                )}
+                {error && (
+                  <p className="settings-error" id={`${id}-error`}>
+                    {error}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      {group === "Purchasing" && modeError && (
+        <p className="settings-error" role="alert">
+          {modeError}
+        </p>
+      )}
+      {group === "Prices" && (
+        <div className="settings-preview">
+          <span>{t("UI_PRICE_PREVIEW")}</span>
+          <output>{preview}</output>
+          <small>
+            {t("UI_DISPLAY_FORMATTING_ONLY_TRANSACTION_AMOUNTS_STAY_THE_SAME")}
+          </small>
+        </div>
+      )}
+    </section>
+  );
+
   return (
     <main className="settings-page">
       <PageHeader
@@ -78,14 +190,46 @@ export default function SettingsPage() {
         eyebrow={t("UI_MAKE_IT_YOURS")}
         description={t("UI_SET_UP_YOUR_WORKSPACE_CHANGES_ARE_SAVED_ON_THIS")}
         actions={
-          <button
-            className="settings-save"
-            type="submit"
-            form="workspace-settings"
-            disabled={!dirty || !!invalid}
-          >
-            {t("UI_SAVE_CHANGES_2")}
-          </button>
+          <div className="settings-actions">
+            <div className="settings-action-buttons">
+              <button
+                type="button"
+                disabled={!dirty}
+                onClick={() => {
+                  setDraft(null);
+                  setStatus(t("UI_CHANGES_DISCARDED"));
+                }}
+              >
+                {t("UI_DISCARD")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft({
+                    settings: toDraft(defaultSettings),
+                    language: "english",
+                  });
+                  setStatus(t("UI_DEFAULTS_LOADED_SAVE_CHANGES_TO_APPLY"));
+                }}
+              >
+                {t("UI_RESTORE_DEFAULTS")}
+              </button>
+              <button
+                className="settings-save"
+                type="submit"
+                form="workspace-settings"
+                disabled={!dirty || !!invalid}
+              >
+                {t("UI_SAVE_CHANGES_2")}
+              </button>
+            </div>
+            <p role="status" aria-live="polite">
+              {status ||
+                (dirty
+                  ? t("UI_YOU_HAVE_UNSAVED_CHANGES")
+                  : t("UI_ALL_CHANGES_SAVED"))}
+            </p>
+          </div>
         }
       />
       <form
@@ -93,9 +237,8 @@ export default function SettingsPage() {
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
+          if (!dirty || invalid) return;
           try {
-            if (displayLanguage === "custom" && !preferences.custom)
-              throw new Error(t("LOCALE_NO_CUSTOM"));
             saveSettings(displayDraft);
             if (displayLanguage !== preferences.selection)
               selectLocale(displayLanguage);
@@ -110,156 +253,36 @@ export default function SettingsPage() {
           }
         }}
       >
-        {(
-          [
-            "Prices",
-            "Appearance",
-            "Order",
-            "Stock",
-            "Deletion",
-            "Purchasing",
-          ] as const
-        ).map((group) => (
-          <section
-            className="settings-section"
-            key={group}
-            aria-labelledby={`group-${group}`}
-          >
-            <h2 id={`group-${group}`}>
-              {t(
-                group === "Order"
-                  ? "PICKER_SETTINGS"
-                  : group === "Prices"
-                    ? "UI_PRICES"
-                    : group === "Stock"
-                      ? "STOCK_TITLE"
-                      : group === "Deletion"
-                        ? "DELETED_CATEGORY"
-                        : group === "Purchasing"
-                          ? "BUY_TITLE"
-                          : "UI_APPEARANCE",
-              )}
-            </h2>
-            {settingsSchema
-              .filter((field) => field.group === group)
-              .map((field) => {
-                const id = `setting-${field.key}`;
-                const error = fieldError(field, displayDraft[field.key], t);
-                return (
-                  <div className="settings-field" key={field.key}>
-                    <div>
-                      <label htmlFor={id}>{t(field.label)}</label>
-                      <p id={`${id}-help`}>{t(field.description)}</p>
-                    </div>
-                    <div className="settings-control">
-                      {field.type === "boolean" ? (
-                        <label className="settings-toggle">
-                          <input
-                            id={id}
-                            type="checkbox"
-                            role="switch"
-                            disabled={
-                              field.key === "forceStockAdherence" &&
-                              !displayDraft.stockManagement
-                            }
-                            checked={Boolean(displayDraft[field.key])}
-                            onChange={(event) =>
-                              update(field.key, event.target.checked)
-                            }
-                            aria-describedby={`${id}-help`}
-                          />
-                          <span
-                            aria-hidden="true"
-                            className="settings-toggle-track"
-                          />
-                          <span>
-                            {displayDraft[field.key] ? t("UI_ON") : t("UI_OFF")}
-                          </span>
-                        </label>
-                      ) : (
-                        <input
-                          id={id}
-                          type={field.type === "number" ? "number" : "text"}
-                          value={String(displayDraft[field.key])}
-                          min={field.min}
-                          max={field.max}
-                          step={field.integer ? 1 : "any"}
-                          maxLength={field.maxLength}
-                          aria-invalid={!!error}
-                          aria-describedby={`${id}-help${error ? ` ${id}-error` : ""}`}
-                          onChange={(event) =>
-                            update(field.key, event.target.value)
-                          }
-                        />
-                      )}
-                      {error && (
-                        <p className="settings-error" id={`${id}-error`}>
-                          {error}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            {group === "Prices" && (
-              <div className="settings-preview">
-                <span>{t("UI_PRICE_PREVIEW")}</span>
-                <output>{preview}</output>
-                <small>
-                  {t(
-                    "UI_DISPLAY_FORMATTING_ONLY_TRANSACTION_AMOUNTS_STAY_THE_SAME",
-                  )}
-                </small>
-              </div>
-            )}
-          </section>
-        ))}
-        <LanguageSettings
-          value={displayLanguage}
-          customAvailable={!!preferences.custom}
-          onChange={(language) => {
-            setDraft({ settings: displayDraft, language });
-            setStatus("");
-          }}
-        />
-        <footer className="settings-actions">
-          <div className="settings-action-buttons">
-            <button
-              type="button"
-              disabled={!dirty}
-              onClick={() => {
-                setDraft(null);
-                setStatus(t("UI_CHANGES_DISCARDED"));
-              }}
-            >
-              {t("UI_DISCARD")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDraft({
-                  settings: toDraft(defaultSettings),
-                  language: "english",
-                });
-                setStatus(t("UI_DEFAULTS_LOADED_SAVE_CHANGES_TO_APPLY"));
-              }}
-            >
-              {t("UI_RESTORE_DEFAULTS")}
-            </button>
-          </div>
-          <p role="status" aria-live="polite">
-            {status ||
-              (dirty
-                ? t("UI_YOU_HAVE_UNSAVED_CHANGES")
-                : t("UI_ALL_CHANGES_SAVED"))}
-          </p>
-        </footer>
+        <SettingsCategory title={t("SETTINGS_ORDER_ENTRY")}>
+          {renderGroup("Purchasing", "ORDER_MODES_SETTINGS")}
+          {renderGroup("Order", "PICKER_SETTINGS")}
+          {renderGroup("Stock", "STOCK_TITLE")}
+        </SettingsCategory>
+        <SettingsCategory title={t("SETTINGS_DISPLAY")}>
+          {renderGroup("Appearance", "UI_APPEARANCE")}
+          {renderGroup("Prices", "UI_PRICES")}
+        </SettingsCategory>
+        <SettingsCategory title={t("SETTINGS_LANGUAGE")}>
+          <LanguageSettings
+            value={displayLanguage}
+            customAvailable={!!preferences.custom}
+            onChange={(language) => {
+              setDraft({ settings: displayDraft, language });
+              setStatus("");
+            }}
+          />
+          <LocaleSettings />
+        </SettingsCategory>
+        <SettingsCategory title={t("SETTINGS_WORKSPACE_DATA")}>
+          <DemoSettings />
+          <BackupSettings />
+          {renderGroup("Deletion", "DELETED_CATEGORY")}
+          <DatabaseResetSettings />
+        </SettingsCategory>
+        <SettingsCategory title={t("SETTINGS_INSTALLATION")}>
+          <InstallationSettings />
+        </SettingsCategory>
       </form>
-      <InstallationSettings />
-      <LocaleSettings />
-      <BackupSettings />
-      <DemoSettings />
-      <DatabaseResetSettings />
     </main>
   );
 }

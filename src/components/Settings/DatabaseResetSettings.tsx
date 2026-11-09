@@ -54,7 +54,7 @@ export default function DatabaseResetSettings() {
       className="settings-section database-danger"
       aria-labelledby="database-reset-title"
     >
-      <h2 id="database-reset-title">{t("RESET_TITLE")}</h2>
+      <h3 id="database-reset-title">{t("RESET_TITLE")}</h3>
       <p>{t("RESET_DESCRIPTION")}</p>
       <button
         type="button"

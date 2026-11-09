@@ -16,17 +16,22 @@ import "../../styles/Reports.css";
 
 export default function DashboardPage() {
   const t = useLocaleText();
-  const { purchasing } = useClientGlobal();
+  const { sales, purchasing } = useClientGlobal();
   const period = useReportPeriod("day");
   const [refresh, setRefresh] = useState(0);
-  const { data, busy, error } = useDashboardSummary(period.range, refresh);
+  const { data, busy, error } = useDashboardSummary(
+    sales ? period.range : null,
+    refresh,
+  );
   const key = `${period.range?.start}:${period.range?.end}`;
   return (
     <ReportPrintContext.Provider value={period.range}>
       <main className="dashboard-page">
         <PageHeader
           title={t("REPORT_DASHBOARD")}
-          description={t("REPORT_DASHBOARD_HELP")}
+          description={t(
+            sales ? "REPORT_DASHBOARD_HELP" : "PURCHASE_REPORT_HELP",
+          )}
           actions={
             <>
               <WorkspaceReportPrintButton
@@ -51,33 +56,34 @@ export default function DashboardPage() {
           <p role="alert">{t("DASH_INVALID")}</p>
         ) : (
           <>
-            <CollapsibleReport title={t("REPORT_TRANSACTIONS")}>
-              <TransactionsView
-                range={period.range}
-                scope="sales"
-                refresh={refresh}
-              />
-            </CollapsibleReport>
+            {sales && (
+              <CollapsibleReport title={t("REPORT_TRANSACTIONS")}>
+                <TransactionsView
+                  range={period.range}
+                  scope="sales"
+                  refresh={refresh}
+                />
+              </CollapsibleReport>
+            )}
             {purchasing && (
               <CollapsibleReport title={t("REPORT_SUPPLIER_TRANSACTIONS")}>
                 <PurchasingHistory range={period.range} refresh={refresh} />
               </CollapsibleReport>
             )}
-            {busy ? (
-              <p role="status">{t("DASH_LOADING")}</p>
-            ) : error ? (
-              <p role="alert">{t("DASH_ERROR")}</p>
-            ) : (
-              data && (
-                <>
+            {sales &&
+              (busy ? (
+                <p role="status">{t("DASH_LOADING")}</p>
+              ) : error ? (
+                <p role="alert">{t("DASH_ERROR")}</p>
+              ) : (
+                data && (
                   <TopSellingItems
                     key={key}
                     items={data.topItems}
                     title="REPORT_ITEMS_SOLD"
                   />
-                </>
-              )
-            )}
+                )
+              ))}
           </>
         )}
       </main>

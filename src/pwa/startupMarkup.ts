@@ -1,3 +1,4 @@
+import { SYSTEM_THEME_QUERY } from "../settings/theme";
 import { SETTINGS_STORAGE_KEY } from "../settings/storage";
 import { englishMessages as english } from "../localization/messages";
 import { appBranding, startupAssets } from "../config/appBranding";
@@ -66,8 +67,13 @@ export const startupRecoveryScript = `
 /** Apply the saved appearance before first paint, without waiting for JavaScript bundles. */
 export const startupThemeScript = `
   (function() {
-    var dark = false;
-    try { dark = JSON.parse(localStorage.getItem('${SETTINGS_STORAGE_KEY}') || '{}').darkMode === true; } catch (_) {}
+    var dark = window.matchMedia('${SYSTEM_THEME_QUERY}').matches;
+    try {
+      var settings = JSON.parse(localStorage.getItem('${SETTINGS_STORAGE_KEY}') || '{}');
+      if (settings.theme === 'dark' || settings.theme === 'light') dark = settings.theme === 'dark';
+      else if (settings.theme !== 'system' && settings.darkMode === true) dark = true;
+    } catch (_) {}
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
     document.documentElement.dataset.appTheme = dark ? 'dark' : 'light';
     var theme = document.querySelector('meta[name="theme-color"]');
     if (theme) theme.setAttribute('content', dark ? '${appBranding.darkBackground}' : '${appBranding.background}');

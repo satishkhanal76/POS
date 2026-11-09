@@ -4,9 +4,9 @@ import { DashboardRange, dateInput } from "../dashboard/period";
 
 export default class DashboardController {
   constructor(private readonly store: DashboardOS) {}
-  async getSummary(range: DashboardRange, purchasing = true) {
+  async getSummary(range: DashboardRange, purchasing = true, sales = true) {
     const [entries, suppliers] = await Promise.all([
-      this.store.getEntries(range),
+      sales ? this.store.getEntries(range) : Promise.resolve([]),
       purchasing ? this.store.getSupplierEntries(range) : Promise.resolve([]),
     ]);
     return this.summarize(entries, range, suppliers);

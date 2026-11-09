@@ -78,7 +78,7 @@ export default function BackupSettings() {
   };
   return (
     <section className="settings-section" aria-labelledby="backup-title">
-      <h2 id="backup-title">{t("UI_DATABASE_BACKUP")}</h2>
+      <h3 id="backup-title">{t("UI_DATABASE_BACKUP")}</h3>
       <p>{t("BACKUP_DESCRIPTION", { workspace })}</p>
       {interrupted && <p role="alert">{t("RESTORE_INTERRUPTED")}</p>}
       <p>

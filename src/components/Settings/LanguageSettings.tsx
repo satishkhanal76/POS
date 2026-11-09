@@ -18,7 +18,7 @@ export default function LanguageSettings({
       className="settings-section"
       aria-labelledby="locale-selection-title"
     >
-      <h2 id="locale-selection-title">{t("LOCALE_SELECTION_TITLE")}</h2>
+      <h3 id="locale-selection-title">{t("LOCALE_SELECTION_TITLE")}</h3>
       <div className="settings-field">
         <div>
           <label htmlFor="locale-selection">{t("LOCALE_SELECT_LABEL")}</label>

@@ -1,3 +1,4 @@
+import { useClientGlobal } from "../../contexts/ClientGlobal";
 import { useLocaleText } from "../../contexts/Locale";
 import { useState } from "react";
 import FullScreenModal from "../Modals/FullScreenModal";
@@ -16,6 +17,7 @@ export default function ItemEditForm({
   onClose,
   onSaved,
 }: ItemEditFormProps) {
+  const { sales } = useClientGlobal();
   const t = useLocaleText();
   const { itemOS } = useDatabase();
   const [name, setName] = useState(item.getName());
@@ -40,13 +42,19 @@ export default function ItemEditForm({
           setBusy(true);
           setError("");
           try {
-            if ((canSell && !price.trim()) || (!canSell && !canPurchase))
+            if (
+              (sales && canSell && !price.trim()) ||
+              (!canSell && !canPurchase)
+            )
               throw new Error(t("UI_ENTER_A_PRICE"));
             await new ItemsController(itemOS).updateItem(
               item.getId(),
               name,
-              canSell ? Number(price) : item.getAmount(),
-              { canSell: canSell ? 1 : 0, canPurchase: canPurchase ? 1 : 0 },
+              sales && canSell ? Number(price) : undefined,
+              {
+                ...(sales ? { canSell: canSell ? 1 : 0 } : {}),
+                canPurchase: canPurchase ? 1 : 0,
+              },
             );
             onSaved();
           } catch (failure) {
@@ -60,9 +68,13 @@ export default function ItemEditForm({
           }
         }}
       >
-        <p>
-          {t("UI_PRICE_CHANGES_TAKE_EFFECT_NOW_PREVIOUS_TRANSACTIONS_KEEP_THE")}
-        </p>
+        {sales && (
+          <p>
+            {t(
+              "UI_PRICE_CHANGES_TAKE_EFFECT_NOW_PREVIOUS_TRANSACTIONS_KEEP_THE",
+            )}
+          </p>
+        )}
         <div className="input-container">
           <label htmlFor="edit-item-name">{t("INPUT_ITEM_NAME_LABEL")}</label>
           <input
@@ -74,29 +86,33 @@ export default function ItemEditForm({
             onChange={(event) => setName(event.target.value)}
           />
         </div>
-        <div className="input-container">
-          <label htmlFor="edit-item-price">{t("UI_CURRENT_PRICE")}</label>
-          <input
-            className="input"
-            id="edit-item-price"
-            type="number"
-            min="0"
-            step="any"
-            value={price}
-            required={canSell}
-            disabled={busy || !canSell}
-            onChange={(event) => setPrice(event.target.value)}
-          />
-        </div>
-        <label>
-          <input
-            type="checkbox"
-            checked={canSell}
-            onChange={(event) => setCanSell(event.target.checked)}
-            disabled={busy}
-          />
-          {t("BUY_CAN_SELL")}
-        </label>
+        {sales && (
+          <>
+            <div className="input-container">
+              <label htmlFor="edit-item-price">{t("UI_CURRENT_PRICE")}</label>
+              <input
+                className="input"
+                id="edit-item-price"
+                type="number"
+                min="0"
+                step="any"
+                value={price}
+                required={canSell}
+                disabled={busy || !canSell}
+                onChange={(event) => setPrice(event.target.value)}
+              />
+            </div>
+            <label>
+              <input
+                type="checkbox"
+                checked={canSell}
+                onChange={(event) => setCanSell(event.target.checked)}
+                disabled={busy}
+              />
+              {t("BUY_CAN_SELL")}
+            </label>
+          </>
+        )}
         <label>
           <input
             type="checkbox"

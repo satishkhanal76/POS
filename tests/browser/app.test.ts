@@ -58,7 +58,7 @@ beforeEach(async () => {
   errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base);
-  await page.locator(".page-header").waitFor();
+  await page.locator(".page-header:visible").waitFor();
   await page.evaluate(async (modulePath) => {
     const { createDatabaseStores } = (await import(
       modulePath
@@ -152,7 +152,7 @@ afterEach(async () => {
 
 async function go(path: string) {
   await page.goto(`${base}${path}`);
-  await page.locator(".page-header").waitFor();
+  await page.locator(".page-header:visible").waitFor();
 }
 async function rowCount(count: number) {
   await page.waitForFunction(
@@ -476,7 +476,21 @@ test("install settings use the browser install prompt and theme metadata follows
   await page
     .getByText(english.PWA_INSTALL_DISMISSED, { exact: true })
     .waitFor();
-  await page.getByRole("switch").check();
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.waitForFunction(
+    () => document.documentElement.dataset.appTheme === "dark",
+  );
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.waitForFunction(
+    () => document.documentElement.dataset.appTheme === "light",
+  );
+  const theme = page.getByRole("combobox", {
+    name: english.SETTINGS_THEME,
+    exact: true,
+  });
+  await theme.press("Enter");
+  await theme.press("End");
+  await theme.press("Enter");
   await page
     .getByRole("button", { name: english.UI_SAVE_CHANGES_2, exact: true })
     .click();

@@ -81,7 +81,7 @@ export default function MissingTranslationsSettings() {
       className="settings-section locale-audit"
       aria-labelledby="locale-audit-title"
     >
-      <h2 id="locale-audit-title">{t("LOCALE_AUDIT_TITLE")}</h2>
+      <h3 id="locale-audit-title">{t("LOCALE_AUDIT_TITLE")}</h3>
       <p>{t("LOCALE_AUDIT_HELP")}</p>
       <PaginationControls
         className="catalog-toolbar"

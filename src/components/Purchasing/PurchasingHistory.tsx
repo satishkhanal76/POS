@@ -1,3 +1,5 @@
+import ContactFilter from "../Forms/ContactFilter";
+import PageHeader from "../Layout/PageHeader";
 import { DashboardRange } from "../../dashboard/period";
 import useListFilter from "../../hooks/useListFilter";
 import Select from "../Forms/Select";
@@ -24,10 +26,12 @@ export default function PurchasingHistory({
   contactId,
   range: fixedRange,
   refresh = 0,
+  standalone = false,
 }: {
   contactId?: string;
   range?: DashboardRange;
   refresh?: number;
+  standalone?: boolean;
 }) {
   const t = useLocaleText(),
     stores = useDatabase(),
@@ -41,6 +45,10 @@ export default function PurchasingHistory({
     [stores.purchasingOS],
   );
   const [requestedKind, setKind] = useListFilter("purchasing-kind");
+  const [selectedContact, setContact] = useListFilter("purchasing-contact");
+  const supplierId =
+    contactId ??
+    (standalone && selectedContact !== "all" ? selectedContact : undefined);
   const selectedKind = ["purchase", "supplier-payment"].includes(requestedKind)
     ? requestedKind
     : "all";
@@ -52,12 +60,12 @@ export default function PurchasingHistory({
         ? controller.getPage(
             { ...options, includeDeleted: range.includeDeleted },
             range,
-            contactId,
+            supplierId,
             selectedKind,
           )
         : Promise.reject(new Error());
     },
-    [controller, range, contactId, selectedKind, revision, refresh],
+    [controller, range, supplierId, selectedKind, revision, refresh],
   );
   const pagination = usePagedQuery(query, "purchasing");
   const columns: CustomTableColumn<PurchasingRow>[] = [
@@ -107,45 +115,60 @@ export default function PurchasingHistory({
       ),
     },
   ];
+  const print = (
+    <PrintReportButton
+      disabled={!range}
+      createReport={async () => {
+        const result = await query({
+          page: 1,
+          pageSize: 0,
+          sort: pagination.sort,
+        });
+        return {
+          title: t("BUY_HISTORY"),
+          range,
+          sections: [printTable(t("BUY_HISTORY"), result.rows, columns)],
+        };
+      }}
+    />
+  );
   return (
     <>
+      {standalone && (
+        <PageHeader
+          title={t("BUY_TITLE")}
+          description={t("PURCHASE_REPORT_HELP")}
+          actions={print}
+        />
+      )}
       {!fixedRange && <DashboardFilters {...period} />}
       {!range ? (
         <p role="alert">{t("DASH_INVALID")}</p>
       ) : (
         <>
-          <ReportToolbar
-            actions={
-              <PrintReportButton
-                createReport={async () => {
-                  const result = await query({
-                    page: 1,
-                    pageSize: 0,
-                    sort: pagination.sort,
-                  });
-                  return {
-                    title: t("BUY_HISTORY"),
-                    range: range,
-                    sections: [
-                      printTable(t("BUY_HISTORY"), result.rows, columns),
-                    ],
-                  };
-                }}
-              />
-            }
-          >
+          <ReportToolbar actions={standalone ? null : print}>
+            {/* Purchases and its export share the same filtered query. */}
             <PaginationControls
               filters={
-                <label className="pagination-field">
-                  {t("FILTER_TYPE")}
-                  <Select value={selectedKind} onChange={setKind}>
-                    <option value="all">{t("FILTER_ALL_TYPES")}</option>
-                    <option value="purchase">{t("BUY_PURCHASE")}</option>
-                    <option value="supplier-payment">
-                      {t("BUY_PAYMENTS")}
-                    </option>
-                  </Select>
-                </label>
+                <>
+                  {standalone && (
+                    <ContactFilter
+                      purchase
+                      value={selectedContact}
+                      onChange={setContact}
+                    />
+                  )}
+                  <label className="pagination-field">
+                    {t("FILTER_TYPE")}
+                    <Select value={selectedKind} onChange={setKind}>
+                      <option value="all">{t("FILTER_ALL_TYPES")}</option>
+                      <option value="purchase">{t("BUY_PURCHASE")}</option>
+                      <option value="supplier-payment">
+                        {t("BUY_PAYMENTS")}
+                      </option>
+                    </Select>
+                  </label>
+                </>
               }
               extraSorts
               itemSorts={false}

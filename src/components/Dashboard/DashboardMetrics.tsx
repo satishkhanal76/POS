@@ -6,8 +6,8 @@ import Price from "../Items/Price";
 
 export default function DashboardMetrics({ data }: { data: DashboardSummary }) {
   const t = useLocaleText();
-  const { purchasing } = useClientGlobal();
-  const metrics = dashboardMetrics(data, purchasing);
+  const { sales, purchasing } = useClientGlobal();
+  const metrics = dashboardMetrics(data, purchasing, sales);
   return (
     <section className="dashboard-metrics" aria-label={t("DASH_OVERVIEW")}>
       {metrics.map((metric) => (

@@ -23,7 +23,7 @@ export default function LocaleSettings() {
         className="settings-section"
         aria-labelledby="locale-files-title"
       >
-        <h2 id="locale-files-title">{t("LOCALE_FILES_TITLE")}</h2>
+        <h3 id="locale-files-title">{t("LOCALE_FILES_TITLE")}</h3>
         <p>{t("LOCALE_FILES_DESCRIPTION")}</p>
         <div className="workspace-buttons">
           <button

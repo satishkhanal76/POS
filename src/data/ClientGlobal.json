@@ -1,10 +1,11 @@
 {
   "currencyCharacter": "$",
   "numOfDecimalPlaces": 2,
-  "darkMode": false,
+  "theme": "system",
   "stockManagement": false,
   "forceStockAdherence": false,
   "showSoftDeletedToggle": false,
+  "sales": true,
   "purchasing": true,
   "pickerPageSize": 10,
   "pickerRecentFirst": true

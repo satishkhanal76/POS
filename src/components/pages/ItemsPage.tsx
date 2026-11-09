@@ -38,12 +38,17 @@ export default function ItemsPage() {
     },
     [itemOS, includeDeleted, search, revision, refresh],
   );
-  const { stockManagement } = useClientGlobal();
-  const sorts = itemSortOptions(stockManagement);
-  const pagination = usePagedQuery(query, 'items', 'name-asc', sorts.map(option => option.value));
+  const { sales, stockManagement } = useClientGlobal();
+  const sorts = itemSortOptions(stockManagement, sales);
+  const pagination = usePagedQuery(
+    query,
+    "items",
+    "name-asc",
+    sorts.map((option) => option.value),
+  );
   useEffect(() => {
     if (!stockManagement) return;
-    const update = () => setRefresh(value => value + 1);
+    const update = () => setRefresh((value) => value + 1);
     window.addEventListener(STOCK_UPDATED, update);
     return () => window.removeEventListener(STOCK_UPDATED, update);
   }, [stockManagement]);
@@ -70,23 +75,37 @@ export default function ItemsPage() {
       )}
       <PageHeader
         title={t("ITEMS_TITLE")}
-        actions={<>
-          <ItemsPrintButton items={pagination.result?.rows ?? []} page={pagination.page} includeDeleted={includeDeleted} disabled={pagination.loading || pagination.error}/>
-          <button
-            type="button"
-            className="page-add-button"
-            onClick={() => setAdding(true)}
-            aria-label={t("ITEM_FORM_TITLE")}
-          >
-            <MdAdd aria-hidden="true" />
-          </button>
-        </>}
+        actions={
+          <>
+            <ItemsPrintButton
+              items={pagination.result?.rows ?? []}
+              page={pagination.page}
+              includeDeleted={includeDeleted}
+              disabled={pagination.loading || pagination.error}
+            />
+            <button
+              type="button"
+              className="page-add-button"
+              onClick={() => setAdding(true)}
+              aria-label={t("ITEM_FORM_TITLE")}
+            >
+              <MdAdd aria-hidden="true" />
+            </button>
+          </>
+        }
       />
       <DeletedVisibility />
       <PaginationControls
         className="catalog-toolbar"
         sortOptions={sorts}
-        filters={<CatalogSearch label={t('SEARCH_ITEMS')} placeholder={t('SEARCH_ITEMS_PLACEHOLDER')} value={search} onChange={setSearch}/>}
+        filters={
+          <CatalogSearch
+            label={t("SEARCH_ITEMS")}
+            placeholder={t("SEARCH_ITEMS_PLACEHOLDER")}
+            value={search}
+            onChange={setSearch}
+          />
+        }
 
         page={pagination.page}
         pageSize={pagination.pageSize}

@@ -80,7 +80,7 @@ async function controlledApp() {
       failures.push(`${request.url()}: ${request.failure()?.errorText}`);
   });
   await page.goto(base);
-  await page.locator(".page-header").waitFor();
+  await page.locator(".page-header:visible").waitFor();
   try {
     await page.waitForFunction(
       async () =>
@@ -119,7 +119,7 @@ async function controlledApp() {
       { cause: error },
     );
   }
-  await page.locator(".page-header").waitFor();
+  await page.locator(".page-header:visible").waitFor();
 }
 
 test("production HTML exposes scoped install metadata, icons, and previews without template tokens", async () => {
@@ -224,14 +224,9 @@ test("the branded startup screen is visible while the app bundle loads, then dis
   await context.close();
   context = await browser.newContext({
     serviceWorkers: "block",
+    colorScheme: "dark",
     viewport: { width: 390, height: 844 },
   });
-  await context.addInitScript(() =>
-    localStorage.setItem(
-      "pos.clientGlobal",
-      JSON.stringify({ darkMode: true }),
-    ),
-  );
   await context.route("https://**/*", (route) => route.abort());
   page = await context.newPage();
   let release = () => {};
@@ -262,7 +257,7 @@ test("the branded startup screen is visible while the app bundle loads, then dis
       true,
     );
     release();
-    await page.locator(".page-header").waitFor();
+    await page.locator(".page-header:visible").waitFor();
     assert.equal(await page.locator(".app-boot").count(), 0);
   } finally {
     release();

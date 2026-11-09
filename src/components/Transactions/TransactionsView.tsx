@@ -1,4 +1,4 @@
-import TransactionContactFilter from "./TransactionContactFilter";
+import ContactFilter from "../Forms/ContactFilter";
 import useListFilter from "../../hooks/useListFilter";
 import Select from "../Forms/Select";
 import ReportToolbar from "../Reports/ReportToolbar";
@@ -226,7 +226,8 @@ export default function TransactionsView({
               filters={
                 <>
                   {contactFilter && (
-                    <TransactionContactFilter
+                    <ContactFilter
+                      membership
                       value={contactSelection}
                       onChange={setContactSelection}
                     />

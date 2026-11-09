@@ -10,7 +10,7 @@ export default function InstallationSettings() {
   const [status, setStatus] = useState<"dismissed" | "failed" | null>(null);
   return (
     <section className="settings-section" aria-labelledby="install-app-title">
-      <h2 id="install-app-title">{t("PWA_INSTALL_TITLE")}</h2>
+      <h3 id="install-app-title">{t("PWA_INSTALL_TITLE")}</h3>
       <p>{t(installed ? "PWA_INSTALLED" : "PWA_INSTALL_DESCRIPTION")}</p>
       {canInstall ? (
         <div className="workspace-buttons">

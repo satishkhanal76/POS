@@ -1,3 +1,4 @@
+import { useClientGlobal } from "../../contexts/ClientGlobal";
 import { createPurchaseInvoice } from "../../purchasing/invoice";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
@@ -29,6 +30,7 @@ export default function PurchasePOS({
   renderModeSwitch: (disabled: boolean) => ReactNode;
   initialSupplierId?: string;
 }) {
+  const { sales } = useClientGlobal();
   const t = useLocaleText(),
     stores = useDatabase(),
     { notify } = useNotifications();
@@ -256,8 +258,8 @@ export default function PurchasePOS({
       )}
       <main className="pos-workspace purchase-workspace">
         <PageHeader
-          title={t("UI_POINT_OF_SALE")}
-          eyebrow={t("ORDER_PURCHASE_WORKSPACE")}
+          title={t(sales ? "UI_POINT_OF_SALE" : "ORDER_PURCHASE_WORKSPACE")}
+          eyebrow={sales ? t("ORDER_PURCHASE_WORKSPACE") : undefined}
           description={t("ORDER_PURCHASE_HELP")}
           actions={<span className="pos-status">{t("BUY_PURCHASE_MODE")}</span>}
         />

@@ -8,7 +8,7 @@ import { CustomTableColumn } from "../utils/CustomTableView";
 
 export default function DashboardTrend({ data }: { data: DashboardSummary }) {
   const t = useLocaleText();
-  const { purchasing } = useClientGlobal();
+  const { sales, purchasing } = useClientGlobal();
   const columns: CustomTableColumn<DashboardSummary["buckets"][number]>[] = [
     {
       key: "period",
@@ -21,24 +21,28 @@ export default function DashboardTrend({ data }: { data: DashboardSummary }) {
             : { day: "numeric", month: "short", year: "numeric" },
         ),
     },
-    {
-      key: "count",
-      header: t("DASH_SALE_COUNT"),
-      variant: "numeric",
-      render: (row) => row.salesCount,
-    },
-    {
-      key: "sales",
-      header: t("DASH_SALES"),
-      variant: "numeric",
-      render: (row) => <Price price={row.sales} />,
-    },
-    {
-      key: "payments",
-      header: t("DASH_PAYMENTS"),
-      variant: "numeric",
-      render: (row) => <Price price={row.payments} />,
-    },
+    ...(sales
+      ? ([
+          {
+            key: "count",
+            header: t("DASH_SALE_COUNT"),
+            variant: "numeric",
+            render: (row) => row.salesCount,
+          },
+          {
+            key: "sales",
+            header: t("DASH_SALES"),
+            variant: "numeric",
+            render: (row) => <Price price={row.sales} />,
+          },
+          {
+            key: "payments",
+            header: t("DASH_PAYMENTS"),
+            variant: "numeric",
+            render: (row) => <Price price={row.payments} />,
+          },
+        ] satisfies CustomTableColumn<DashboardSummary["buckets"][number]>[])
+      : []),
   ];
   if (purchasing)
     columns.push(
@@ -72,8 +76,12 @@ export default function DashboardTrend({ data }: { data: DashboardSummary }) {
       <h2>{t("DASH_TREND")}</h2>
       <p className="dashboard-note">{t("DASH_TREND_HELP")}</p>
       <div className="dashboard-legend" aria-hidden="true">
-        <span>{t("DASH_SALES")}</span>
-        <span>{t("DASH_PAYMENTS")}</span>
+        {sales && (
+          <>
+            <span>{t("DASH_SALES")}</span>
+            <span>{t("DASH_PAYMENTS")}</span>
+          </>
+        )}
         {purchasing && (
           <>
             <span className="supplier-purchases">{t("DASH_PURCHASES")}</span>
@@ -91,10 +99,16 @@ export default function DashboardTrend({ data }: { data: DashboardSummary }) {
             title={bucket.key}
           >
             <div className="dashboard-bars">
-              <i
-                style={{ height: `${(Math.abs(bucket.sales) / max) * 100}%` }}
-              />
-              <i style={{ height: `${(bucket.payments / max) * 100}%` }} />
+              {sales && (
+                <>
+                  <i
+                    style={{
+                      height: `${(Math.abs(bucket.sales) / max) * 100}%`,
+                    }}
+                  />
+                  <i style={{ height: `${(bucket.payments / max) * 100}%` }} />
+                </>
+              )}
               {purchasing && (
                 <>
                   <i

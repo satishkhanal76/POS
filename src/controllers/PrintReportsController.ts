@@ -13,11 +13,12 @@ export default class PrintReportsController {
     range: DashboardRange,
     mode: "dashboard" | "overview",
     purchasing = true,
+    sales = true,
   ) {
     const store = new DashboardOS(this.stores.database);
     const [entries, supplierEntries, supplierRows, supplierInsights] =
       await Promise.all([
-        store.getEntries(range),
+        sales ? store.getEntries(range) : Promise.resolve([]),
         purchasing ? store.getSupplierEntries(range) : Promise.resolve([]),
         purchasing && mode === "dashboard"
           ? this.stores.purchasingOS.getPage(

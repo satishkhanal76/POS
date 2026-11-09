@@ -1,3 +1,4 @@
+import { useClientGlobal } from "./contexts/ClientGlobal";
 import DatabaseMaintenanceStatus from "./components/App/DatabaseMaintenanceStatus";
 import PurchasesPage from "./components/pages/PurchasesPage";
 import PurchasePage from "./components/pages/PurchasePage";
@@ -8,7 +9,7 @@ import AppStatus from "./components/App/AppStatus";
 import PriceHistoryPage from "./components/pages/PriceHistoryPage";
 import DemoWelcome from "./components/Workspace/DemoWelcome";
 import DemoBanner from "./components/Workspace/DemoBanner";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import "./styles/modern-normalize.css";
 import "./App.css";
 import NavBar from "./components/NavBar";
@@ -20,6 +21,7 @@ import TransactionsPage from "./components/pages/TransactionsPage";
 import SettingsPage from "./components/pages/SettingsPage";
 
 function App() {
+  const { sales, purchasing } = useClientGlobal();
   return (
     <div className="container App">
       <NavBar />
@@ -30,16 +32,31 @@ function App() {
       <Routes>
         <Route path="/contacts" Component={ContactsPage} />
         <Route path="/contact" Component={ContactPage} />
-        <Route path="/purchases" Component={PurchasesPage} />
-        <Route path="/purchase" Component={PurchasePage} />
+        <Route
+          path="/purchases"
+          element={purchasing ? <PurchasesPage /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/purchase"
+          element={purchasing ? <PurchasePage /> : <Navigate to="/" replace />}
+        />
         <Route path="/dashboard" Component={DashboardPage} />
         <Route path="/overview" Component={OverviewPage} />
         <Route path="/" Component={() => <POSPage />}></Route>
         <Route path="/customers" Component={() => <ContactsPage />}></Route>
         <Route path="/items" Component={() => <ItemsPage />}></Route>
-        <Route path="/transaction" Component={() => <TransactionPage />} />
-        <Route path="/price-history" Component={PriceHistoryPage} />
-        <Route path="/transactions" Component={() => <TransactionsPage />} />
+        <Route
+          path="/transaction"
+          element={sales ? <TransactionPage /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/price-history"
+          element={sales ? <PriceHistoryPage /> : <Navigate to="/" replace />}
+        />
+        <Route
+          path="/transactions"
+          element={sales ? <TransactionsPage /> : <Navigate to="/" replace />}
+        />
         <Route path="/settings" Component={() => <SettingsPage />} />
       </Routes>
     </div>

@@ -9,7 +9,7 @@ import "./NavBar.css";
 
 export default function NavBar() {
   const t = useLocaleText();
-  const { purchasing } = useClientGlobal();
+  const settings = useClientGlobal();
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const location = useLocation();
@@ -59,16 +59,37 @@ export default function NavBar() {
         <NavLink className="nav-control" to="/" end>
           {t("NAVBAR_ITEM_HOME")}
         </NavLink>
-        {navigationGroups.map((group) => (
-          <NavigationDropdown
-            key={group.id}
-            group={{
-              ...group,
-              links: group.links.filter((link) => !link.feature || purchasing),
-            }}
-            translate={t}
-          />
-        ))}
+        {navigationGroups.map((group) => {
+          const links = group.links.filter(
+            (link) => !link.feature || settings[link.feature],
+          );
+          const [link] = links;
+          if (!link) return null;
+          if (links.length === 1) {
+            const onDetailPage = group.relatedPaths?.includes(
+              location.pathname,
+            );
+            return (
+              <NavLink
+                key={group.id}
+                className={
+                  onDetailPage ? "nav-control is-active" : "nav-control"
+                }
+                to={link.path}
+                end
+              >
+                {t(link.localeKey)}
+              </NavLink>
+            );
+          }
+          return (
+            <NavigationDropdown
+              key={group.id}
+              group={{ ...group, links }}
+              translate={t}
+            />
+          );
+        })}
         <NavLink className="nav-control nav-settings" to="/settings">
           {t("NAVBAR_SETTINGS")}
         </NavLink>
