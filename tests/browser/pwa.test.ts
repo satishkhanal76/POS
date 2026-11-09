@@ -153,6 +153,10 @@ test("an installed cache launches the app and its navigation while offline", asy
   await context.setOffline(true);
   await page.goto(`${base}settings`);
   await page.getByRole("heading", { name: "Settings", exact: true }).waitFor();
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_INSTALLATION })
+    .click();
   await page.getByText(english.PWA_OFFLINE, { exact: true }).waitFor();
   await page.getByText(english.PWA_OFFLINE_READY, { exact: true }).waitFor();
   assert.equal(

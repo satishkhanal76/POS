@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useClientGlobal } from "../../contexts/ClientGlobal";
 import useStockCounts from "../../hooks/useStockCounts";
 import { useLocaleText } from "../../contexts/Locale";
@@ -6,6 +6,7 @@ import { useDatabase } from "../../contexts/DatabaseContext";
 import PickerController from "../../controllers/PickerController";
 import { PickerOptions } from "../../pickers/types";
 import usePickerQuery from "../../hooks/usePickerQuery";
+import ItemAddForm from "../Items/ItemAddForm";
 import Price from "../Items/Price";
 import SearchableModal from "./SearchableModal";
 import ProductItem from "../../models/ProductItem";
@@ -27,6 +28,7 @@ export default function ItemSelectionModal({
   const t = useLocaleText(),
     stores = useDatabase(),
     settings = useClientGlobal();
+  const [creating, setCreating] = useState(false);
   const controller = useMemo(() => new PickerController(stores), [stores]);
   const load = useCallback(
     (options: PickerOptions) => controller.items(options),
@@ -45,10 +47,24 @@ export default function ItemSelectionModal({
     settings.stockManagement && (isModalOpen || preload),
   );
   if (!isModalOpen) return null;
+  if (creating)
+    return (
+      <ItemAddForm
+        onClose={() => setCreating(false)}
+        onAddItem={() => {
+          picker.retry();
+          setCreating(false);
+        }}
+      />
+    );
   return (
     <SearchableModal
       title={t("ADD_ITEM_MODAL_TITLE")}
       onClose={onClose}
+      createAction={{
+        label: t("ITEM_FORM_TITLE"),
+        onClick: () => setCreating(true),
+      }}
       query={picker.query}
       onQueryChange={picker.setQuery}
       loading={picker.loading}

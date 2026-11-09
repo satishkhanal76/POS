@@ -13,7 +13,10 @@ export interface ITransactionController {
    * @param transactionsOS
    * @returns
    */
-  postTransaction: (transaction: ITransaction) => Promise<ITransaction | null>;
+  postTransaction: (
+    transaction: ITransaction,
+    customerId?: string,
+  ) => Promise<ITransaction | null>;
 
   getLatestTransaction: (
     currenltyViewingTransaction: ITransaction | null,
@@ -49,9 +52,10 @@ export default class TransactionController
 
   public async postTransaction(
     transaction: ITransaction,
+    customerId?: string,
   ): Promise<ITransaction | null> {
     if (transaction.getId() === this.#transaction.getId()) {
-      return this.objectStore.postTransaction(this.#transaction);
+      return this.objectStore.postTransaction(this.#transaction, customerId);
     }
     return null;
   }

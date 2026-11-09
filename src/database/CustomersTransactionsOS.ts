@@ -1,11 +1,8 @@
-import {
-  indexedHeader,
-  indexedSummary,
-  indexedLink,
-} from "./listing/metadata";
+import { indexedHeader, indexedSummary, indexedLink } from "./listing/metadata";
+import { customerLinkStores, queueCustomerLink } from "./customerLink";
 import { DELETION_UPDATED } from "../deletion/state";
 import TransactionHistoryStore from "./TransactionHistoryStore";
-import Transaction from "../models/Transaction";
+import { ITransaction } from "../models/Transaction";
 import { v4 as uuidv4 } from "uuid";
 import { ICustomer } from "../models/Customer";
 import { getLocaleText } from "../localization/locale";
@@ -66,10 +63,7 @@ export default class CustomersTransactionsOS
     });
   }
 
-  public onDatabaseUpgrade(
-    _db: IDBDatabase,
-    transaction: IDBTransaction,
-  ) {
+  public onDatabaseUpgrade(_db: IDBDatabase, transaction: IDBTransaction) {
     const store = transaction.objectStore(this.objectStoreName);
     if (!store.indexNames.contains("customerTimestamp"))
       store.createIndex("customerTimestamp", ["customerId", "timestamp"]);
@@ -208,7 +202,7 @@ export default class CustomersTransactionsOS
   }
 
   /** Payment header, customer link and balance are saved in a single commit. */
-  public async recordPayment(payment: Transaction, customer: ICustomer) {
+  public async recordPayment(payment: ITransaction, customer: ICustomer) {
     if (
       payment.getKind() !== "payment" ||
       !Number.isFinite(payment.getTotal()) ||
@@ -239,97 +233,37 @@ export default class CustomersTransactionsOS
 
   private async commitLink(
     model: CustomerTransaction,
-    payment?: Transaction,
+    payment?: ITransaction,
   ): Promise<CustomerTransaction> {
     const db = await this.db.getDatabase();
     const link = this.getObjectAsSchema(model);
     await new Promise<void>((resolve, reject) => {
       const transaction = db.transaction(
-        [
-          this.objectStoreName,
-          "CUSTOMER_TRANSACTION_SUMMARIES",
-          "TRANSACTIONS",
-          "CUSTOMER",
-        ],
+        ["TRANSACTIONS", ...customerLinkStores],
         "readwrite",
       );
       let message = getLocaleText("TRANSACTION_LINK_FAILED");
       transaction.oncomplete = () => resolve();
       transaction.onabort = () => reject(new Error(message));
-      const links = transaction.objectStore(this.objectStoreName);
-      const existing = links.index("transactionId").getAll(link.transactionId);
-      existing.onsuccess = () => {
-        if (
-          (existing.result as CustomerTransactionsSchema[]).some(
-            (row) => !row.deletedAt,
-          )
-        ) {
-          message = getLocaleText("TRANSACTION_ALREADY_LINKED");
-          transaction.abort();
-          return;
-        }
-        const customer = transaction
-          .objectStore("CUSTOMER")
-          .get(link.customerId);
-        customer.onsuccess = () => {
-          if (!customer.result || customer.result.deletedAt) {
-            message = getLocaleText("PAGINATION_CUSTOMER_MISSING");
-            transaction.abort();
-            return;
-          }
-          const sales = transaction.objectStore("TRANSACTIONS");
-          if (payment)
-            sales.add(
-              indexedHeader(
-                {
-                  id: payment.getId(),
-                  timestamp: payment.getTimestamp(),
-                  total: payment.getTotal(),
-                  kind: "payment",
-                },
-                "payment",
-                [link.customerId],
-              ),
-            );
-          const sale = sales.get(link.transactionId);
-          sale.onsuccess = () => {
-            if (!sale.result || sale.result.deletedAt) {
-              message = getLocaleText("PAGINATION_TRANSACTION_MISSING");
-              transaction.abort();
-              return;
-            }
-            sales.put(
-              indexedHeader(sale.result, sale.result.kind ?? "sale", [
-                link.customerId,
-              ]),
-            );
-            links.add(link);
-            const summaries = transaction.objectStore(
-              "CUSTOMER_TRANSACTION_SUMMARIES",
-            );
-            const previous = summaries.get(link.customerId);
-            previous.onsuccess = () => {
-              const summary: CustomerSummarySchema = previous.result || {
-                id: link.customerId,
-                count: 0,
-                total: 0,
-                timestamp: 0,
-              };
-              summaries.put(
-                indexedSummary(
-                  {
-                    id: summary.id,
-                    count: summary.count + 1,
-                    total: summary.total + sale.result.total,
-                    timestamp: Math.max(summary.timestamp, link.timestamp),
-                  },
-                  customer.result.deletedAt,
-                ),
-              );
-            };
-          };
-        };
-      };
+      if (payment) {
+        const sales = transaction.objectStore("TRANSACTIONS");
+        sales.add(
+          indexedHeader(
+            {
+              id: payment.getId(),
+              timestamp: payment.getTimestamp(),
+              total: payment.getTotal(),
+              kind: "payment",
+            },
+            "payment",
+            [link.customerId],
+          ),
+        );
+      }
+      queueCustomerLink(transaction, link, (reason) => {
+        message = reason;
+        transaction.abort();
+      });
     });
     return model;
   }

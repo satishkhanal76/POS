@@ -1,3 +1,11 @@
+import {
+  MdAdd,
+  MdCheck,
+  MdOutlineCancel,
+  MdOutlinePayments,
+  MdPersonAddAlt,
+} from "react-icons/md";
+import OrderShortcut from "./OrderShortcut";
 import { useClientGlobal } from "../../contexts/ClientGlobal";
 import { createPurchaseInvoice } from "../../purchasing/invoice";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
@@ -30,7 +38,8 @@ export default function PurchasePOS({
   renderModeSwitch: (disabled: boolean) => ReactNode;
   initialSupplierId?: string;
 }) {
-  const { sales } = useClientGlobal();
+  const { sales, compactUI, showOrderActions } = useClientGlobal();
+  const showActionsPanel = !compactUI || showOrderActions;
   const t = useLocaleText(),
     stores = useDatabase(),
     { notify } = useNotifications();
@@ -145,18 +154,54 @@ export default function PurchasePOS({
     postAfterSelection.current = forPosting;
     setSupplierOpen(true);
   };
-  const buttons: IButtonProps[] = [
-    {
-      children: t("BUTTON_ADD"),
-      className: "pos-action pos-action-add",
-      onClick: () => setAddOpen(true),
+  const removeLine = (id: string) => {
+    if (lock.current) return;
+    setLines((rows) => rows.filter((row) => row.id !== id));
+    if (selected === id) setSelected(null);
+  };
+  const payment = {
+    children: t("BUY_PAY"),
+    disabled: !!lines.length,
+    onClick: () => setPaymentOpen(true),
+  };
+  const selectSupplier = {
+    children: t("ORDER_SELECT_SUPPLIER"),
+    onClick: () => chooseSupplier(false),
+  };
+  const submit = {
+    children: t("ORDER_POST_PURCHASE"),
+    className: "pos-action pos-action-primary",
+    disabled: !lines.length,
+    onClick: () => {
+      if (supplier) void post(supplier);
+      else chooseSupplier(true);
     },
+  };
+  const add = {
+    children: t("BUTTON_ADD"),
+    className: "pos-action pos-action-add",
+    onClick: () => setAddOpen(true),
+  };
+  const voidOrder = {
+    children: t("BUTTON_VOID_TRANSACTION"),
+    className: "pos-action pos-action-danger",
+    disabled: !lines.length,
+    onClick: () => {
+      if (window.confirm(t("ORDER_CLEAR_PURCHASE"))) {
+        setLines([]);
+        setSelected(null);
+        setReference(createPurchaseInvoice());
+        notify(t("NOTIFICATION_VOIDED"), "info");
+      }
+    },
+  };
+  const buttons: IButtonProps[] = [
+    add,
     {
       children: t("BUTTON_REMOVE"),
       disabled: !active,
       onClick: () => {
-        setLines((rows) => rows.filter((row) => row.id !== selected));
-        setSelected(null);
+        if (active) removeLine(active.id);
       },
     },
     {
@@ -173,38 +218,21 @@ export default function PurchasePOS({
         if (active) setEditing({ line: active, isNew: false });
       },
     },
-    {
-      children: t("ORDER_POST_PURCHASE"),
-      className: "pos-action pos-action-primary",
-      disabled: !lines.length,
-      onClick: () => {
-        if (supplier) void post(supplier);
-        else chooseSupplier(true);
-      },
-    },
-    {
-      children: t("ORDER_SELECT_SUPPLIER"),
-      onClick: () => chooseSupplier(false),
-    },
-    {
-      children: t("BUTTON_VOID_TRANSACTION"),
-      className: "pos-action pos-action-danger",
-      disabled: !lines.length,
-      onClick: () => {
-        if (window.confirm(t("ORDER_CLEAR_PURCHASE"))) {
-          setLines([]);
-          setSelected(null);
-          setReference(createPurchaseInvoice());
-          notify(t("NOTIFICATION_VOIDED"), "info");
-        }
-      },
-    },
-    {
-      children: t("BUY_PAY"),
-      disabled: !!lines.length,
-      onClick: () => setPaymentOpen(true),
-    },
+    submit,
+    selectSupplier,
+    voidOrder,
+    payment,
   ];
+  const addShortcut = (
+    <OrderShortcut action={add} icon={<MdAdd />} busy={busy} primary />
+  );
+  const supplierShortcut = (
+    <OrderShortcut
+      action={selectSupplier}
+      icon={<MdPersonAddAlt />}
+      busy={busy}
+    />
+  );
   return (
     <>
       <ItemSelectionModal
@@ -263,8 +291,13 @@ export default function PurchasePOS({
           description={t("ORDER_PURCHASE_HELP")}
           actions={<span className="pos-status">{t("BUY_PURCHASE_MODE")}</span>}
         />
-        <div className="pos-layout">
-          <section className="pos-order" aria-label={t("UI_CURRENT_ORDER")}>
+        <div
+          className={`pos-layout${showActionsPanel ? "" : " pos-layout-order-only"}`}
+        >
+          <section
+            className={`pos-order${compactUI ? " pos-compact" : ""}`}
+            aria-label={t("UI_CURRENT_ORDER")}
+          >
             {renderModeSwitch(busy)}
             <PurchaseOrderView
               disabled={busy}
@@ -273,17 +306,66 @@ export default function PurchasePOS({
               onSelect={setSelected}
               onEdit={(line) => setEditing({ line, isNew: false })}
               supplier={supplier?.getName() ?? ""}
+              onClearSupplier={() => setSupplier(null)}
               date={date}
               reference={reference}
               onAdd={() => setAddOpen(true)}
+              compact={
+                compactUI
+                  ? {
+                      onRemove: removeLine,
+                      emptySupplier: !showActionsPanel && supplierShortcut,
+                      add: addShortcut,
+                      emptyAdd: (
+                        <OrderShortcut
+                          action={{
+                            ...add,
+                            children: t("UI_ADD_YOUR_FIRST_ITEM"),
+                          }}
+                          icon={<MdAdd />}
+                          busy={busy}
+                          primary
+                          labeled
+                        />
+                      ),
+                      payment: (
+                        <OrderShortcut
+                          action={payment}
+                          icon={<MdOutlinePayments />}
+                          busy={busy}
+                          labeled
+                        />
+                      ),
+                      footer: (
+                        <div className="pos-shortcut-group pos-shortcut-footer">
+                          <OrderShortcut
+                            action={voidOrder}
+                            icon={<MdOutlineCancel />}
+                            busy={busy}
+                            danger
+                          />
+                          {supplierShortcut}
+                          <OrderShortcut
+                            action={submit}
+                            icon={<MdCheck />}
+                            busy={busy}
+                            primary
+                          />
+                        </div>
+                      ),
+                    }
+                  : undefined
+              }
             />
           </section>
-          <OrderActionsPanel
-            busy={busy}
-            buttons={buttons}
-            description={t("ORDER_PURCHASE_HELP")}
-            note={t("BUY_RECEIVE_HELP")}
-          />
+          {showActionsPanel && (
+            <OrderActionsPanel
+              busy={busy}
+              buttons={buttons}
+              description={t("ORDER_PURCHASE_HELP")}
+              note={t("BUY_RECEIVE_HELP")}
+            />
+          )}
         </div>
       </main>
     </>

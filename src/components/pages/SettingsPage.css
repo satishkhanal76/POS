@@ -110,22 +110,24 @@
 }
 .settings-action-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  justify-content: flex-end;
+  gap: 0.5rem;
 }
 .settings-actions button,
 .settings-page .settings-save {
   border: 1px solid var(--color-slate500);
   border-radius: 8px;
-  padding: 0.75rem 1rem;
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  font-size: var(--text-small);
+  line-height: 1.25;
   cursor: pointer;
 }
 .settings-page .settings-save {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  font: inherit;
   font-weight: 600;
   background: var(--accent);
   color: #fff;
@@ -156,10 +158,6 @@
 
 .settings-page .page-header-actions {
   align-self: flex-start;
-}
-
-.settings-action-buttons {
-  justify-content: flex-end;
 }
 
 .settings-actions > p {
@@ -245,11 +243,16 @@
   }
 
   .settings-page .page-header-actions {
-    max-width: 100%;
+    width: 100%;
+  }
+
+  .settings-actions {
+    width: 100%;
   }
 
   .settings-action-buttons {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .settings-actions > p {

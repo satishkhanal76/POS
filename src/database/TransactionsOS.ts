@@ -1,5 +1,11 @@
+import { v4 as uuidv4 } from "uuid";
+import { customerLinkStores, queueCustomerLink } from "./customerLink";
 import { PICKER_USAGE_UPDATED } from "../pickers/events";
-import { indexedHeader, createListingIndexes } from "./listing/metadata";
+import {
+  indexedHeader,
+  indexedLink,
+  createListingIndexes,
+} from "./listing/metadata";
 import { validQuantity, roundQuantity } from "../validators/QuantityValidator";
 import TransactionHistoryStore from "./TransactionHistoryStore";
 import { loadSettings } from "../settings/settings";
@@ -43,7 +49,10 @@ export interface ITransactionsOS extends IObjectStore<
     currenltyViewingTransaction?: ITransaction | null,
   ) => Promise<Transaction | null>;
 
-  postTransaction: (transaction: Transaction) => Promise<Transaction>;
+  postTransaction: (
+    transaction: Transaction,
+    customerId?: string,
+  ) => Promise<Transaction>;
 }
 
 export default class TransactionsOS
@@ -239,7 +248,7 @@ export default class TransactionsOS
   }
 
   /** Sale header, line items and stock changes commit together, or all roll back. */
-  public async postTransaction(sale: Transaction) {
+  public async postTransaction(sale: Transaction, customerId?: string) {
     if (sale.getKind() === "payment")
       throw new Error(getLocaleText("PAYMENT_CUSTOMER_REQUIRED"));
     if (sale.isPosted()) throw new Error(getLocaleText("STOCK_ALREADY_POSTED"));
@@ -264,6 +273,7 @@ export default class TransactionsOS
           "TRANSACTION_DISCOUNTS",
           "PRODUCTS",
           "STOCK",
+          ...(customerId ? customerLinkStores : []),
         ],
         "readwrite",
       );
@@ -281,6 +291,20 @@ export default class TransactionsOS
             products.length + discounts.length,
           ),
         });
+        if (customerId)
+          queueCustomerLink(
+            transaction,
+            indexedLink({
+              id: uuidv4(),
+              timestamp: sale.getTimestamp(),
+              transactionId: sale.getId(),
+              customerId,
+            }),
+            (reason) => {
+              message = reason;
+              transaction.abort();
+            },
+          );
         for (const line of products)
           transaction
             .objectStore("TRANSACTION_PRODUCTS")

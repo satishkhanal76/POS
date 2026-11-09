@@ -325,6 +325,10 @@ test("discount dialog applies a percentage and a flat deduction and posts the re
 });
 test("settings download the English template, accept custom text, and persist Nepali fallback", async () => {
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_LANGUAGE })
+    .click();
   const pending = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Download Text_EN.json", exact: true })
@@ -360,6 +364,10 @@ test("settings download the English template, accept custom text, and persist Ne
 });
 test("backup controls download the full database and restore a reviewed file", async () => {
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_WORKSPACE_DATA })
+    .click();
   const pending = page.waitForEvent("download");
   await page
     .getByRole("button", { name: english.UI_DOWNLOAD_FULL_BACKUP, exact: true })
@@ -402,6 +410,10 @@ test("backup controls download the full database and restore a reviewed file", a
 
 test("settings switch back to the existing demo without resetting practice records", async () => {
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_WORKSPACE_DATA })
+    .click();
   await Promise.all([
     page.waitForEvent("load"),
     page
@@ -411,6 +423,10 @@ test("settings switch back to the existing demo without resetting practice recor
       })
       .click(),
   ]);
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_WORKSPACE_DATA })
+    .click();
   await page
     .getByRole("button", { name: "Switch to Demo", exact: true })
     .waitFor();
@@ -426,6 +442,10 @@ test("settings switch back to the existing demo without resetting practice recor
 
 test("fresh demo populates catalog, customer summaries, sale history, and price history", async () => {
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_WORKSPACE_DATA })
+    .click();
   page.once("dialog", (dialog) => {
     void dialog.accept();
   });
@@ -457,6 +477,10 @@ test("fresh demo populates catalog, customer summaries, sale history, and price 
 
 test("install settings use the browser install prompt and theme metadata follows saved appearance", async () => {
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_INSTALLATION })
+    .click();
   await page.evaluate(() => {
     window.dispatchEvent(
       Object.assign(new Event("beforeinstallprompt"), {
@@ -476,6 +500,10 @@ test("install settings use the browser install prompt and theme metadata follows
   await page
     .getByText(english.PWA_INSTALL_DISMISSED, { exact: true })
     .waitFor();
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_DISPLAY })
+    .click();
   await page.emulateMedia({ colorScheme: "dark" });
   await page.waitForFunction(
     () => document.documentElement.dataset.appTheme === "dark",
@@ -545,6 +573,160 @@ test("development installs expose a real manifest and correctly scoped Apple ico
   }
 });
 
+test("empty POS pickers can create records and return to the order", async () => {
+  await page.evaluate(async (moduleUrl) => {
+    const { createDatabaseStores } = (await import(
+      moduleUrl
+    )) as typeof import("../../src/database/DatabaseStores");
+    const db = await createDatabaseStores("POS_DEMO").database.getDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(["PRODUCTS", "CUSTOMER"], "readwrite");
+      transaction.objectStore("PRODUCTS").clear();
+      transaction.objectStore("CUSTOMER").clear();
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(transaction.error);
+    });
+  }, `${base}src/database/DatabaseStores.ts`);
+  await go("");
+
+  const button = (name: string) =>
+    page.getByRole("button", { name, exact: true });
+  await button(english.UI_ADD_YOUR_FIRST_ITEM).click();
+  await button(english.ITEM_FORM_TITLE).click();
+  await page
+    .getByLabel(english.INPUT_ITEM_NAME_LABEL, { exact: true })
+    .fill("New Item");
+  await page
+    .getByLabel(english.INPUT_ITEM_PRICE_LABEL, { exact: true })
+    .fill("4");
+  await button(english.INPUT_FORM_SUBMIT_BUTTON).click();
+  await page.locator(".modal-item").filter({ hasText: "New Item" }).click();
+
+  await button(english.BUTTON_ADD_TO_CUSTOMER).click();
+  await button(english.CUSTOMER_FORM_TITLE).click();
+  await page
+    .getByLabel(english.INPUT_CUSTOMER_NAME_LABEL, { exact: true })
+    .fill("New Contact");
+  await button(english.UI_SAVE_CHANGES).click();
+  await page.locator(".modal-item").filter({ hasText: "New Contact" }).click();
+  await page
+    .locator(".sale-order-customer")
+    .getByText("Customer: New Contact")
+    .waitFor();
+  await page
+    .locator(".transaction-details")
+    .getByText("$4.00", { exact: true })
+    .waitFor();
+});
+
+test("compact POS offers order shortcuts on a phone-sized viewport", async () => {
+  const workspace = page.locator(".pos-workspace:visible");
+  assert.equal(await workspace.locator(".pos-shortcut").count(), 0);
+
+  await page.setViewportSize({ width: 375, height: 700 });
+  await go("");
+  await workspace.locator(".pos-shortcut").first().waitFor();
+
+  assert.equal(await page.locator("[data-compact-views]").count(), 0);
+  const order = workspace.locator(".pos-order");
+  const shortcut = (name: string) =>
+    order.getByRole("button", { name, exact: true });
+  await shortcut(english.PAYMENT_RECORD).click();
+  await page.getByLabel(english.PAYMENT_AMOUNT, { exact: true }).fill("2");
+  await page
+    .getByRole("button", { name: english.PAYMENT_CONTINUE, exact: true })
+    .click();
+  assert.equal(await shortcut(english.BUTTON_POST_TRANSACTION).count(), 0);
+  await shortcut(english.BUTTON_ADD_TO_CUSTOMER).click();
+  await page.getByRole("searchbox").fill("Customer 0");
+  await page
+    .locator(".modal-item")
+    .filter({ hasText: /^Customer 0/ })
+    .click();
+  await order
+    .locator(".sale-order-customer")
+    .getByText("Customer: Customer 0")
+    .waitFor();
+  await shortcut(english.BUTTON_POST_TRANSACTION).click();
+  await page
+    .locator(".notification-message")
+    .getByText("Customer payment recorded for Customer 0.", { exact: true })
+    .waitFor();
+  await shortcut(english.UI_ADD_YOUR_FIRST_ITEM).click();
+  await page.locator(".modal-item").first().click();
+
+  assert.equal(await shortcut(english.BUTTON_ADD).isEnabled(), true);
+  assert.equal(await shortcut(english.BUTTON_DISCOUNT).isEnabled(), true);
+  assert.equal(
+    await shortcut(english.BUTTON_VOID_TRANSACTION).isEnabled(),
+    true,
+  );
+  await order.locator("button.quantity").click();
+  await page.getByLabel(english.QUANTITY_LABEL, { exact: true }).fill("3");
+  await page
+    .getByRole("button", { name: english.QUANTITY_APPLY, exact: true })
+    .click();
+  await order
+    .locator(".transaction-details")
+    .getByText("$15.00", { exact: true })
+    .waitFor();
+  assert.equal(
+    await shortcut(english.BUTTON_ADD_TO_CUSTOMER).isEnabled(),
+    true,
+  );
+  assert.equal(
+    await workspace
+      .locator(".pos-actions-panel")
+      .getByRole("button", {
+        name: english.BUTTON_POST_TRANSACTION,
+        exact: true,
+      })
+      .isEnabled(),
+    true,
+  );
+  await order.locator(".pos-compact-line .pos-shortcut").click();
+  await shortcut(english.PAYMENT_RECORD).waitFor();
+
+  await go("settings");
+  assert.equal(await page.locator(".settings-category[open]").count(), 0);
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_DISPLAY })
+    .click();
+  await page
+    .getByRole("switch", { name: english.SETTINGS_COMPACT_OTHER_VIEWS })
+    .press("Space");
+  await page
+    .getByRole("switch", { name: english.SETTINGS_SHOW_ORDER_ACTIONS })
+    .press("Space");
+  await page
+    .getByRole("button", { name: english.UI_SAVE_CHANGES_2, exact: true })
+    .click();
+  await go("");
+  assert.equal(await workspace.locator(".pos-actions-panel").count(), 0);
+  assert.equal(await page.locator("[data-compact-views]").count(), 1);
+
+  await shortcut(english.UI_ADD_YOUR_FIRST_ITEM).click();
+  await page.locator(".modal-item").first().click();
+  await shortcut(english.BUTTON_POST_TRANSACTION).click();
+  await shortcut(english.PAYMENT_RECORD).waitFor();
+  await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_DISPLAY })
+    .click();
+  await page
+    .getByRole("switch", { name: english.SETTINGS_COMPACT_UI })
+    .press("Space");
+  await page
+    .getByRole("button", { name: english.UI_SAVE_CHANGES_2, exact: true })
+    .click();
+  await go("");
+  assert.equal(await workspace.locator(".pos-shortcut").count(), 0);
+  assert.equal(await workspace.locator(".pos-actions-panel").count(), 1);
+  assert.equal(await page.locator("[data-compact-views]").count(), 0);
+});
+
 test("quantity uses a validated dialog and notification pills pause on hover then disappear", async () => {
   await page.clock.install();
   const dialogs: string[] = [];
@@ -609,7 +791,7 @@ test("posting a sale displays an automatic success notification without native a
   assert.deepEqual(dialogs, []);
 });
 
-test("customer linking reports success without a blocking alert", async () => {
+test("linking a customer keeps the order editable until posting", async () => {
   const dialogs: string[] = [];
   page.on("dialog", (dialog) => {
     dialogs.push(dialog.type());
@@ -617,16 +799,31 @@ test("customer linking reports success without a blocking alert", async () => {
   });
   await go("");
   await page
-    .getByRole("button", { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true })
-    .click();
-  await page.locator(".modal-item").first().click();
-  await page
     .getByRole("button", { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true })
     .click();
   await page.getByRole("searchbox").fill("Customer 0");
   await page
     .locator(".modal-item")
     .filter({ hasText: /^Customer 0/ })
+    .click();
+  await page
+    .locator(".sale-order-customer")
+    .getByText("Customer: Customer 0")
+    .waitFor();
+  await page
+    .getByRole("button", { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true })
+    .click();
+  await page.locator(".modal-item").first().click();
+  await page
+    .getByRole("button", { name: english.BUTTON_ADD, exact: true })
+    .click();
+  await page.locator(".modal-item").first().click();
+  await page
+    .locator(".transaction-details")
+    .getByText("$10.00", { exact: true })
+    .waitFor();
+  await page
+    .getByRole("button", { name: english.BUTTON_POST_TRANSACTION, exact: true })
     .click();
   await page
     .locator(".notification-message")
@@ -638,21 +835,12 @@ test("customer linking reports success without a blocking alert", async () => {
   assert.deepEqual(dialogs, []);
 });
 
-test("a failed customer link preserves the saved sale and retries without posting it twice", async () => {
+test("a customer removed before posting leaves the sale draft available to retry", async () => {
   await go("");
   await page
     .getByRole("button", { name: english.UI_ADD_YOUR_FIRST_ITEM, exact: true })
     .click();
   await page.locator(".modal-item").first().click();
-  const moduleUrl = `${base}src/database/CustomersTransactionsOS.ts`;
-  await page.evaluate(`import(${JSON.stringify(moduleUrl)}).then(module => {
-    const original = module.default.prototype.addOne;
-    let attempts = 0;
-    module.default.prototype.addOne = function(...args) {
-      if (attempts++ === 0) return Promise.reject(new Error('Simulated link failure'));
-      return original.apply(this, args);
-    };
-  })`);
   await page
     .getByRole("button", { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true })
     .click();
@@ -661,22 +849,41 @@ test("a failed customer link preserves the saved sale and retries without postin
     .locator(".modal-item")
     .filter({ hasText: /^Customer 0/ })
     .click();
-  await page.getByText("Simulated link failure", { exact: true }).waitFor();
+  await page.locator(".sale-order-customer").waitFor();
+
+  await page.evaluate(async (moduleUrl) => {
+    const { createDatabaseStores } = (await import(
+      moduleUrl
+    )) as typeof import("../../src/database/DatabaseStores");
+    const db = await createDatabaseStores("POS_DEMO").database.getDatabase();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction("CUSTOMER", "readwrite");
+      transaction.objectStore("CUSTOMER").delete("c0");
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(transaction.error);
+    });
+  }, `${base}src/database/DatabaseStores.ts`);
+
+  const post = page.getByRole("button", {
+    name: english.BUTTON_POST_TRANSACTION,
+    exact: true,
+  });
+  await post.click();
+  await page
+    .locator(".notification-message")
+    .getByText(english.PAGINATION_CUSTOMER_MISSING, { exact: true })
+    .waitFor();
   await page
     .locator(".transaction-details")
     .getByText("$5.00", { exact: true })
     .waitFor();
   await page
-    .getByRole("button", { name: english.BUTTON_ADD_TO_CUSTOMER, exact: true })
+    .getByRole("button", { name: english.UNLINK_ACTION, exact: true })
     .click();
-  await page.getByRole("searchbox").fill("Customer 0");
-  await page
-    .locator(".modal-item")
-    .filter({ hasText: /^Customer 0/ })
-    .click();
+  await post.click();
   await page
     .locator(".notification-message")
-    .filter({ hasText: "Customer 0" })
+    .getByText(english.NOTIFICATION_POSTED, { exact: true })
     .waitFor();
   await go("transactions");
   await page.getByText("1–10 of 36", { exact: true }).waitFor();

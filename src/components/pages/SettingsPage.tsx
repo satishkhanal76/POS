@@ -15,7 +15,7 @@ import DemoSettings from "../Workspace/DemoSettings";
 import { ReactNode, useEffect, useState } from "react";
 import { useClientGlobal } from "../../contexts/ClientGlobal";
 import {
-  defaultSettings,
+  getDeviceDefaults,
   fieldError,
   orderModeError,
   saveSettings,
@@ -34,7 +34,7 @@ function SettingsCategory({
   children: ReactNode;
 }) {
   return (
-    <details className="settings-category" open>
+    <details className="settings-category">
       <summary>
         <h2>{title}</h2>
       </summary>
@@ -115,8 +115,11 @@ export default function SettingsPage() {
                       type="checkbox"
                       role="switch"
                       disabled={
-                        field.key === "forceStockAdherence" &&
-                        !displayDraft.stockManagement
+                        (field.key === "forceStockAdherence" &&
+                          !displayDraft.stockManagement) ||
+                        ((field.key === "showOrderActions" ||
+                          field.key === "compactOtherViews") &&
+                          !displayDraft.compactUI)
                       }
                       checked={Boolean(displayDraft[field.key])}
                       onChange={(event) =>
@@ -206,7 +209,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => {
                   setDraft({
-                    settings: toDraft(defaultSettings),
+                    settings: toDraft(getDeviceDefaults()),
                     language: "english",
                   });
                   setStatus(t("UI_DEFAULTS_LOADED_SAVE_CHANGES_TO_APPLY"));

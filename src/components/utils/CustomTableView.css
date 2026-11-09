@@ -245,3 +245,15 @@
     gap: 0.5rem;
   }
 }
+
+[data-compact-views] .custom-table :is(th, td):not(.table-empty) {
+  padding: 0.5rem 0.75rem;
+}
+[data-compact-views] .table-footer {
+  padding: 0.55rem 0.75rem;
+}
+@media (max-width: 600px) {
+  [data-compact-views] .custom-table tbody tr:not(:last-child) {
+    margin-bottom: 0.45rem;
+  }
+}

@@ -1,13 +1,20 @@
+import { ReactNode } from "react";
 import Price from "../Items/Price";
 import { useLocaleText } from "../../contexts/Locale";
 import { IDiscountTransactionItem } from "../../models/DiscountTransactionItem";
 import { IProductTransactionItem } from "../../models/ProductTransactionItem";
 import { ITransaction } from "../../models/Transaction";
-import TransactionsItemsContainer from "./TransactionsItemsContainer";
+import TransactionsItemsContainer, {
+  CompactTransactionLines,
+} from "./TransactionsItemsContainer";
 import "./TransactionView.css";
 
 interface TransactionViewProps {
   transaction: ITransaction;
+  compactLines?: CompactTransactionLines;
+  headerAction?: ReactNode;
+  details?: ReactNode;
+  footerActions?: ReactNode;
   onDoubleClick: (
     transactionItem: IProductTransactionItem | IDiscountTransactionItem,
   ) => void;
@@ -19,6 +26,10 @@ interface TransactionViewProps {
 
 const TransactionView = ({
   transaction,
+  compactLines,
+  headerAction,
+  details,
+  footerActions,
   onDoubleClick,
   onClick,
   activeItem,
@@ -38,17 +49,21 @@ const TransactionView = ({
             {new Date(transaction.getTimestamp()).toLocaleString()}
           </time>
         </div>
-        <span className="transaction-item-count">
-          {transaction.getKind() === "payment"
-            ? t("PAYMENT_TITLE")
-            : t(
-                transaction.getAllTransactionProductItems().length === 1
-                  ? "TRANSACTION_ITEM_COUNT_ONE"
-                  : "TRANSACTION_ITEM_COUNT_OTHER",
-                { count: transaction.getAllTransactionProductItems().length },
-              )}
-        </span>
+        <div className="pos-order-heading-actions">
+          <span className="transaction-item-count">
+            {transaction.getKind() === "payment"
+              ? t("PAYMENT_TITLE")
+              : t(
+                  transaction.getAllTransactionProductItems().length === 1
+                    ? "TRANSACTION_ITEM_COUNT_ONE"
+                    : "TRANSACTION_ITEM_COUNT_OTHER",
+                  { count: transaction.getAllTransactionProductItems().length },
+                )}
+          </span>
+          {headerAction}
+        </div>
       </header>
+      {details}
       {transaction.getKind() === "payment" ? (
         <div className="payment-detail">
           <h3>{t("PAYMENT_TITLE")}</h3>
@@ -62,9 +77,11 @@ const TransactionView = ({
           onDoubleClick={onDoubleClick}
           onClick={onClick}
           total={transaction.getTotal()}
+          compactLines={compactLines}
           activeItem={activeItem}
         ></TransactionsItemsContainer>
       )}
+      {footerActions}
     </div>
   );
 };

@@ -94,3 +94,35 @@
   height: 20px;
   flex-shrink: 0;
 }
+
+[data-compact-views] .transaction-page .transaction-toolbar {
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+[data-compact-views] .transaction-page .transaction-toolbar > .page-back-link {
+  flex: 0 1 auto;
+}
+[data-compact-views] .transaction-page .transaction-toolbar-actions {
+  width: auto;
+  flex-wrap: wrap;
+}
+[data-compact-views] .transaction-page .transaction-customer {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+}
+[data-compact-views] .transaction-page .transaction-customer button {
+  width: auto;
+}
+[data-compact-views]
+  .transaction-page
+  :is(.transaction-title, .transaction-details) {
+  padding: 0.7rem 0.85rem;
+}
+[data-compact-views] .transaction-page .transaction-items-container {
+  min-height: 0;
+}
+[data-compact-views] .transaction-page .transaction-item {
+  padding-block: 0.45rem;
+}

@@ -69,3 +69,11 @@
     width: 100%;
   }
 }
+
+[data-compact-views] .pagination-controls,
+[data-compact-views] .pagination-options {
+  gap: 0.5rem;
+}
+[data-compact-views] .catalog-toolbar {
+  padding: 0.65rem;
+}

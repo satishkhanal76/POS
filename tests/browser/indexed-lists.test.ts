@@ -435,6 +435,10 @@ test("order pickers show recent favorites, search beyond the first page, and res
   );
   await page.keyboard.press("Escape");
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_ORDER_ENTRY })
+    .click();
   await page.getByLabel(english.PICKER_LIMIT, { exact: true }).fill("5");
   await page
     .getByRole("button", { name: english.UI_SAVE_CHANGES_2, exact: true })
@@ -475,6 +479,10 @@ test("catalog toolbars sort complete results and reveal live stock sorting only 
   );
   await page.keyboard.press("Escape");
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_ORDER_ENTRY })
+    .click();
   await page.locator("#setting-stockManagement").check();
   await page
     .getByRole("button", { name: english.UI_SAVE_CHANGES_2, exact: true })
@@ -1046,6 +1054,10 @@ test("supplier overview ranks selected activity, filters lifetime balances, link
 
 test("language settings audit missing keys and custom fallbacks without breaking the app", async () => {
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_LANGUAGE })
+    .click();
   const audit = page.locator(".locale-audit");
   await audit
     .getByRole("heading", { name: english.LOCALE_AUDIT_TITLE, exact: true })
@@ -1114,6 +1126,10 @@ test("language settings audit missing keys and custom fallbacks without breaking
 
 test("shared software name references update runtime branding and persist through reload", async () => {
   await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_LANGUAGE })
+    .click();
   await page.getByLabel(english.LOCALE_FILE_LABEL).setInputFiles({
     name: "brand.json",
     mimeType: "application/json",

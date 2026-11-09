@@ -1,6 +1,6 @@
 import { useLocaleText } from "../../contexts/Locale";
 import { ReactNode, useId } from "react";
-import { MdSearch, MdArrowForward } from "react-icons/md";
+import { MdSearch, MdArrowForward, MdAdd } from "react-icons/md";
 import FullScreenModal from "./FullScreenModal";
 import { useLocale } from "../../contexts/Locale";
 import "./SearchableModal.css";
@@ -23,6 +23,7 @@ interface SearchableModalProps {
   onLoadMore: () => void;
   onRetry: () => void;
   recentFirst: boolean;
+  createAction?: { label: string; onClick: () => void };
   searchLabel?: string;
   title?: string;
   searchPlaceholderText?: string;
@@ -44,6 +45,7 @@ export default function SearchableModal({
   onRetry,
   recentFirst,
   searchLabel,
+  createAction,
 }: SearchableModalProps) {
   const t = useLocaleText();
   const searchId = useId();
@@ -117,11 +119,22 @@ export default function SearchableModal({
                 ? t("UI_NO_MATCHES_FOUND")
                 : t("UI_NOTHING_TO_SELECT_YET")}
             </h3>
-            <p>
-              {query.trim()
-                ? t("UI_TRY_ANOTHER_NAME_OR_CLEAR_YOUR_SEARCH")
-                : t("UI_ADD_ITEMS_OR_CUSTOMERS_FROM_MANAGE_THEN_RETURN_HERE")}
-            </p>
+            {!query.trim() && createAction ? (
+              <button
+                type="button"
+                className="modal-create-button"
+                onClick={createAction.onClick}
+              >
+                <MdAdd aria-hidden="true" />
+                {createAction.label}
+              </button>
+            ) : (
+              <p>
+                {query.trim()
+                  ? t("UI_TRY_ANOTHER_NAME_OR_CLEAR_YOUR_SEARCH")
+                  : t("UI_ADD_ITEMS_OR_CUSTOMERS_FROM_MANAGE_THEN_RETURN_HERE")}
+              </p>
+            )}
           </div>
         )}
       </div>

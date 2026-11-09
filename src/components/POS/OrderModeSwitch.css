@@ -75,14 +75,14 @@ body.light-theme {
   text-align: left;
   font: inherit;
 }
-.purchase-order-line .purchase-unit-cost {
+.purchase-workspace .purchase-unit-cost {
   display: block;
   font-size: 0.8rem;
   font-weight: 400;
   margin-top: 0.35rem;
   color: var(--color-slate400);
 }
-.purchase-order-line .purchase-unit-cost .price {
+.purchase-workspace .purchase-unit-cost .price {
   font-weight: 400;
 }
 .purchase-order-line.active {

@@ -98,6 +98,27 @@ export const settingsSchema: SettingField[] = [
     integer: true,
   },
   {
+    key: "compactUI",
+    type: "boolean",
+    label: "SETTINGS_COMPACT_UI",
+    description: "SETTINGS_COMPACT_UI_HELP",
+    group: "Appearance",
+  },
+  {
+    key: "compactOtherViews",
+    type: "boolean",
+    label: "SETTINGS_COMPACT_OTHER_VIEWS",
+    description: "SETTINGS_COMPACT_OTHER_VIEWS_HELP",
+    group: "Appearance",
+  },
+  {
+    key: "showOrderActions",
+    type: "boolean",
+    label: "SETTINGS_SHOW_ORDER_ACTIONS",
+    description: "SETTINGS_SHOW_ORDER_ACTIONS_HELP",
+    group: "Appearance",
+  },
+  {
     key: "theme",
     type: "select",
     label: "SETTINGS_THEME",
@@ -109,6 +130,17 @@ export const defaultSettings: Settings = {
   ...defaults,
   theme: isThemePreference(defaults.theme) ? defaults.theme : "system",
 };
+export function getDeviceDefaults(): Settings {
+  // Match the breakpoint where the POS switches to a single-column layout.
+  const compactUI =
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(max-width: 800px)").matches;
+  return {
+    ...defaultSettings,
+    compactUI: compactUI ?? defaultSettings.compactUI,
+  };
+}
+
 export const STORAGE_KEY = SETTINGS_STORAGE_KEY;
 export const UPDATE_EVENT = "clientGlobal:updated";
 export type SettingsDraft = Record<keyof Settings, string | boolean>;
@@ -193,7 +225,7 @@ export function parseDraft(draft: SettingsDraft): Settings {
 }
 
 export function loadSettings(): Settings {
-  const next = { ...defaultSettings };
+  const next = getDeviceDefaults();
   try {
     const parsed: unknown = JSON.parse(
       localStorage.getItem(STORAGE_KEY) || "{}",

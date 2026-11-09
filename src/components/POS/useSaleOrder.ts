@@ -22,6 +22,7 @@ interface SaleTransactionState {
   transaction: ITransaction | null;
   activeTransactionItem:
     IProductTransactionItem | IDiscountTransactionItem | null;
+  linkedCustomer: ICustomer | null;
   isAddModalOpen: boolean;
   isCustomerModalOpen: boolean;
 }
@@ -67,6 +68,7 @@ export default function useSaleOrder() {
     useState<SaleTransactionState>({
       transaction: null,
       activeTransactionItem: null,
+      linkedCustomer: null,
       isAddModalOpen: false,
       isCustomerModalOpen: false,
     });
@@ -93,22 +95,27 @@ export default function useSaleOrder() {
   }, [initialTransactionId, transactionController]);
 
   // Contact selection queries its own limited pages; do not load every contact here.
-  const { transaction } = transactionState;
+  const { transaction, linkedCustomer } = transactionState;
+  const isPayment = transaction?.getKind() === "payment";
+  const canPost =
+    !!transaction &&
+    (isPayment || transaction.isPosted()
+      ? !!linkedCustomer
+      : transaction.hasItems());
 
   const handleAddBtnClick = () => {
     setTransactionState((t) => ({ ...t, isAddModalOpen: true }));
   };
 
-  const handleRemoveBtnClick = () => {
-    if (!transaction || !transactionState.activeTransactionItem) return;
+  const removeItem = (item = transactionState.activeTransactionItem) => {
+    if (!transaction || !item || transaction.isPosted() || saveInFlight.current)
+      return;
 
-    transaction.removeTransactionItem(
-      transactionState.activeTransactionItem.getItem().getId(),
-    );
+    transaction.removeTransactionItem(item.getItem().getId());
 
     if (!transaction.getLast()) return handleVoidTransaction();
-    setTransactionState((t) => ({
-      ...t,
+    setTransactionState((current) => ({
+      ...current,
       activeTransactionItem: transaction.getLast(),
     }));
   };
@@ -141,6 +148,7 @@ export default function useSaleOrder() {
     setTransactionState((p) => ({
       ...p,
       transaction: t,
+      linkedCustomer: p.transaction?.isPosted() ? null : p.linkedCustomer,
       activeTransactionItem: transactionItem,
       isAddModalOpen: false,
     }));
@@ -191,18 +199,44 @@ export default function useSaleOrder() {
   };
 
   const handlePostTransaction = async () => {
-    if (!transaction || transaction.isPosted() || saveInFlight.current) return;
-    if (!begin()) return;
+    if (!transaction || !canPost || !begin()) return;
     try {
-      const posted = await transactionController.postTransaction(transaction);
-      if (!posted) throw new Error(t("NOTIFICATION_POST_FAILED"));
-      transaction.setIsPosted(true);
+      if (isPayment && linkedCustomer) {
+        await cutomersTransactionsOS.recordPayment(transaction, linkedCustomer);
+      } else if (transaction.isPosted() && linkedCustomer) {
+        await cutomersTransactionsOS.addOne(
+          new CustomerTransaction({
+            id: uuidv4(),
+            timestamp: Date.now(),
+            customer: linkedCustomer,
+            transaction,
+          }),
+        );
+      } else {
+        const posted = await transactionController.postTransaction(
+          transaction,
+          linkedCustomer?.getId(),
+        );
+        if (!posted) throw new Error(t("NOTIFICATION_POST_FAILED"));
+      }
       setTransactionState((current) => ({
         ...current,
         transaction: null,
         activeTransactionItem: null,
+        linkedCustomer: null,
       }));
-      notify(t("NOTIFICATION_POSTED"));
+      notify(
+        linkedCustomer
+          ? t(
+              isPayment
+                ? "PAYMENT_SAVED"
+                : "TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS",
+              {
+                CUSTOMER_NAME: linkedCustomer.getName(),
+              },
+            )
+          : t("NOTIFICATION_POSTED"),
+      );
     } catch (error) {
       notify(
         error instanceof Error ? error.message : t("NOTIFICATION_POST_FAILED"),
@@ -219,6 +253,7 @@ export default function useSaleOrder() {
       ...t,
       transaction: null,
       activeTransactionItem: null,
+      linkedCustomer: null,
     }));
   };
 
@@ -235,80 +270,54 @@ export default function useSaleOrder() {
     setDiscountModalOpen(true);
   };
 
-  const handleAddCustomer = async (customer: ICustomer | null) => {
-    if (!transaction || !customer || saveInFlight.current) return;
-    if (!begin()) return;
+  const setLinkedCustomer = (customer: ICustomer | null) => {
+    if (saveInFlight.current) return;
     setTransactionState((current) => ({
       ...current,
+      linkedCustomer: customer,
       isCustomerModalOpen: false,
     }));
-    try {
-      if (transaction.getKind() === "payment") {
-        await cutomersTransactionsOS.recordPayment(
-          transaction as PaymentTransaction,
-          customer,
-        );
-      } else {
-        if (!transaction.isPosted()) {
-          const posted =
-            await transactionController.postTransaction(transaction);
-          if (!posted) throw new Error(t("NOTIFICATION_POST_FAILED"));
-          transaction.setIsPosted(true);
-        }
-        // Posting and linking are separate: a failed link leaves a posted sale
-        // that can be linked again without posting or deducting stock twice.
-        await cutomersTransactionsOS.addOne(
-          new CustomerTransaction({
-            id: uuidv4(),
-            timestamp: Date.now(),
-            customer,
-            transaction,
-          }),
-        );
-      }
-      setTransactionState((current) => ({
-        ...current,
-        transaction: null,
-        activeTransactionItem: null,
-      }));
-      notify(
-        t(
-          transaction.getKind() === "payment"
-            ? "PAYMENT_SAVED"
-            : "TRANSACTION_LINKED_TO_CUSTOMER_SUCCESS",
-          { CUSTOMER_NAME: customer.getName() },
-        ),
-      );
-    } catch (error) {
-      notify(
-        error instanceof Error
-          ? error.message
-          : t(
-              transaction.isPosted()
-                ? "NOTIFICATION_CUSTOMER_LINK_FAILED"
-                : "NOTIFICATION_POST_FAILED",
-            ),
-        "error",
-      );
-      setTransactionState((current) => ({ ...current }));
-    } finally {
-      end();
-    }
   };
 
-  const isPayment = transaction?.getKind() === "payment";
+  const customer = {
+    children: text.BUTTON_ADD_TO_CUSTOMER,
+    onClick: selectCustomer,
+  };
+  const post = {
+    children: text.BUTTON_POST_TRANSACTION,
+    className: "pos-action pos-action-primary",
+    disabled: !canPost,
+    onClick: handlePostTransaction,
+  };
+  const add = {
+    children: text.BUTTON_ADD,
+    className: "pos-action pos-action-add",
+    disabled: isPayment || !!transaction?.isPosted(),
+    onClick: handleAddBtnClick,
+  };
+  const payment = {
+    children: t("PAYMENT_RECORD"),
+    disabled: !!transaction,
+    onClick: () => setPaymentModalOpen(true),
+  };
+  const discount = {
+    children: text.BUTTON_DISCOUNT,
+    disabled: isPayment || !transaction?.hasItems() || transaction.isPosted(),
+    onClick: handleDiscount,
+  };
+  const voidOrder = {
+    className: "pos-action pos-action-danger",
+    children: transaction?.isPosted()
+      ? text.BUTTON_CREATE_NEW_TRANSACTION
+      : text.BUTTON_VOID_TRANSACTION,
+    disabled: !transaction ? true : false,
+    onClick: transaction?.isPosted()
+      ? () => handleCreateNewTransaction()
+      : handleVoidTransaction,
+  };
   const buttonsProps: IButtonProps[] = [
-    {
-      children: t("PAYMENT_RECORD"),
-      disabled: !!transaction,
-      onClick: () => setPaymentModalOpen(true),
-    },
-    {
-      children: text.BUTTON_ADD,
-      className: "pos-action pos-action-add",
-      disabled: isPayment || !!transaction?.isPosted(),
-      onClick: handleAddBtnClick,
-    },
+    payment,
+    add,
     {
       children: text.BUTTON_REMOVE,
       disabled:
@@ -317,7 +326,7 @@ export default function useSaleOrder() {
         !transactionState.activeTransactionItem
           ? true
           : false,
-      onClick: handleRemoveBtnClick,
+      onClick: () => removeItem(),
     },
     {
       children: text.BUTTON_CHANGE_QUANTITY,
@@ -329,35 +338,10 @@ export default function useSaleOrder() {
           : false,
       onClick: () => handleChangeQuantity(),
     },
-    {
-      children: text.BUTTON_POST_TRANSACTION,
-      className: "pos-action pos-action-primary",
-      disabled:
-        isPayment || transaction?.isPosted() || !transaction?.hasItems()
-          ? true
-          : false,
-      onClick: handlePostTransaction,
-    },
-    {
-      className: "pos-action pos-action-danger",
-      children: transaction?.isPosted()
-        ? text.BUTTON_CREATE_NEW_TRANSACTION
-        : text.BUTTON_VOID_TRANSACTION,
-      disabled: !transaction ? true : false,
-      onClick: transaction?.isPosted()
-        ? () => handleCreateNewTransaction()
-        : handleVoidTransaction,
-    },
-    {
-      children: text.BUTTON_ADD_TO_CUSTOMER,
-      disabled: !transaction ? true : false,
-      onClick: selectCustomer,
-    },
-    {
-      children: text.BUTTON_DISCOUNT,
-      disabled: isPayment || !transaction?.hasItems() || transaction.isPosted(),
-      onClick: handleDiscount,
-    },
+    post,
+    voidOrder,
+    customer,
+    discount,
   ];
 
   const recordPayment = (amount: number) => {
@@ -417,8 +401,18 @@ export default function useSaleOrder() {
     transaction,
     isPayment,
     buttonsProps,
+    shortcuts: {
+      payment,
+      add,
+      post,
+      customer: { ...customer, disabled: !transaction },
+      discount,
+      voidOrder,
+    },
+    removeItem,
     handleAddItem,
-    handleAddCustomer,
+    linkedCustomer,
+    setLinkedCustomer,
     handleAddBtnClick,
     handleChangeQuantity,
   };

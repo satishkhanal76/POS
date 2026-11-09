@@ -114,3 +114,154 @@
     grid-template-columns: 1fr;
   }
 }
+
+.pos-layout.pos-layout-order-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+.purchase-order-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.purchase-order-meta > span {
+  margin-inline-end: auto;
+  overflow-wrap: anywhere;
+}
+
+.pos-order .pos-order-heading-actions,
+.pos-shortcut-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pos-shortcut {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--color-slate600);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--color-slate100);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+.pos-shortcut span {
+  display: flex;
+}
+.pos-shortcut-primary {
+  color: var(--accent);
+  border-color: currentColor;
+}
+.pos-shortcut-danger {
+  color: var(--rose-600);
+}
+.pos-shortcut:not(.pos-shortcut-danger):hover:not(:disabled) {
+  color: var(--accent);
+  border-color: currentColor;
+}
+.pos-shortcut:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.pos-shortcut-footer {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: 0.65rem 0.75rem;
+  border-top: 1px solid var(--color-slate600);
+}
+.pos-empty-shortcuts {
+  flex-direction: column;
+  align-items: stretch;
+}
+.pos-shortcut-labeled {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+}
+.pos-shortcut-labeled span {
+  font-size: 1.25rem;
+}
+.pos-compact
+  :is(.transaction-title, .transaction-details, .pos-empty-order > header) {
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+}
+.pos-compact .pos-empty-state {
+  min-height: 0;
+  padding: 1rem 0.75rem;
+}
+.pos-compact .pos-empty-icon {
+  display: none;
+}
+.pos-compact .pos-empty-state h3 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+.pos-compact .pos-empty-state p {
+  margin: 0.35rem 0 0.75rem;
+}
+.pos-compact .transaction-items-container {
+  min-height: 0;
+  padding: 0.25rem 0.5rem;
+}
+.pos-compact .pos-compact-line {
+  grid-template-columns:
+    minmax(44px, max-content) minmax(0, 1fr) minmax(0, max-content)
+    44px;
+  gap: 0.4rem;
+  padding: 0.15rem 0.25rem;
+}
+.pos-compact .transaction-columns.pos-compact-line {
+  padding: 0.45rem 0.8rem;
+}
+.pos-compact-line button.quantity,
+.pos-compact-line button.name {
+  min-height: 44px;
+  padding: 0.15rem 0.3rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.pos-compact-line button.name {
+  padding-inline: 0;
+  border: 0;
+  text-align: start;
+}
+.pos-compact-line :is(.quantity, .name, .pos-shortcut):focus-visible {
+  outline-offset: -2px;
+}
+
+.pos-compact .transaction-title > div:first-child {
+  min-width: 0;
+}
+.pos-compact .transaction-title > div:first-child .transaction-item-count {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.pos-compact .transaction-details {
+  border-top-width: 2px;
+  border-top-color: var(--color-slate500);
+}
+.pos-compact .transaction-details > .price {
+  font-size: 1.4rem;
+}
+.pos-compact .purchase-order-meta {
+  padding: 0.5rem 0.75rem;
+}
+.pos-compact-line .quantity,
+.pos-compact-line > .price {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+.pos-compact-line {
+  cursor: default;
+}

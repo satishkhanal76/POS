@@ -42,6 +42,13 @@ export function ClientGlobalProvider({ children }: { children: ReactNode }) {
     system.addEventListener("change", update);
     return () => system.removeEventListener("change", update);
   }, [settings.theme]);
+  useLayoutEffect(() => {
+    document.documentElement.toggleAttribute(
+      "data-compact-views",
+      settings.compactUI && settings.compactOtherViews,
+    );
+    return () => document.documentElement.removeAttribute("data-compact-views");
+  }, [settings.compactUI, settings.compactOtherViews]);
   return (
     <ClientGlobalContext.Provider value={settings}>
       {children}
