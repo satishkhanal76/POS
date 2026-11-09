@@ -2,7 +2,7 @@ import { SortOption } from "./catalogSorts";
 import Select from "../Forms/Select";
 import { ReactNode, useId } from "react";
 import { useLocaleText } from "../../contexts/Locale";
-import { PageOptions, PageSort } from "../../database/Pagination";
+import { PageOptions, PageSort, pageSizes } from "../../database/Pagination";
 import "./PaginationControls.css";
 
 interface PaginationControlsProps {
@@ -16,7 +16,7 @@ interface PaginationControlsProps {
   extraSorts?: boolean;
   itemSorts?: boolean;
   filters?: ReactNode;
-  sortOptions?: SortOption[];
+  sortOptions?: readonly SortOption[];
   className?: string;
 }
 export default function PaginationControls({
@@ -49,22 +49,34 @@ export default function PaginationControls({
               value={sort}
               onChange={(value) => onChange({ sort: value as PageSort })}
             >
-              {sortOptions ? sortOptions.map(option => <option key={option.value} value={option.value}>{t(option.label)}</option>) : <>
-              <option value="newest">{t("PAGINATION_NEWEST")}</option>
-              <option value="oldest">{t("PAGINATION_OLDEST")}</option>
-              {extraSorts && (
+              {sortOptions ? (
+                sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {t(option.label)}
+                  </option>
+                ))
+              ) : (
                 <>
-                  <option value="total-high">{t("SORT_TOTAL_HIGH")}</option>
-                  <option value="total-low">{t("SORT_TOTAL_LOW")}</option>
-                  {itemSorts && (
+                  <option value="newest">{t("PAGINATION_NEWEST")}</option>
+                  <option value="oldest">{t("PAGINATION_OLDEST")}</option>
+                  {extraSorts && (
                     <>
-                      <option value="items-high">{t("SORT_ITEMS_HIGH")}</option>
-                      <option value="items-low">{t("SORT_ITEMS_LOW")}</option>
+                      <option value="total-high">{t("SORT_TOTAL_HIGH")}</option>
+                      <option value="total-low">{t("SORT_TOTAL_LOW")}</option>
+                      {itemSorts && (
+                        <>
+                          <option value="items-high">
+                            {t("SORT_ITEMS_HIGH")}
+                          </option>
+                          <option value="items-low">
+                            {t("SORT_ITEMS_LOW")}
+                          </option>
+                        </>
+                      )}
                     </>
                   )}
                 </>
               )}
-              </>}
             </Select>
           </div>
         )}
@@ -75,10 +87,9 @@ export default function PaginationControls({
             value={pageSize}
             onChange={(value) => onChange({ pageSize: Number(value) })}
           >
-            <option value={0}>{t("REPORT_ALL")}</option>
-            {[10, 25, 50, 100].map((size) => (
+            {pageSizes.map((size) => (
               <option value={size} key={size}>
-                {size}
+                {size === 0 ? t("REPORT_ALL") : size}
               </option>
             ))}
           </Select>

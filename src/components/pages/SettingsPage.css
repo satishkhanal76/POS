@@ -236,6 +236,27 @@
   font-weight: 700;
 }
 
+.settings-subcategory {
+  margin: 0.65rem 0 0;
+  border-radius: 10px;
+}
+
+.settings-subcategory > summary {
+  min-height: 44px;
+  padding: 0.65rem 0.85rem;
+}
+
+.settings-subcategory > summary h3 {
+  margin: 0;
+}
+
+.settings-subcategory > .settings-section {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--color-slate600);
+  border-radius: 0;
+}
+
 @media (max-width: 760px) {
   .settings-page > .page-header {
     flex-direction: column;

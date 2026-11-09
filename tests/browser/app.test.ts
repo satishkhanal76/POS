@@ -172,8 +172,181 @@ async function downloadedJson(download: Download): Promise<unknown> {
   return JSON.parse((await downloadedBytes(download)).toString("utf8"));
 }
 
+test("Sales and Purchases use saved filter and sort defaults unless the URL overrides them", async () => {
+  const period = page.getByRole("combobox", {
+    name: english.DASH_PERIOD,
+    exact: true,
+  });
+  for (const path of ["transactions", "purchases"]) {
+    await go(path);
+    await period.getByText(english.DASH_MONTH, { exact: true }).waitFor();
+  }
+
+  await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_HISTORY })
+    .click();
+  assert.equal(await page.locator(".settings-subcategory[open]").count(), 0);
+  await page
+    .locator(".settings-subcategory > summary")
+    .filter({ hasText: english.SETTINGS_HISTORY_FILTERS })
+    .click();
+  const history = page.getByRole("region", {
+    name: english.SETTINGS_HISTORY_FILTERS,
+    exact: true,
+  });
+  const preset = history.getByRole("combobox", {
+    name: english.SETTINGS_HISTORY_PERIOD,
+    exact: true,
+  });
+  await preset.press("Enter");
+  assert.equal(
+    await page
+      .getByRole("option", { name: english.DASH_CUSTOM, exact: true })
+      .count(),
+    0,
+  );
+  await preset.press("End");
+  await preset.press("Enter");
+  for (const name of [
+    english.SETTINGS_HISTORY_PAGE_SIZE,
+    english.SETTINGS_SALES_SORT,
+    english.SETTINGS_SALES_FILTER,
+    english.SETTINGS_PURCHASE_SORT,
+    english.SETTINGS_PURCHASE_FILTER,
+  ]) {
+    const select = history.getByRole("combobox", { name, exact: true });
+    await select.press("Enter");
+    await select.press("End");
+    await select.press("Enter");
+  }
+  await page
+    .getByRole("button", { name: english.UI_SAVE_CHANGES_2, exact: true })
+    .click();
+
+  const sort = page.getByRole("combobox", {
+    name: english.PAGINATION_SORT,
+    exact: true,
+  });
+  const filter = page.getByRole("combobox", {
+    name: english.FILTER_TYPE,
+    exact: true,
+  });
+  const size = page.getByRole("combobox", {
+    name: english.PAGINATION_PAGE_SIZE,
+    exact: true,
+  });
+  for (const [path, sortLabel, filterLabel, prefix] of [
+    ["transactions", english.SORT_ITEMS_LOW, english.REPORT_PAYMENTS, ""],
+    ["purchases", english.SORT_TOTAL_LOW, english.BUY_PAYMENTS, "purchasing-"],
+  ]) {
+    await go(path);
+    await period.getByText(english.REPORT_ALL_TIME, { exact: true }).waitFor();
+    await sort.getByText(sortLabel, { exact: true }).waitFor();
+    await filter.getByText(filterLabel, { exact: true }).waitFor();
+    await size.getByText("100", { exact: true }).waitFor();
+    await go(
+      `${path}?period=custom&date=2023-11-01&end=2023-11-30&${prefix}kind=all&${prefix}sort=oldest&${prefix}pageSize=25`,
+    );
+    await period.getByText(english.DASH_CUSTOM, { exact: true }).waitFor();
+    await sort.getByText(english.PAGINATION_OLDEST, { exact: true }).waitFor();
+    await filter.getByText(english.FILTER_ALL_TYPES, { exact: true }).waitFor();
+    await size.getByText("25", { exact: true }).waitFor();
+  }
+});
+
+test("Dashboard and Overview keep independent report defaults", async () => {
+  await go("settings");
+  await page
+    .locator(".settings-category > summary")
+    .filter({ hasText: english.SETTINGS_HISTORY })
+    .click();
+  assert.equal(await page.locator(".settings-subcategory[open]").count(), 0);
+  for (const title of [english.REPORT_DASHBOARD, english.REPORT_OVERVIEW]) {
+    await page
+      .locator(".settings-subcategory > summary")
+      .filter({ hasText: title })
+      .click();
+  }
+  const dashboard = page.getByRole("region", {
+    name: english.REPORT_DASHBOARD,
+    exact: true,
+  });
+  const overview = page.getByRole("region", {
+    name: english.REPORT_OVERVIEW,
+    exact: true,
+  });
+
+  for (const [group, label] of [
+    [dashboard, english.DASH_DAY],
+    [overview, english.DASH_MONTH],
+  ] as const) {
+    const period = group.getByRole("combobox", {
+      name: english.SETTINGS_HISTORY_PERIOD,
+      exact: true,
+    });
+    await period.getByText(label, { exact: true }).waitFor();
+    await period.press("Enter");
+    assert.equal(
+      await page
+        .getByRole("option", { name: english.DASH_CUSTOM, exact: true })
+        .count(),
+      0,
+    );
+    await period.press("Escape");
+  }
+  const period = dashboard.getByRole("combobox", {
+    name: english.SETTINGS_HISTORY_PERIOD,
+    exact: true,
+  });
+  await period.press("Enter");
+  await period.press("End");
+  await period.press("Enter");
+  await period.getByText(english.REPORT_ALL_TIME, { exact: true }).waitFor();
+  const size = dashboard.getByRole("combobox", {
+    name: english.SETTINGS_HISTORY_PAGE_SIZE,
+    exact: true,
+  });
+  await size.press("Enter");
+  await size.press("End");
+  await size.press("Enter");
+  await dashboard
+    .getByRole("switch", { name: english.SETTINGS_REPORT_COLLAPSED })
+    .press("Space");
+  await page
+    .getByRole("button", { name: english.UI_SAVE_CHANGES_2, exact: true })
+    .click();
+
+  const reportPeriod = page.getByRole("combobox", {
+    name: english.DASH_PERIOD,
+    exact: true,
+  });
+  await go("dashboard");
+  await reportPeriod
+    .getByText(english.REPORT_ALL_TIME, { exact: true })
+    .waitFor();
+  const sales = page.locator(".report-disclosure").filter({
+    has: page
+      .locator("summary")
+      .getByText(english.REPORT_TRANSACTIONS, { exact: true }),
+  });
+  assert.equal(await sales.getAttribute("open"), "");
+  await sales
+    .getByRole("combobox", { name: english.PAGINATION_PAGE_SIZE, exact: true })
+    .getByText("100", { exact: true })
+    .waitFor();
+  await sales.locator("summary").click();
+  assert.equal(await sales.getAttribute("open"), null);
+
+  await go("overview");
+  await reportPeriod.getByText(english.DASH_MONTH, { exact: true }).waitFor();
+  await page.locator(".report-disclosure").first().waitFor();
+  assert.equal(await page.locator(".report-disclosure[open]").count(), 0);
+});
+
 test("pagination controls query pages and preserve list state through detail/back navigation", async () => {
-  await go("transactions");
+  await go("transactions?period=all");
   await rowCount(10);
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await page.getByText("11–20 of 35", { exact: true }).waitFor();
@@ -315,7 +488,7 @@ test("discount dialog applies a percentage and a flat deduction and posts the re
   await page
     .getByRole("button", { name: "Add your first item", exact: true })
     .waitFor();
-  await go("transactions");
+  await go("transactions?period=all");
   await rowCount(10);
   await page
     .locator(".custom-table tbody tr")
@@ -435,7 +608,7 @@ test("settings switch back to the existing demo without resetting practice recor
     page.getByRole("button", { name: "Switch to Demo", exact: true }).click(),
   ]);
   await page.locator(".demo-banner").waitFor();
-  await go("transactions");
+  await go("transactions?period=all");
   await rowCount(10);
   await page.getByText("1–10 of 35", { exact: true }).waitFor();
 });
@@ -455,7 +628,7 @@ test("fresh demo populates catalog, customer summaries, sale history, and price 
       .getByRole("button", { name: english.UI_RESTART_DEMO, exact: true })
       .click(),
   ]);
-  await go("transactions");
+  await go("transactions?period=all");
   await rowCount(10);
   await page.getByText("1–10 of 24", { exact: true }).waitFor();
   await go("contacts");
@@ -885,6 +1058,6 @@ test("a customer removed before posting leaves the sale draft available to retry
     .locator(".notification-message")
     .getByText(english.NOTIFICATION_POSTED, { exact: true })
     .waitFor();
-  await go("transactions");
+  await go("transactions?period=all");
   await page.getByText("1–10 of 36", { exact: true }).waitFor();
 });

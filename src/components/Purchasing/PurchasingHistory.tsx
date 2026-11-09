@@ -1,6 +1,11 @@
+import {
+  PurchaseFilter,
+  purchaseSorts,
+  purchaseSortOptions,
+} from "../../settings/history";
 import ContactFilter from "../Forms/ContactFilter";
 import PageHeader from "../Layout/PageHeader";
-import { DashboardRange } from "../../dashboard/period";
+import { DashboardPeriod, DashboardRange } from "../../dashboard/period";
 import useListFilter from "../../hooks/useListFilter";
 import Select from "../Forms/Select";
 import { purchaseInvoice } from "../../purchasing/invoice";
@@ -25,17 +30,25 @@ import printTable from "../Reports/printTable";
 export default function PurchasingHistory({
   contactId,
   range: fixedRange,
+  defaultPeriod = "all",
+  defaultSort = "newest",
+  defaultFilter = "all",
+  defaultPageSize = 10,
   refresh = 0,
   standalone = false,
 }: {
   contactId?: string;
   range?: DashboardRange;
+  defaultPeriod?: DashboardPeriod;
+  defaultSort?: (typeof purchaseSorts)[number];
+  defaultFilter?: PurchaseFilter;
+  defaultPageSize?: number;
   refresh?: number;
   standalone?: boolean;
 }) {
   const t = useLocaleText(),
     stores = useDatabase(),
-    period = useReportPeriod("all"),
+    period = useReportPeriod(defaultPeriod),
     revision = useDeletionRevision(),
     navigate = useNavigate(),
     location = useLocation();
@@ -44,7 +57,10 @@ export default function PurchasingHistory({
     () => new PurchasingController(stores.purchasingOS),
     [stores.purchasingOS],
   );
-  const [requestedKind, setKind] = useListFilter("purchasing-kind");
+  const [requestedKind, setKind] = useListFilter(
+    "purchasing-kind",
+    defaultFilter,
+  );
   const [selectedContact, setContact] = useListFilter("purchasing-contact");
   const supplierId =
     contactId ??
@@ -67,7 +83,13 @@ export default function PurchasingHistory({
     },
     [controller, range, supplierId, selectedKind, revision, refresh],
   );
-  const pagination = usePagedQuery(query, "purchasing");
+  const pagination = usePagedQuery(
+    query,
+    "purchasing",
+    defaultSort,
+    purchaseSorts,
+    defaultPageSize,
+  );
   const columns: CustomTableColumn<PurchasingRow>[] = [
     {
       key: "date",
@@ -170,8 +192,7 @@ export default function PurchasingHistory({
                   </label>
                 </>
               }
-              extraSorts
-              itemSorts={false}
+              sortOptions={purchaseSortOptions}
               page={pagination.page}
               pageSize={pagination.pageSize}
               sort={pagination.sort}

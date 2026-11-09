@@ -1,3 +1,6 @@
+export const pageSizes = [0, 10, 25, 50, 100] as const;
+export type PageSize = (typeof pageSizes)[number];
+
 export const historySorts = [
   "newest",
   "oldest",
@@ -6,7 +9,15 @@ export const historySorts = [
   "items-high",
   "items-low",
 ] as const;
-export const pageSorts = [...historySorts, 'name-asc', 'name-desc', 'price-high', 'price-low', 'stock-high', 'stock-low'] as const;
+export const pageSorts = [
+  ...historySorts,
+  "name-asc",
+  "name-desc",
+  "price-high",
+  "price-low",
+  "stock-high",
+  "stock-low",
+] as const;
 export type PageSort = (typeof pageSorts)[number];
 export interface PageOptions {
   page: number;
@@ -27,7 +38,7 @@ export function readIndexPage<T>(
   options: PageOptions,
   range?: IDBKeyRange,
 ): Promise<PageResult<T>> {
-  const requestedSize = [0, 10, 25, 50, 100].includes(options.pageSize)
+  const requestedSize = pageSizes.some((size) => size === options.pageSize)
     ? options.pageSize
     : 10;
   return new Promise((resolve, reject) => {

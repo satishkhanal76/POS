@@ -93,98 +93,119 @@ export default function SettingsPage() {
     ? t("UI_ENTER_VALID_DECIMAL_PLACES_TO_PREVIEW")
     : `${displayDraft.currencyCharacter}${(1234.5).toFixed(decimals)}`;
 
-  const renderGroup = (group: SettingField["group"], label: string) => (
-    <section className="settings-section" aria-labelledby={`group-${group}`}>
-      <h3 id={`group-${group}`}>{t(label)}</h3>
-      {settingsSchema
-        .filter((field) => field.group === group)
-        .map((field) => {
-          const id = `setting-${field.key}`;
-          const error = fieldError(field, displayDraft[field.key], t);
-          return (
-            <div className="settings-field" key={field.key}>
-              <div>
-                <label htmlFor={id}>{t(field.label)}</label>
-                <p id={`${id}-help`}>{t(field.description)}</p>
-              </div>
-              <div className="settings-control">
-                {field.type === "boolean" ? (
-                  <label className="settings-toggle">
+  const renderGroup = (
+    group: SettingField["group"],
+    label: string,
+    collapsible = false,
+  ) => {
+    const heading = <h3 id={`group-${group}`}>{t(label)}</h3>;
+    const section = (
+      <section className="settings-section" aria-labelledby={`group-${group}`}>
+        {!collapsible && heading}
+        {settingsSchema
+          .filter((field) => field.group === group)
+          .map((field) => {
+            const id = `setting-${field.key}`;
+            const error = fieldError(field, displayDraft[field.key], t);
+            return (
+              <div className="settings-field" key={field.key}>
+                <div>
+                  <label htmlFor={id}>{t(field.label)}</label>
+                  <p id={`${id}-help`}>{t(field.description)}</p>
+                </div>
+                <div className="settings-control">
+                  {field.type === "boolean" ? (
+                    <label className="settings-toggle">
+                      <input
+                        id={id}
+                        type="checkbox"
+                        role="switch"
+                        disabled={
+                          (field.key === "forceStockAdherence" &&
+                            !displayDraft.stockManagement) ||
+                          ((field.key === "showOrderActions" ||
+                            field.key === "compactOtherViews") &&
+                            !displayDraft.compactUI)
+                        }
+                        checked={Boolean(displayDraft[field.key])}
+                        onChange={(event) =>
+                          update(field.key, event.target.checked)
+                        }
+                        aria-describedby={`${id}-help`}
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="settings-toggle-track"
+                      />
+                      <span>
+                        {displayDraft[field.key] ? t("UI_ON") : t("UI_OFF")}
+                      </span>
+                    </label>
+                  ) : field.type === "select" ? (
+                    <Select
+                      id={id}
+                      value={String(displayDraft[field.key])}
+                      aria-describedby={`${id}-help`}
+                      onChange={(value) => update(field.key, value)}
+                    >
+                      {field.options.map(({ value, label }) => (
+                        <option key={value} value={value}>
+                          {label ? t(label) : value}
+                        </option>
+                      ))}
+                    </Select>
+                  ) : (
                     <input
                       id={id}
-                      type="checkbox"
-                      role="switch"
-                      disabled={
-                        (field.key === "forceStockAdherence" &&
-                          !displayDraft.stockManagement) ||
-                        ((field.key === "showOrderActions" ||
-                          field.key === "compactOtherViews") &&
-                          !displayDraft.compactUI)
-                      }
-                      checked={Boolean(displayDraft[field.key])}
+                      type={field.type === "number" ? "number" : "text"}
+                      value={String(displayDraft[field.key])}
+                      min={field.min}
+                      max={field.max}
+                      step={field.integer ? 1 : "any"}
+                      maxLength={field.maxLength}
+                      aria-invalid={!!error}
+                      aria-describedby={`${id}-help${error ? ` ${id}-error` : ""}`}
                       onChange={(event) =>
-                        update(field.key, event.target.checked)
+                        update(field.key, event.target.value)
                       }
-                      aria-describedby={`${id}-help`}
                     />
-                    <span
-                      aria-hidden="true"
-                      className="settings-toggle-track"
-                    />
-                    <span>
-                      {displayDraft[field.key] ? t("UI_ON") : t("UI_OFF")}
-                    </span>
-                  </label>
-                ) : field.type === "select" ? (
-                  <Select
-                    id={id}
-                    value={String(displayDraft[field.key])}
-                    aria-describedby={`${id}-help`}
-                    onChange={(value) => update(field.key, value)}
-                  >
-                    <option value="system">{t("SETTINGS_THEME_SYSTEM")}</option>
-                    <option value="light">{t("SETTINGS_THEME_LIGHT")}</option>
-                    <option value="dark">{t("SETTINGS_THEME_DARK")}</option>
-                  </Select>
-                ) : (
-                  <input
-                    id={id}
-                    type={field.type === "number" ? "number" : "text"}
-                    value={String(displayDraft[field.key])}
-                    min={field.min}
-                    max={field.max}
-                    step={field.integer ? 1 : "any"}
-                    maxLength={field.maxLength}
-                    aria-invalid={!!error}
-                    aria-describedby={`${id}-help${error ? ` ${id}-error` : ""}`}
-                    onChange={(event) => update(field.key, event.target.value)}
-                  />
-                )}
-                {error && (
-                  <p className="settings-error" id={`${id}-error`}>
-                    {error}
-                  </p>
-                )}
+                  )}
+                  {error && (
+                    <p className="settings-error" id={`${id}-error`}>
+                      {error}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      {group === "Purchasing" && modeError && (
-        <p className="settings-error" role="alert">
-          {modeError}
-        </p>
-      )}
-      {group === "Prices" && (
-        <div className="settings-preview">
-          <span>{t("UI_PRICE_PREVIEW")}</span>
-          <output>{preview}</output>
-          <small>
-            {t("UI_DISPLAY_FORMATTING_ONLY_TRANSACTION_AMOUNTS_STAY_THE_SAME")}
-          </small>
-        </div>
-      )}
-    </section>
-  );
+            );
+          })}
+        {group === "Purchasing" && modeError && (
+          <p className="settings-error" role="alert">
+            {modeError}
+          </p>
+        )}
+        {group === "Prices" && (
+          <div className="settings-preview">
+            <span>{t("UI_PRICE_PREVIEW")}</span>
+            <output>{preview}</output>
+            <small>
+              {t(
+                "UI_DISPLAY_FORMATTING_ONLY_TRANSACTION_AMOUNTS_STAY_THE_SAME",
+              )}
+            </small>
+          </div>
+        )}
+      </section>
+    );
+    return collapsible ? (
+      <details className="settings-category settings-subcategory">
+        <summary>{heading}</summary>
+        {section}
+      </details>
+    ) : (
+      section
+    );
+  };
 
   return (
     <main className="settings-page">
@@ -264,6 +285,11 @@ export default function SettingsPage() {
         <SettingsCategory title={t("SETTINGS_DISPLAY")}>
           {renderGroup("Appearance", "UI_APPEARANCE")}
           {renderGroup("Prices", "UI_PRICES")}
+        </SettingsCategory>
+        <SettingsCategory title={t("SETTINGS_HISTORY")}>
+          {renderGroup("History", "SETTINGS_HISTORY_FILTERS", true)}
+          {renderGroup("Dashboard", "REPORT_DASHBOARD", true)}
+          {renderGroup("Overview", "REPORT_OVERVIEW", true)}
         </SettingsCategory>
         <SettingsCategory title={t("SETTINGS_LANGUAGE")}>
           <LanguageSettings

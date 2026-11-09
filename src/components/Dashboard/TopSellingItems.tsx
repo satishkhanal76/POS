@@ -11,12 +11,14 @@ type Item = DashboardSummary["topItems"][number];
 export default function TopSellingItems({
   items,
   title = "DASH_TOP_ITEMS",
+  defaultRanking = "quantity",
 }: {
   items: Item[];
   title?: LocaleKey;
+  defaultRanking?: "quantity" | "gross";
 }) {
   const t = useLocaleText();
-  const [sort, setSort] = useState<"quantity" | "gross">("quantity");
+  const [sort, setSort] = useState<"quantity" | "gross">(defaultRanking);
   const rows = [...items].sort(
     (a, b) => b[sort] - a[sort] || a.name.localeCompare(b.name),
   );

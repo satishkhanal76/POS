@@ -1,3 +1,4 @@
+import { ReportViewDefaults } from "../../reports/ReportViewDefaults";
 import ReportToolbar from "../Reports/ReportToolbar";
 import PrintReportButton from "../Reports/PrintReportButton";
 import printTable from "../Reports/printTable";
@@ -5,7 +6,7 @@ import useDeletedVisibility from "../../hooks/useDeletedVisibility";
 import useDeletionRevision from "../../hooks/useDeletionRevision";
 import Select from "../Forms/Select";
 import "../../styles/Reports.css";
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDatabase } from "../../contexts/DatabaseContext";
 import { useLocaleText } from "../../contexts/Locale";
@@ -20,9 +21,11 @@ type Result = Awaited<ReturnType<CustomerBalancesOS["getPage"]>>;
 export default function CustomerBalances({
   refresh = 0,
   embedded = false,
+  defaultFilter = "owing",
 }: {
   refresh?: number;
   embedded?: boolean;
+  defaultFilter?: BalanceFilter;
 }) {
   const t = useLocaleText();
   const { includeDeleted } = useDeletedVisibility();
@@ -31,10 +34,11 @@ export default function CustomerBalances({
   const store = useMemo(() => new CustomerBalancesOS(database), [database]);
   const navigate = useNavigate();
   const location = useLocation();
-  const [filter, setFilter] = useState<BalanceFilter>("owing");
+  const [filter, setFilter] = useState<BalanceFilter>(defaultFilter);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const defaults = useContext(ReportViewDefaults);
+  const [pageSize, setPageSize] = useState(defaults.pageSize);
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState(false);

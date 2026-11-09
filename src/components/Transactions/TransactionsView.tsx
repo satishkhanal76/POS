@@ -1,3 +1,8 @@
+import {
+  SalesFilter,
+  salesSorts,
+  salesSortOptions,
+} from "../../settings/history";
 import ContactFilter from "../Forms/ContactFilter";
 import useListFilter from "../../hooks/useListFilter";
 import Select from "../Forms/Select";
@@ -14,7 +19,7 @@ import TransactionHistoryController from "../../controllers/TransactionHistoryCo
 import TransactionHistoryStore, {
   TransactionKindFilter,
 } from "../../database/TransactionHistoryStore";
-import { DashboardRange } from "../../dashboard/period";
+import { DashboardPeriod, DashboardRange } from "../../dashboard/period";
 import useReportPeriod from "../../hooks/useReportPeriod";
 import DashboardFilters from "../Dashboard/DashboardFilters";
 import "../../styles/Reports.css";
@@ -28,6 +33,10 @@ import PaginationControls from "../utils/PaginationControls";
 export default function TransactionsView({
   customerId,
   range: fixedRange,
+  defaultPeriod = "all",
+  defaultSort = "newest",
+  defaultFilter = "all",
+  defaultPageSize = 10,
   kind,
   scope = "",
   refresh = 0,
@@ -38,6 +47,10 @@ export default function TransactionsView({
   customerId?: string;
   customerName?: string;
   range?: DashboardRange;
+  defaultPeriod?: DashboardPeriod;
+  defaultSort?: (typeof salesSorts)[number];
+  defaultFilter?: SalesFilter;
+  defaultPageSize?: number;
   kind?: TransactionKindFilter;
   scope?: string;
   refresh?: number;
@@ -48,7 +61,7 @@ export default function TransactionsView({
   const navigate = useNavigate();
   const location = useLocation();
   const { transactionsOS, database } = useDatabase();
-  const period = useReportPeriod("all");
+  const period = useReportPeriod(defaultPeriod);
   const range = fixedRange ?? period.range;
   const controller = useMemo(
     () =>
@@ -60,6 +73,7 @@ export default function TransactionsView({
   );
   const [requestedKind, setKind] = useListFilter(
     scope ? `${scope}-kind` : "kind",
+    defaultFilter,
   );
   const selectedKind =
     kind ??
@@ -101,7 +115,13 @@ export default function TransactionsView({
       revision,
     ],
   );
-  const pagination = usePagedQuery(query, scope);
+  const pagination = usePagedQuery(
+    query,
+    scope,
+    defaultSort,
+    salesSorts,
+    defaultPageSize,
+  );
   const columns: CustomTableColumn<TransactionListEntry>[] = [
     {
       key: "time",
@@ -244,7 +264,7 @@ export default function TransactionsView({
                   )}
                 </>
               }
-              extraSorts
+              sortOptions={salesSortOptions}
               page={pagination.page}
               pageSize={pagination.pageSize}
               sort={pagination.sort}

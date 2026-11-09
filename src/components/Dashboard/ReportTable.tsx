@@ -2,6 +2,7 @@ import ReportToolbar from "../Reports/ReportToolbar";
 import { ReportPrintContext } from "../../reports/ReportPrintContext";
 import PrintReportButton from "../Reports/PrintReportButton";
 import printTable from "../Reports/printTable";
+import { ReportViewDefaults } from "../../reports/ReportViewDefaults";
 import { useContext, useState } from "react";
 import CustomTableView, { CustomTableColumn } from "../utils/CustomTableView";
 import PaginationControls from "../utils/PaginationControls";
@@ -21,7 +22,8 @@ export default function ReportTable<T>({
   onRowClick?: (row: T) => void;
 }) {
   const range = useContext(ReportPrintContext);
-  const [pageSize, setSize] = useState(10);
+  const defaults = useContext(ReportViewDefaults);
+  const [pageSize, setSize] = useState(defaults.pageSize);
   const [requestedPage, setPage] = useState(1);
   const size = pageSize || Math.max(1, rows.length);
   const page = Math.min(

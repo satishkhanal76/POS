@@ -1,4 +1,6 @@
-import { ReactNode } from "react";
+import { ReactNode, useContext } from "react";
+
+import { ReportViewDefaults } from "../../reports/ReportViewDefaults";
 
 /** Native disclosure keeps report details keyboard accessible and collapsed by default. */
 export default function CollapsibleReport({
@@ -10,8 +12,10 @@ export default function CollapsibleReport({
   children: ReactNode;
   nested?: boolean;
 }) {
+  const { startCollapsed } = useContext(ReportViewDefaults);
   return (
     <details
+      open={!startCollapsed}
       className={`report-disclosure ${nested ? "report-disclosure-nested" : "dashboard-panel"}`}
     >
       <summary>{title}</summary>

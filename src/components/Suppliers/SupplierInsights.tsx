@@ -1,3 +1,4 @@
+import type { BalanceFilter } from "../../database/CustomerBalancesOS";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useLocaleText } from "../../contexts/Locale";
@@ -17,16 +18,18 @@ export default function SupplierInsights({
   range,
   refresh,
   periodParams,
+  defaultFilter = "owing",
 }: {
   range: DashboardRange;
   refresh: number;
   periodParams: URLSearchParams;
+  defaultFilter?: BalanceFilter;
 }) {
   const t = useLocaleText();
   const location = useLocation();
   const navigate = useNavigate();
   const { data, busy, error } = useSupplierInsights(range, refresh);
-  const [filter, setFilter] = useState("owing");
+  const [filter, setFilter] = useState<string>(defaultFilter);
   const openContact = (row: SupplierInsight, lifetime = false) => {
     const params = lifetime
       ? new URLSearchParams({ period: "all" })

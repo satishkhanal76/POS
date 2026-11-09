@@ -3,28 +3,137 @@ import { SETTINGS_STORAGE_KEY } from "./storage";
 import { getLocaleText, LocaleKey, Translate } from "../contexts/Locale";
 import defaults from "../data/ClientGlobal.json";
 
+import { pageSizes, PageSize } from "../database/Pagination";
+import {
+  HistoryPeriod,
+  PurchaseFilter,
+  PurchaseSort,
+  purchaseSortOptions,
+  SalesFilter,
+  SalesSort,
+  salesSortOptions,
+} from "./history";
+
+import type { BalanceFilter } from "../database/CustomerBalancesOS";
+
+type ItemRanking = "quantity" | "gross";
+
 export type Settings = Omit<typeof defaults, "theme"> & {
+  historyPeriod: HistoryPeriod;
+  historyPageSize: `${PageSize}`;
+  salesSort: SalesSort;
+  salesFilter: SalesFilter;
+  purchaseSort: PurchaseSort;
+  purchaseFilter: PurchaseFilter;
+  dashboardPeriod: HistoryPeriod;
+  dashboardPageSize: `${PageSize}`;
+  dashboardSalesSort: SalesSort;
+  dashboardSalesFilter: SalesFilter;
+  dashboardPurchaseSort: PurchaseSort;
+  dashboardPurchaseFilter: PurchaseFilter;
+  dashboardItemRanking: ItemRanking;
+  dashboardStartCollapsed: boolean;
+  overviewPeriod: HistoryPeriod;
+  overviewPageSize: `${PageSize}`;
+  overviewItemRanking: ItemRanking;
+  overviewCustomerFilter: BalanceFilter;
+  overviewSupplierFilter: BalanceFilter;
+  overviewStartCollapsed: boolean;
   theme: ThemePreference;
 };
 type Field<K extends keyof Settings> = {
   key: K;
-  type: K extends "theme"
-    ? "select"
-    : Settings[K] extends boolean
-      ? "boolean"
-      : Settings[K] extends number
-        ? "number"
-        : "text";
   label: LocaleKey;
   description: LocaleKey;
   group:
-    "Prices" | "Appearance" | "Stock" | "Deletion" | "Purchasing" | "Order";
+    | "Prices"
+    | "Appearance"
+    | "Stock"
+    | "Deletion"
+    | "Purchasing"
+    | "Order"
+    | "History"
+    | "Dashboard"
+    | "Overview";
   min?: number;
   max?: number;
   integer?: boolean;
   maxLength?: number;
-};
+} & (K extends
+  | "theme"
+  | "historyPeriod"
+  | "historyPageSize"
+  | "salesSort"
+  | "salesFilter"
+  | "purchaseSort"
+  | "purchaseFilter"
+  | "dashboardPeriod"
+  | "dashboardPageSize"
+  | "dashboardSalesSort"
+  | "dashboardSalesFilter"
+  | "dashboardPurchaseSort"
+  | "dashboardPurchaseFilter"
+  | "dashboardItemRanking"
+  | "overviewPeriod"
+  | "overviewPageSize"
+  | "overviewItemRanking"
+  | "overviewCustomerFilter"
+  | "overviewSupplierFilter"
+  ? {
+      type: "select";
+      options: readonly { value: Settings[K]; label?: LocaleKey }[];
+      invalid: LocaleKey;
+    }
+  : {
+      type: Settings[K] extends boolean
+        ? "boolean"
+        : Settings[K] extends number
+          ? "number"
+          : "text";
+    });
 export type SettingField = { [K in keyof Settings]: Field<K> }[keyof Settings];
+
+const periodOptions = [
+  { value: "day", label: "DASH_DAY" },
+  { value: "week", label: "DASH_WEEK" },
+  { value: "month", label: "DASH_MONTH" },
+  { value: "year", label: "DASH_YEAR" },
+  { value: "all", label: "REPORT_ALL_TIME" },
+] as const;
+
+const pageSizeOptions = pageSizes.map((size) => ({
+  value: `${size}` as const,
+  label: size === 0 ? ("REPORT_ALL" as const) : undefined,
+}));
+
+const salesFilterOptions = [
+  { value: "all", label: "FILTER_ALL_TYPES" },
+  { value: "sale", label: "PAYMENT_SALE" },
+  { value: "payment", label: "REPORT_PAYMENTS" },
+] as const;
+
+const purchaseFilterOptions = [
+  { value: "all", label: "FILTER_ALL_TYPES" },
+  { value: "purchase", label: "BUY_PURCHASE" },
+  { value: "supplier-payment", label: "BUY_PAYMENTS" },
+] as const;
+
+const itemRankingOptions = [
+  { value: "quantity", label: "DASH_UNITS" },
+  { value: "gross", label: "DASH_ITEM_VALUE" },
+] as const;
+const customerBalanceOptions = [
+  { value: "owing", label: "DASH_OWING" },
+  { value: "settled", label: "DASH_SETTLED" },
+  { value: "credit", label: "DASH_CREDIT" },
+  { value: "all", label: "DASH_ALL_CUSTOMERS" },
+] as const;
+const supplierBalanceOptions = [
+  { value: "owing", label: "SUPPLIER_FILTER_OWING" },
+  { value: "credit", label: "SUPPLIER_FILTER_CREDIT" },
+  { value: "settled", label: "SUPPLIER_FILTER_SETTLED" },
+  { value: "all", label: "REPORT_ALL" },
+] as const;
 
 export const settingsSchema: SettingField[] = [
   {
@@ -123,11 +232,213 @@ export const settingsSchema: SettingField[] = [
     type: "select",
     label: "SETTINGS_THEME",
     description: "SETTINGS_THEME_HELP",
+    options: [
+      { value: "system", label: "SETTINGS_THEME_SYSTEM" },
+      { value: "light", label: "SETTINGS_THEME_LIGHT" },
+      { value: "dark", label: "SETTINGS_THEME_DARK" },
+    ],
+    invalid: "SETTINGS_THEME_INVALID",
     group: "Appearance",
+  },
+  {
+    key: "historyPeriod",
+    type: "select",
+    label: "SETTINGS_HISTORY_PERIOD",
+    description: "SETTINGS_HISTORY_PERIOD_HELP",
+    options: periodOptions,
+    invalid: "SETTINGS_HISTORY_PERIOD_INVALID",
+    group: "History",
+  },
+  {
+    key: "historyPageSize",
+    type: "select",
+    label: "SETTINGS_HISTORY_PAGE_SIZE",
+    description: "SETTINGS_HISTORY_PAGE_SIZE_HELP",
+    options: pageSizeOptions,
+    invalid: "VALIDATION_REQUIRED",
+    group: "History",
+  },
+  {
+    key: "salesSort",
+    type: "select",
+    label: "SETTINGS_SALES_SORT",
+    description: "SETTINGS_SALES_SORT_HELP",
+    options: salesSortOptions,
+    invalid: "VALIDATION_REQUIRED",
+    group: "History",
+  },
+  {
+    key: "salesFilter",
+    type: "select",
+    label: "SETTINGS_SALES_FILTER",
+    description: "SETTINGS_SALES_FILTER_HELP",
+    options: salesFilterOptions,
+    invalid: "VALIDATION_REQUIRED",
+    group: "History",
+  },
+  {
+    key: "purchaseSort",
+    type: "select",
+    label: "SETTINGS_PURCHASE_SORT",
+    description: "SETTINGS_PURCHASE_SORT_HELP",
+    options: purchaseSortOptions,
+    invalid: "VALIDATION_REQUIRED",
+    group: "History",
+  },
+  {
+    key: "purchaseFilter",
+    type: "select",
+    label: "SETTINGS_PURCHASE_FILTER",
+    description: "SETTINGS_PURCHASE_FILTER_HELP",
+    options: purchaseFilterOptions,
+    invalid: "VALIDATION_REQUIRED",
+    group: "History",
+  },
+  {
+    key: "dashboardPeriod",
+    type: "select",
+    label: "SETTINGS_HISTORY_PERIOD",
+    description: "SETTINGS_REPORT_PERIOD_HELP",
+    group: "Dashboard",
+    options: periodOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "dashboardPageSize",
+    type: "select",
+    label: "SETTINGS_HISTORY_PAGE_SIZE",
+    description: "SETTINGS_REPORT_PAGE_SIZE_HELP",
+    group: "Dashboard",
+    options: pageSizeOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "dashboardSalesSort",
+    type: "select",
+    label: "SETTINGS_SALES_SORT",
+    description: "SETTINGS_SALES_SORT_HELP",
+    group: "Dashboard",
+    options: salesSortOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "dashboardSalesFilter",
+    type: "select",
+    label: "SETTINGS_SALES_FILTER",
+    description: "SETTINGS_SALES_FILTER_HELP",
+    group: "Dashboard",
+    options: salesFilterOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "dashboardPurchaseSort",
+    type: "select",
+    label: "SETTINGS_PURCHASE_SORT",
+    description: "SETTINGS_PURCHASE_SORT_HELP",
+    group: "Dashboard",
+    options: purchaseSortOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "dashboardPurchaseFilter",
+    type: "select",
+    label: "SETTINGS_PURCHASE_FILTER",
+    description: "SETTINGS_PURCHASE_FILTER_HELP",
+    group: "Dashboard",
+    options: purchaseFilterOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "dashboardItemRanking",
+    type: "select",
+    label: "SETTINGS_ITEM_RANKING",
+    description: "SETTINGS_ITEM_RANKING_HELP",
+    group: "Dashboard",
+    options: itemRankingOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "dashboardStartCollapsed",
+    type: "boolean",
+    label: "SETTINGS_REPORT_COLLAPSED",
+    description: "SETTINGS_REPORT_COLLAPSED_HELP",
+    group: "Dashboard",
+  },
+  {
+    key: "overviewPeriod",
+    type: "select",
+    label: "SETTINGS_HISTORY_PERIOD",
+    description: "SETTINGS_REPORT_PERIOD_HELP",
+    group: "Overview",
+    options: periodOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "overviewPageSize",
+    type: "select",
+    label: "SETTINGS_HISTORY_PAGE_SIZE",
+    description: "SETTINGS_REPORT_PAGE_SIZE_HELP",
+    group: "Overview",
+    options: pageSizeOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "overviewItemRanking",
+    type: "select",
+    label: "SETTINGS_ITEM_RANKING",
+    description: "SETTINGS_ITEM_RANKING_HELP",
+    group: "Overview",
+    options: itemRankingOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "overviewCustomerFilter",
+    type: "select",
+    label: "SETTINGS_CUSTOMER_BALANCE_FILTER",
+    description: "SETTINGS_BALANCE_FILTER_HELP",
+    group: "Overview",
+    options: customerBalanceOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "overviewSupplierFilter",
+    type: "select",
+    label: "SETTINGS_SUPPLIER_BALANCE_FILTER",
+    description: "SETTINGS_BALANCE_FILTER_HELP",
+    group: "Overview",
+    options: supplierBalanceOptions,
+    invalid: "VALIDATION_REQUIRED",
+  },
+  {
+    key: "overviewStartCollapsed",
+    type: "boolean",
+    label: "SETTINGS_REPORT_COLLAPSED",
+    description: "SETTINGS_REPORT_COLLAPSED_HELP",
+    group: "Overview",
   },
 ];
 export const defaultSettings: Settings = {
   ...defaults,
+  historyPeriod: "month",
+  historyPageSize: "10",
+  salesSort: "newest",
+  salesFilter: "all",
+  purchaseSort: "newest",
+  purchaseFilter: "all",
+  dashboardPeriod: "day",
+  dashboardPageSize: "10",
+  dashboardSalesSort: "newest",
+  dashboardSalesFilter: "all",
+  dashboardPurchaseSort: "newest",
+  dashboardPurchaseFilter: "all",
+  dashboardItemRanking: "quantity",
+  dashboardStartCollapsed: true,
+  overviewPeriod: "month",
+  overviewPageSize: "10",
+  overviewItemRanking: "quantity",
+  overviewCustomerFilter: "owing",
+  overviewSupplierFilter: "owing",
+  overviewStartCollapsed: true,
   theme: isThemePreference(defaults.theme) ? defaults.theme : "system",
 };
 export function getDeviceDefaults(): Settings {
@@ -160,7 +471,9 @@ export function fieldError(
   t: Translate = getLocaleText,
 ): string | undefined {
   if (field.type === "select")
-    return isThemePreference(value) ? undefined : t("SETTINGS_THEME_INVALID");
+    return field.options.some((option) => option.value === value)
+      ? undefined
+      : t(field.invalid);
   if (field.type === "boolean")
     return typeof value === "boolean" ? undefined : t("UI_CHOOSE_ON_OR_OFF");
   if (field.type === "text") {
